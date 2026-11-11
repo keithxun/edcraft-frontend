@@ -3,7 +3,12 @@ import type { AuthoringQuestionPayload } from "../types";
 import { CodeQuestionView } from "./CodeQuestionView";
 import { EvidenceDetails } from "./EvidenceDetails";
 import { GenericQuestionView } from "./GenericQuestionView";
-import { buildQuestionFields, isCodeQuestionPayload } from "./questionPayload";
+import { MathQuestionView } from "./MathQuestionView";
+import {
+    buildQuestionFields,
+    isCodeQuestionPayload,
+    isMathQuestionPayload,
+} from "./questionPayload";
 
 interface PreviewQuestionProps {
     instance: AuthoringQuestionPayload;
@@ -32,16 +37,34 @@ export function PreviewQuestion({
     const InputsHeading = headingLevel === "h2" ? "h3" : "h4";
     const fields = buildQuestionFields(instance);
     const codeInstance = isCodeQuestionPayload(instance) ? instance : null;
+    const mathInstance = isMathQuestionPayload(instance) ? instance : null;
     // No domain means a legacy code payload; only show the code view when the
     // payload actually has the code envelope.
     const showCode = codeInstance !== null && (domain === undefined || domain === "code");
+    // A math payload is recognised by its flat envelope even when the domain is
+    // absent; an explicit other domain keeps the generic fallback.
+    const showMath = mathInstance !== null && (domain === undefined || domain === "math");
 
     return (
         <article className={review ? "space-y-4" : "space-y-4 rounded-lg border p-4"}>
-            <div className="flex flex-wrap items-start justify-between gap-2">
-                <Heading className="min-w-0 text-base font-medium">{fields.text}</Heading>
-                {!review && <Badge variant="default">Draft for review</Badge>}
-            </div>
+            {(!showMath || !review) && (
+                <div
+                    className={
+                        showMath
+                            ? "flex justify-end"
+                            : "flex flex-wrap items-start justify-between gap-2"
+                    }
+                >
+                    {/* The math view owns the prompt heading so the equation can
+                        sit directly above it without repeating the prompt. */}
+                    {!showMath && (
+                        <Heading className="min-w-0 text-base font-medium">
+                            {fields.text}
+                        </Heading>
+                    )}
+                    {!review && <Badge variant="default">Draft for review</Badge>}
+                </div>
+            )}
 
             {!review && (
                 <p className="text-xs text-muted-foreground">
@@ -49,7 +72,14 @@ export function PreviewQuestion({
                 </p>
             )}
 
-            {showCode ? (
+            {showMath && mathInstance ? (
+                <MathQuestionView
+                    instance={mathInstance}
+                    review={review}
+                    headingLevel={headingLevel}
+                    inputsHeadingLevel={InputsHeading}
+                />
+            ) : showCode ? (
                 <CodeQuestionView
                     instance={codeInstance}
                     review={review}

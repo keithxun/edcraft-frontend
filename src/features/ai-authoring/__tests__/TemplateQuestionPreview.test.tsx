@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { CodeTemplateCandidate } from "@/api/models";
 import { TemplateQuestionPreview } from "../components/TemplateQuestionPreview";
-import { approvedReview, stubReview } from "./fixtures";
+import { approvedReview, mathReview, stubReview } from "./fixtures";
 
 vi.mock("../components/ReadOnlyCode", () => ({
     ReadOnlyCode: ({ code, label }: { code: string; label: string }) => (
@@ -38,5 +38,27 @@ describe("TemplateQuestionPreview", () => {
         expect(screen.queryByLabelText("Template code")).not.toBeInTheDocument();
         expect(screen.getByText("Question template")).toBeInTheDocument();
         expect(screen.getByText("Answer expression")).toBeInTheDocument();
+    });
+
+    it("renders a math candidate without code assumptions", () => {
+        const candidate = mathReview.template!.candidate as {
+            equation_template: string;
+            answer_expression: string;
+        };
+        render(
+            <TemplateQuestionPreview template={mathReview.template!} domain="math" />,
+        );
+
+        expect(
+            screen.getByRole("heading", { name: "Solve for x." }),
+        ).toBeInTheDocument();
+        expect(screen.getByText(candidate.equation_template)).toBeInTheDocument();
+        expect(screen.getByText(candidate.answer_expression)).toBeInTheDocument();
+        expect(screen.getByText("Parameters")).toBeInTheDocument();
+        expect(screen.getByText("Wrong choices")).toBeInTheDocument();
+        expect(
+            screen.getByText("Forgets to divide by the coefficient of x."),
+        ).toBeInTheDocument();
+        expect(screen.queryByLabelText("Template code")).not.toBeInTheDocument();
     });
 });

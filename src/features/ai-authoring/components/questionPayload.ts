@@ -1,4 +1,9 @@
-import type { AuthoringQuestionPayload, CodeQuestionInstance } from "../types";
+import type {
+    AuthoringQuestionPayload,
+    CodeQuestionInstance,
+    MathQuestionInstance,
+    MathTemplateCandidate,
+} from "../types";
 
 export interface PreviewChoice {
     value: unknown;
@@ -33,11 +38,62 @@ export function isCodeQuestionPayload(
 }
 
 /**
+ * A math question is a flat envelope: the equation and choices sit at the top
+ * level instead of inside a nested `question` object. Requiring every field
+ * keeps other flat domains from being mistaken for math.
+ */
+export function isMathQuestionPayload(
+    value: AuthoringQuestionPayload,
+): value is MathQuestionInstance {
+    if (!isRecord(value)) return false;
+    return (
+        typeof value.template_id === "string" &&
+        typeof value.seed === "number" &&
+        isRecord(value.parameters) &&
+        typeof value.equation === "string" &&
+        typeof value.question === "string" &&
+        Array.isArray(value.choices) &&
+        value.choices.every((choice) => typeof choice === "string") &&
+        typeof value.correct_index === "number" &&
+        typeof value.answer === "string"
+    );
+}
+
+/** A math template candidate is identified by the equation field. */
+export function isMathTemplateCandidate(value: unknown): value is MathTemplateCandidate {
+    if (!isRecord(value)) return false;
+    return (
+        typeof value.template_id === "string" &&
+        typeof value.equation_template === "string" &&
+        typeof value.question_template === "string" &&
+        Array.isArray(value.parameters) &&
+        typeof value.answer_expression === "string" &&
+        Array.isArray(value.distractors)
+    );
+}
+
+/**
  * Normalizes the question text, choices and answer for the shared
  * QuestionContent renderer. Unknown domains only need this small envelope;
  * their domain-specific fields stay in the raw data disclosure.
  */
 export function buildQuestionFields(payload: AuthoringQuestionPayload): PreviewQuestionFields {
+    if (isMathQuestionPayload(payload)) {
+        // Math carries the canonical choice order from the backend. Unlike the
+        // code path, do not synthesize the correct position from the seed.
+        return {
+            text: payload.question,
+            questionType: "mcq",
+            answer: payload.answer,
+            choices: payload.choices.map((value, index) => ({
+                value,
+                correct: index === payload.correct_index,
+            })),
+            correctIndex: payload.correct_index,
+            seed: payload.seed,
+        };
+    }
+
     const record = isRecord(payload) ? payload : {};
     const question = isRecord(record.question) ? record.question : {};
     const distractors = Array.isArray(question.distractors) ? question.distractors : [];

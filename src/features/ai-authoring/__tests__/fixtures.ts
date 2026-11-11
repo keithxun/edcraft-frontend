@@ -8,6 +8,8 @@ import type {
     AuthoringQuestionPayload,
     AuthoringReview,
     CodeQuestionInstance,
+    MathQuestionInstance,
+    MathTemplateCandidate,
 } from "../types";
 
 const digest = "a".repeat(64);
@@ -431,4 +433,71 @@ export const stubBatch: AuthoringBatch = {
         stubQuestionInstance,
         { ...stubQuestionInstance, seed: 3 } as AuthoringQuestionPayload,
     ],
+};
+
+/** A math question uses a flat envelope instead of the code question object. */
+export const mathQuestionInstance: MathQuestionInstance = {
+    template_id: "linear-one-step",
+    artifact_id: "artifact-math",
+    seed: 4,
+    parameters: { a: 2, b: 1, c: 5 },
+    equation: "2x + 1 = 5",
+    question: "Solve for x.",
+    choices: ["2", "3", "-2"],
+    correct_index: 0,
+    answer: "2",
+    requires_manual_review: true,
+};
+
+export const mathPreview: AuthoringPreview = {
+    ...preview,
+    domain: "math",
+    artifact_id: "artifact-math",
+    question: mathQuestionInstance,
+};
+
+export const mathTemplateCandidate: MathTemplateCandidate = {
+    template_id: "linear-one-step",
+    difficulty: "easy",
+    question_type: "mcq",
+    equation_template: "{a}x + {b} = {c}",
+    question_template: "Solve for x.",
+    parameters: [
+        { name: "a", values: [2, 3] },
+        { name: "b", values: [1, 4] },
+        { name: "c", values: [5, 7] },
+    ],
+    answer_expression: "(c - b) / a",
+    distractors: [
+        {
+            expression: "c - b",
+            reason_template: "Forgets to divide by the coefficient of x.",
+        },
+        {
+            expression: "c + b",
+            reason_template: "Adds the constant instead of subtracting it.",
+        },
+    ],
+};
+
+export const mathReview: AuthoringReview = {
+    ...approvedReview,
+    artifact_id: "artifact-math",
+    request: {
+        ...approvedReview.request,
+        domain: "math",
+        prompt: "Write a one-step linear equation question.",
+    },
+    template: {
+        template_id: "linear-one-step",
+        candidate: mathTemplateCandidate,
+    },
+    candidate: null,
+};
+
+export const mathBatch: AuthoringBatch = {
+    ...batch,
+    domain: "math",
+    artifact_id: "artifact-math",
+    questions: [mathQuestionInstance, { ...mathQuestionInstance, seed: 5 }],
 };

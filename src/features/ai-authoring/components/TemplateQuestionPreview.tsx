@@ -1,8 +1,13 @@
 import type { CodeTemplateCandidate } from "@/api/models";
 import { QuestionContent } from "@/features/questions/components/QuestionContent";
-import type { AuthoringTemplateCandidate, ReviewTemplate } from "../types";
+import type {
+    AuthoringTemplateCandidate,
+    MathTemplateCandidate,
+    ReviewTemplate,
+} from "../types";
 import { EvidenceDetails } from "./EvidenceDetails";
-import { isRecord } from "./questionPayload";
+import { isMathTemplateCandidate, isRecord } from "./questionPayload";
+import { QuestionInputs } from "./QuestionInputs";
 import { ReadOnlyCode } from "./ReadOnlyCode";
 
 interface TemplateQuestionPreviewProps {
@@ -18,11 +23,12 @@ function renderExpression(value: unknown) {
 function isCodeCandidate(
     candidate: AuthoringTemplateCandidate,
 ): candidate is CodeTemplateCandidate {
+    if (!isRecord(candidate)) return false;
+    const record: Record<string, unknown> = candidate;
     return (
-        isRecord(candidate) &&
-        typeof candidate.code === "string" &&
-        typeof candidate.question_template === "string" &&
-        Array.isArray(candidate.distractors)
+        typeof record.code === "string" &&
+        typeof record.question_template === "string" &&
+        Array.isArray(record.distractors)
     );
 }
 
@@ -59,9 +65,59 @@ function CodeTemplateView({ candidate }: { candidate: CodeTemplateCandidate }) {
     );
 }
 
+/** Mathematics template rendered without assuming a programming language. */
+function MathTemplateView({ candidate }: { candidate: MathTemplateCandidate }) {
+    const parameters = Object.fromEntries(
+        candidate.parameters.map((parameter) => [parameter.name, parameter.values]),
+    );
+
+    return (
+        <article className="space-y-4">
+            <h3 className="min-w-0 text-base font-medium">
+                {candidate.question_template}
+            </h3>
+
+            <p className="break-words text-center text-xl font-medium">
+                {candidate.equation_template}
+            </p>
+
+            <section aria-label="Template parameters" className="space-y-1">
+                <h4 className="text-sm font-medium">Parameters</h4>
+                <QuestionInputs inputs={parameters} />
+            </section>
+
+            <section aria-label="Answer expression" className="space-y-1">
+                <h4 className="text-sm font-medium">Answer</h4>
+                <p className="break-words font-mono text-sm">
+                    {candidate.answer_expression}
+                </p>
+            </section>
+
+            <section aria-label="Distractors" className="space-y-2">
+                <h4 className="text-sm font-medium">Wrong choices</h4>
+                <ul className="space-y-2">
+                    {candidate.distractors.map((distractor, index) => (
+                        <li
+                            key={index}
+                            className="rounded border bg-background/60 p-2"
+                        >
+                            <p className="break-words font-mono text-sm">
+                                {distractor.expression}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {distractor.reason_template}
+                            </p>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        </article>
+    );
+}
+
 /** Domain-neutral fallback: show the candidate fields without code assumptions. */
 function GenericTemplateView({ candidate }: { candidate: AuthoringTemplateCandidate }) {
-    const record = isRecord(candidate) ? candidate : {};
+    const record: Record<string, unknown> = isRecord(candidate) ? candidate : {};
     const heading =
         typeof record.question_template === "string"
             ? record.question_template
@@ -93,8 +149,12 @@ export function TemplateQuestionPreview({
     const { candidate } = template;
     // Only the code view assumes the code candidate shape. Unknown domains
     // always take the field-based fallback.
-    const showCode = (domain === undefined || domain === "code") && isCodeCandidate(candidate);
+    const showMath =
+        (domain === undefined || domain === "math") && isMathTemplateCandidate(candidate);
+    const showCode =
+        (domain === undefined || domain === "code") && isCodeCandidate(candidate);
 
+    if (showMath) return <MathTemplateView candidate={candidate} />;
     return showCode ? (
         <CodeTemplateView candidate={candidate} />
     ) : (

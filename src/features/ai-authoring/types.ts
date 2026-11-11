@@ -52,7 +52,10 @@ export type ReviewAttempt = Omit<ApiReviewAttempt, "candidate"> & {
     candidate?: AuthoringTemplateCandidate | null;
 };
 /** A code template or an opaque candidate from another domain. */
-export type AuthoringTemplateCandidate = CodeTemplateCandidate | Record<string, unknown>;
+export type AuthoringTemplateCandidate =
+    | CodeTemplateCandidate
+    | MathTemplateCandidate
+    | Record<string, unknown>;
 export type ReviewTemplate = Omit<ApiReviewTemplate, "candidate"> & {
     candidate: AuthoringTemplateCandidate;
 };
@@ -70,8 +73,51 @@ export type AuthoringReview = Omit<
     template?: ReviewTemplate | null;
 };
 export type CodeQuestionInstance = ApiCodeQuestionInstance;
-/** A deterministic question from any domain; the code instance is one shape. */
-export type AuthoringQuestionPayload = CodeQuestionInstance | Record<string, unknown>;
+
+/**
+ * A bounded linear-equation question from the mathematics domain. The backend
+ * sends this as a flat object rather than the code question envelope.
+ */
+export type MathQuestionInstance = {
+    template_id: string;
+    artifact_id?: string | null;
+    seed: number;
+    parameters: Record<string, number>;
+    equation: string;
+    question: string;
+    choices: string[];
+    correct_index: number;
+    answer: string;
+    requires_manual_review?: true;
+};
+
+export type MathParameter = {
+    name: string;
+    values: number[];
+};
+
+export type MathDistractor = {
+    expression: string;
+    reason_template: string;
+};
+
+/** A mathematics template candidate (the equation analogue of code). */
+export type MathTemplateCandidate = {
+    template_id: string;
+    difficulty: string;
+    question_type: "mcq";
+    equation_template: string;
+    question_template: string;
+    parameters: MathParameter[];
+    answer_expression: string;
+    distractors: MathDistractor[];
+};
+
+/** A deterministic question from any domain; code and math are two shapes. */
+export type AuthoringQuestionPayload =
+    | CodeQuestionInstance
+    | MathQuestionInstance
+    | Record<string, unknown>;
 export type AuthoringPreview = Omit<PreviewResponse, "question"> & {
     domain: string;
     question: AuthoringQuestionPayload;
