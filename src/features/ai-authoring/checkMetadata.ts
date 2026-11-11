@@ -9,7 +9,9 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
     math_verify_template_structure: "Question template",
     math_validate_answers_and_distractors: "Answers and wrong choices",
     math_assess_template_difficulty: "Difficulty",
+    // Legacy artifacts created before relevance became a shared capability.
     math_assess_template_relevance: "Relevance",
+    assess_template_relevance: "Relevance",
 };
 
 const CHECK_DESCRIPTIONS: Record<string, string> = {
@@ -22,7 +24,9 @@ const CHECK_DESCRIPTIONS: Record<string, string> = {
     math_validate_answers_and_distractors:
         "The answer and every wrong choice evaluate correctly and are distinct.",
     math_assess_template_difficulty: "The estimated difficulty matches the request.",
+    // Legacy artifacts created before relevance became a shared capability.
     math_assess_template_relevance: "The template is relevant to the request.",
+    assess_template_relevance: "The template is relevant to the request.",
 };
 
 export function friendlyCheckLabel(tool: string): string {

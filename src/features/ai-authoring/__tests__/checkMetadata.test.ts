@@ -10,6 +10,7 @@ describe("math check labels", () => {
             "Answers and wrong choices",
         );
         expect(friendlyCheckLabel("math_assess_template_difficulty")).toBe("Difficulty");
+        expect(friendlyCheckLabel("assess_template_relevance")).toBe("Relevance");
         expect(friendlyCheckLabel("math_assess_template_relevance")).toBe("Relevance");
         expect(
             checkDescription({
