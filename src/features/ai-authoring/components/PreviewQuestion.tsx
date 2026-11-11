@@ -47,21 +47,17 @@ export function PreviewQuestion({
 
     return (
         <article className={review ? "space-y-4" : "space-y-4 rounded-lg border p-4"}>
-            {(!showMath || !review) && (
-                <div
-                    className={
-                        showMath
-                            ? "flex justify-end"
-                            : "flex flex-wrap items-start justify-between gap-2"
-                    }
-                >
-                    {/* The math view owns the prompt heading so the equation can
-                        sit directly above it without repeating the prompt. */}
-                    {!showMath && (
-                        <Heading className="min-w-0 text-base font-medium">
-                            {fields.text}
-                        </Heading>
-                    )}
+            {showMath ? (
+                !review && (
+                    <div className="flex justify-end">
+                        <Badge variant="default">Draft for review</Badge>
+                    </div>
+                )
+            ) : (
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                    <Heading className="min-w-0 text-base font-medium">
+                        {fields.text}
+                    </Heading>
                     {!review && <Badge variant="default">Draft for review</Badge>}
                 </div>
             )}

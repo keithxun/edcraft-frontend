@@ -1,7 +1,6 @@
-import { QuestionContent } from "@/features/questions/components/QuestionContent";
 import type { MathQuestionInstance } from "../types";
+import { GenericQuestionView } from "./GenericQuestionView";
 import { QuestionInputs } from "./QuestionInputs";
-import { ReadableValue } from "./ReadableValue";
 
 interface MathQuestionViewProps {
     instance: MathQuestionInstance;
@@ -10,14 +9,10 @@ interface MathQuestionViewProps {
     inputsHeadingLevel: "h3" | "h4";
 }
 
-function renderReadableValue(value: unknown) {
-    return <ReadableValue value={value} />;
-}
-
 /**
- * Mathematics view: the equation leads, followed by the prompt and choices.
- * Review stays neutral until the reviewer reveals the answer; generated
- * previews show the canonical correct choice from the backend.
+ * Mathematics view: the equation leads, then the prompt and choices through the
+ * shared question renderer. Review stays neutral until the reviewer reveals the
+ * answer; generated previews show the canonical correct choice.
  */
 export function MathQuestionView({
     instance,
@@ -31,23 +26,11 @@ export function MathQuestionView({
 
     return (
         <>
-            <div className="space-y-2">
-                <Heading className="min-w-0 break-words text-lg font-semibold">
-                    {instance.equation}
-                </Heading>
-                <p className="text-base">{instance.question}</p>
-            </div>
+            <Heading className="min-w-0 break-words text-lg font-semibold">
+                {instance.equation}
+            </Heading>
 
-            <QuestionContent
-                questionType="mcq"
-                options={instance.choices}
-                correctIndices={[instance.correct_index]}
-                answer={instance.answer}
-                hideAnswerButton={!review}
-                showAnswerByDefault={!review}
-                hideAnswerSummary
-                renderValue={renderReadableValue}
-            />
+            <GenericQuestionView payload={instance} review={review} />
 
             {!review && (
                 <section aria-label="Question inputs" className="space-y-1">

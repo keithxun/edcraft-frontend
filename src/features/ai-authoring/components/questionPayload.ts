@@ -95,6 +95,38 @@ export function buildQuestionFields(payload: AuthoringQuestionPayload): PreviewQ
     }
 
     const record = isRecord(payload) ? payload : {};
+    // Domain-neutral flat envelope: a question string, a choice list, and the
+    // canonical answer index. This keeps unknown domains readable without a
+    // new shared branch for every one of them.
+    const choiceValues = record.choices;
+    if (Array.isArray(choiceValues)) {
+        const flatChoices = choiceValues.filter((value) => typeof value === "string");
+        if (
+            flatChoices.length > 0 &&
+            flatChoices.length === choiceValues.length &&
+            typeof record.question === "string" &&
+            typeof record.answer === "string"
+        ) {
+            const correctIndex =
+                typeof record.correct_index === "number" &&
+                record.correct_index >= 0 &&
+                record.correct_index < flatChoices.length
+                    ? record.correct_index
+                    : flatChoices.indexOf(record.answer);
+            return {
+                text: record.question,
+                questionType: "mcq",
+                answer: record.answer,
+                choices: flatChoices.map((value, index) => ({
+                    value,
+                    correct: index === correctIndex,
+                })),
+                correctIndex,
+                seed: typeof record.seed === "number" ? record.seed : 0,
+            };
+        }
+    }
+
     const question = isRecord(record.question) ? record.question : {};
     const distractors = Array.isArray(question.distractors) ? question.distractors : [];
     const distractorReasons = Array.isArray(question.distractor_reasons)

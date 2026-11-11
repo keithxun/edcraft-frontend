@@ -110,13 +110,18 @@ interface DomainCopy {
     promptPlaceholder: string;
 }
 
-// Only the code domain has domain-specific wording today. Other domains use
-// the neutral copy below without adding branches in the form itself.
+// Domain-specific wording stays data-driven so the form itself has no
+// per-domain branches. Unknown domains use the neutral copy below.
 const DOMAIN_COPY: Record<string, DomainCopy> = {
     code: {
         badge: "Python · multiple choice",
         promptPlaceholder:
             "Describe the programming concept and what students should reason about.",
+    },
+    math: {
+        badge: "Linear equations · multiple choice",
+        promptPlaceholder:
+            "Describe the equation skill, for example one-step equations of the form ax + b = c with small integer coefficients.",
     },
 };
 
