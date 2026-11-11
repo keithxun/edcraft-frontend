@@ -78,22 +78,6 @@ export function isMathTemplateCandidate(value: unknown): value is MathTemplateCa
  * their domain-specific fields stay in the raw data disclosure.
  */
 export function buildQuestionFields(payload: AuthoringQuestionPayload): PreviewQuestionFields {
-    if (isMathQuestionPayload(payload)) {
-        // Math carries the canonical choice order from the backend. Unlike the
-        // code path, do not synthesize the correct position from the seed.
-        return {
-            text: payload.question,
-            questionType: "mcq",
-            answer: payload.answer,
-            choices: payload.choices.map((value, index) => ({
-                value,
-                correct: index === payload.correct_index,
-            })),
-            correctIndex: payload.correct_index,
-            seed: payload.seed,
-        };
-    }
-
     const record = isRecord(payload) ? payload : {};
     // Domain-neutral flat envelope: a question string, a choice list, and the
     // canonical answer index. This keeps unknown domains readable without a
