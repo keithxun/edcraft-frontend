@@ -187,8 +187,15 @@ describe("PreviewQuestion", () => {
         expect(
             screen.getAllByText(mathQuestionInstance.question).length,
         ).toBeGreaterThan(0);
-        for (const choice of mathQuestionInstance.choices) {
-            expect(screen.getAllByText(choice).length).toBeGreaterThan(0);
+        // Check the rendered option values, not the raw-data disclosure: flat
+        // choices are display strings and must not keep JSON quotes.
+        for (const [index, choice] of mathQuestionInstance.choices.entries()) {
+            const label = screen.getByText(`${String.fromCharCode(65 + index)}.`, {
+                exact: true,
+            });
+            const value = label.parentElement?.querySelector("div");
+            expect(value).not.toBeNull();
+            expect(value?.textContent).toBe(choice);
         }
         expect(screen.getByText("✓")).toBeInTheDocument();
         const inputs = screen.getByLabelText("Question inputs");

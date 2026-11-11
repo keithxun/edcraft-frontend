@@ -18,6 +18,11 @@ export interface PreviewQuestionFields {
     choices: PreviewChoice[];
     correctIndex: number;
     seed: number;
+    /**
+     * A flat envelope's choices are display strings, not Python values, so they
+     * render unquoted. Nested code payloads keep the type-distinguishing quotes.
+     */
+    flat: boolean;
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -107,6 +112,7 @@ export function buildQuestionFields(payload: AuthoringQuestionPayload): PreviewQ
                 })),
                 correctIndex,
                 seed: typeof record.seed === "number" ? record.seed : 0,
+                flat: true,
             };
         }
     }
@@ -141,5 +147,6 @@ export function buildQuestionFields(payload: AuthoringQuestionPayload): PreviewQ
         choices,
         correctIndex,
         seed,
+        flat: false,
     };
 }
