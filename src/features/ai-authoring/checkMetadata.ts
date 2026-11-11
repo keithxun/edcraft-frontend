@@ -9,8 +9,9 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
     math_verify_template_structure: "Question template",
     math_validate_answers_and_distractors: "Answers and wrong choices",
     math_assess_template_difficulty: "Difficulty",
-    // Legacy artifacts created before relevance became a shared capability.
-    math_assess_template_relevance: "Relevance",
+    math_verify_item_spec: "Math item",
+    math_validate_options: "Answer choices",
+    math_verify_text_fidelity: "Question wording",
     assess_template_relevance: "Relevance",
 };
 
@@ -24,8 +25,12 @@ const CHECK_DESCRIPTIONS: Record<string, string> = {
     math_validate_answers_and_distractors:
         "The answer and every wrong choice evaluate correctly and are distinct.",
     math_assess_template_difficulty: "The estimated difficulty matches the request.",
-    // Legacy artifacts created before relevance became a shared capability.
-    math_assess_template_relevance: "The template is relevant to the request.",
+    math_verify_item_spec:
+        "The typed math item compiles, solves, and its declared answer agrees.",
+    math_validate_options:
+        "Every wrong choice is demonstrably wrong and no two choices are equivalent.",
+    math_verify_text_fidelity:
+        "A blind parse of the wording reconstructs the same problem.",
     assess_template_relevance: "The template is relevant to the request.",
 };
 
