@@ -1,6 +1,8 @@
 import type {
     AuthoringQuestionPayload,
     CodeQuestionInstance,
+    IrMathTemplateCandidate,
+    LegacyMathTemplateCandidate,
     MathQuestionInstance,
     MathTemplateCandidate,
 } from "../types";
@@ -64,8 +66,10 @@ export function isMathQuestionPayload(
     );
 }
 
-/** A math template candidate is identified by the equation field. */
-export function isMathTemplateCandidate(value: unknown): value is MathTemplateCandidate {
+/** The legacy linear candidate keeps its canonical equation template. */
+export function isLegacyMathTemplateCandidate(
+    value: unknown,
+): value is LegacyMathTemplateCandidate {
     if (!isRecord(value)) return false;
     return (
         typeof value.template_id === "string" &&
@@ -75,6 +79,25 @@ export function isMathTemplateCandidate(value: unknown): value is MathTemplateCa
         typeof value.answer_expression === "string" &&
         Array.isArray(value.distractors)
     );
+}
+
+/** A generic IR candidate carries one typed item family instead of linear fields. */
+export function isIrMathTemplateCandidate(
+    value: unknown,
+): value is IrMathTemplateCandidate {
+    if (!isRecord(value) || !isRecord(value.item)) return false;
+    const item = value.item;
+    return (
+        typeof value.template_id === "string" &&
+        typeof item.topic === "string" &&
+        Array.isArray(item.parameters) &&
+        isRecord(item.body)
+    );
+}
+
+/** A math template candidate is valid in either authoring mode. */
+export function isMathTemplateCandidate(value: unknown): value is MathTemplateCandidate {
+    return isLegacyMathTemplateCandidate(value) || isIrMathTemplateCandidate(value);
 }
 
 /**

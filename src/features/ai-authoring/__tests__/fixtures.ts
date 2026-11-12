@@ -8,6 +8,7 @@ import type {
     AuthoringQuestionPayload,
     AuthoringReview,
     CodeQuestionInstance,
+    IrMathTemplateCandidate,
     MathQuestionInstance,
     MathTemplateCandidate,
 } from "../types";
@@ -478,6 +479,95 @@ export const mathTemplateCandidate: MathTemplateCandidate = {
             reason_template: "Adds the constant instead of subtracting it.",
         },
     ],
+};
+
+export const mathIrTemplateCandidate: IrMathTemplateCandidate = {
+    template_id: "ir-quadratic",
+    difficulty: "easy",
+    question_type: "mcq",
+    item: {
+        schema_version: "math-ir/0.1",
+        topic: "school.quadratic",
+        parameters: [
+            { name: "p", values: ["2", "3"] },
+            { name: "q", values: ["-7", "-5"] },
+        ],
+        body: {
+            topic: "school.quadratic",
+            symbols: [{ name: "x", domain: "real" }],
+            givens: [
+                {
+                    id: "equation",
+                    kind: "relation",
+                    relation: {
+                        kind: "eq",
+                        lhs: {
+                            op: "add",
+                            args: [
+                                {
+                                    op: "pow",
+                                    args: [{ sym: "x" }, { num: "2" }],
+                                },
+                                {
+                                    op: "mul",
+                                    args: [
+                                        {
+                                            op: "sub",
+                                            args: [
+                                                { num: "0" },
+                                                {
+                                                    op: "add",
+                                                    args: [
+                                                        { param: "p" },
+                                                        { param: "q" },
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                        { sym: "x" },
+                                    ],
+                                },
+                                { op: "mul", args: [{ param: "p" }, { param: "q" }] },
+                            ],
+                        },
+                        rhs: { num: "0" },
+                    },
+                },
+            ],
+            text: { mode: "symbolic", template: "Solve {equation}." },
+            goal: { kind: "solve", symbol: "x" },
+            distractors: [
+                {
+                    value: {
+                        op: "sub",
+                        args: [{ num: "0" }, { param: "p" }],
+                    },
+                    misconception: "SIGN_ERROR",
+                    reason: "Flips the sign of one root",
+                },
+                {
+                    value: { op: "add", args: [{ param: "p" }, { param: "q" }] },
+                    misconception: "SUM_AS_ROOT",
+                    reason: "Reports the sum of the roots as a root",
+                },
+            ],
+        },
+    },
+};
+
+export const mathIrReview: AuthoringReview = {
+    ...approvedReview,
+    artifact_id: "artifact-math-ir",
+    request: {
+        ...approvedReview.request,
+        domain: "math",
+        prompt: "Write a quadratic equation question.",
+    },
+    template: {
+        template_id: "ir-quadratic",
+        candidate: mathIrTemplateCandidate,
+    },
+    candidate: null,
 };
 
 export const mathReview: AuthoringReview = {

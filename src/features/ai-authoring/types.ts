@@ -82,18 +82,19 @@ export type MathQuestionInstance = {
     template_id: string;
     artifact_id?: string | null;
     seed: number;
-    parameters: Record<string, number>;
+    parameters: Record<string, number | string>;
     equation: string;
     question: string;
     choices: string[];
     correct_index: number;
     answer: string;
+    topic?: string | null;
     requires_manual_review?: true;
 };
 
 export type MathParameter = {
     name: string;
-    values: number[];
+    values: Array<number | string>;
 };
 
 export type MathDistractor = {
@@ -101,8 +102,67 @@ export type MathDistractor = {
     reason_template: string;
 };
 
-/** A mathematics template candidate (the equation analogue of code). */
-export type MathTemplateCandidate = {
+/** One node of the generic IR expression tree. */
+export type MathIrExpression = {
+    num?: string;
+    sym?: string;
+    param?: string;
+    op?: string;
+    args?: MathIrExpression[];
+};
+
+export type MathIrDistractor = {
+    value?: MathIrExpression | null;
+    components?: MathIrExpression[];
+    items?: MathIrExpression[];
+    misconception: string;
+    reason?: string;
+};
+
+export type MathIrRelation = {
+    kind?: string;
+    lhs: MathIrExpression;
+    rhs: MathIrExpression;
+};
+
+export type MathIrGiven = {
+    id: string;
+    kind?: string;
+    relation?: MathIrRelation | null;
+    symbol?: string | null;
+    domain?: string | null;
+    values?: string[];
+};
+
+export type MathIrGoal = {
+    kind: string;
+    symbol?: string | null;
+    symbols?: string[];
+    expr?: MathIrExpression | null;
+    point?: MathIrExpression | null;
+    order?: number;
+    matrix?: MathIrExpression[][] | null;
+};
+
+/** A reusable generic IR item family authored by the model. */
+export type MathIrTemplate = {
+    schema_version: string;
+    topic: string;
+    parameters: Array<{ name: string; values: string[] }>;
+    body: {
+        schema_version?: string;
+        topic: string;
+        symbols?: Array<{ name: string; domain?: string }>;
+        givens?: MathIrGiven[];
+        text: { mode: string; template: string };
+        goal: MathIrGoal;
+        answer?: { display?: string } | null;
+        distractors: MathIrDistractor[];
+    };
+};
+
+/** A legacy linear-equation template candidate. */
+export type LegacyMathTemplateCandidate = {
     template_id: string;
     difficulty: string;
     question_type: "mcq";
@@ -112,6 +172,19 @@ export type MathTemplateCandidate = {
     answer_expression: string;
     distractors: MathDistractor[];
 };
+
+/** A generic-IR template candidate. */
+export type IrMathTemplateCandidate = {
+    template_id: string;
+    difficulty: string;
+    question_type: "mcq";
+    item: MathIrTemplate;
+};
+
+/** A mathematics template candidate in either authoring mode. */
+export type MathTemplateCandidate =
+    | LegacyMathTemplateCandidate
+    | IrMathTemplateCandidate;
 
 /** A deterministic question from any domain; code and math are two shapes. */
 export type AuthoringQuestionPayload =
