@@ -13,15 +13,20 @@ import {
 } from "@/features/ai-authoring/__tests__/fixtures";
 import { templateRecord } from "./fixtures";
 
-vi.mock("../services/checkPilot.service", () => ({
-    createPilotTemplate: vi.fn(),
-    listPilotTemplates: vi.fn(),
-    getPilotTemplate: vi.fn(),
-    listPilotChecks: vi.fn(),
-    getPilotCheck: vi.fn(),
-    decidePilotTemplate: vi.fn(),
-    generatePilotBatch: vi.fn(),
-}));
+vi.mock("../services/checkPilot.service", async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import("../services/checkPilot.service")>();
+    return {
+        ...actual,
+        createPilotTemplate: vi.fn(),
+        listPilotTemplates: vi.fn(),
+        getPilotTemplate: vi.fn(),
+        listPilotChecks: vi.fn(),
+        getPilotCheck: vi.fn(),
+        decidePilotTemplate: vi.fn(),
+        generatePilotBatch: vi.fn(),
+    };
+});
 
 function deferred<T>() {
     let resolve!: (value: T) => void;
@@ -87,11 +92,14 @@ describe("CheckPilotCreateForm", () => {
         await user.click(screen.getByRole("button", { name: "Author template" }));
 
         await waitFor(() => {
-            expect(createPilotTemplate).toHaveBeenCalledWith({
-                prompt: "Differentiate bounded cubic polynomials.",
-                model_profile: "default",
-                num_distractors: 2,
-            });
+            expect(createPilotTemplate).toHaveBeenCalledWith(
+                {
+                    prompt: "Differentiate bounded cubic polynomials.",
+                    model_profile: "default",
+                    num_distractors: 2,
+                },
+                { timeoutMs: 200_000 },
+            );
         });
         expect(onCreated).toHaveBeenCalledWith(templateRecord());
     });
@@ -110,11 +118,14 @@ describe("CheckPilotCreateForm", () => {
         await user.click(screen.getByRole("button", { name: "Author template" }));
 
         await waitFor(() => {
-            expect(createPilotTemplate).toHaveBeenCalledWith({
-                prompt: "Differentiate.",
-                model_profile: "default",
-                num_distractors: 3,
-            });
+            expect(createPilotTemplate).toHaveBeenCalledWith(
+                {
+                    prompt: "Differentiate.",
+                    model_profile: "default",
+                    num_distractors: 3,
+                },
+                { timeoutMs: 200_000 },
+            );
         });
     });
 
@@ -140,12 +151,34 @@ describe("CheckPilotCreateForm", () => {
         await user.click(screen.getByRole("button", { name: "Author template" }));
 
         await waitFor(() => {
-            expect(createPilotTemplate).toHaveBeenCalledWith({
-                prompt: "Differentiate.",
-                connection_id: "connection-1",
-                model: "gpt-test",
-                num_distractors: 3,
-            });
+            expect(createPilotTemplate).toHaveBeenCalledWith(
+                {
+                    prompt: "Differentiate.",
+                    connection_id: "connection-1",
+                    model: "gpt-test",
+                    num_distractors: 3,
+                },
+                { timeoutMs: 200_000 },
+            );
+        });
+    });
+
+    it("passes a configured long server bound plus margin to the client", async () => {
+        const user = userEvent.setup();
+        renderForm({ ...capabilities, check_pilot_timeout_seconds: 3660 });
+
+        await user.type(screen.getByLabelText("Template request"), "Differentiate.");
+        await user.click(screen.getByRole("button", { name: "Author template" }));
+
+        await waitFor(() => {
+            expect(createPilotTemplate).toHaveBeenCalledWith(
+                {
+                    prompt: "Differentiate.",
+                    model_profile: "default",
+                    num_distractors: 3,
+                },
+                { timeoutMs: 3_675_000 },
+            );
         });
     });
 

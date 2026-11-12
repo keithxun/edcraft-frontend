@@ -35,6 +35,8 @@ export type ApprovalDecision = StoredReviewerApproval["decision"];
 
 export type AuthoringCapabilities = Omit<AuthoringCapabilitiesResponse, "enabled_domains"> & {
     enabled_domains: string[];
+    // Backend may omit this until the combined check-pilot bound is deployed.
+    check_pilot_timeout_seconds?: number | null;
 };
 export type AuthoringModelProfile = ApiAuthoringModelProfile;
 export type CreateAuthoringJobRequest = Omit<SubmitAuthoringJobRequest, "domain"> & {

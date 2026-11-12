@@ -7,15 +7,20 @@ import { PilotGeneration } from "../components/PilotGeneration";
 import { generatePilotBatch } from "../services/checkPilot.service";
 import { pilotBatch, templateRecord } from "./fixtures";
 
-vi.mock("../services/checkPilot.service", () => ({
-    createPilotTemplate: vi.fn(),
-    listPilotTemplates: vi.fn(),
-    getPilotTemplate: vi.fn(),
-    listPilotChecks: vi.fn(),
-    getPilotCheck: vi.fn(),
-    decidePilotTemplate: vi.fn(),
-    generatePilotBatch: vi.fn(),
-}));
+vi.mock("../services/checkPilot.service", async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import("../services/checkPilot.service")>();
+    return {
+        ...actual,
+        createPilotTemplate: vi.fn(),
+        listPilotTemplates: vi.fn(),
+        getPilotTemplate: vi.fn(),
+        listPilotChecks: vi.fn(),
+        getPilotCheck: vi.fn(),
+        decidePilotTemplate: vi.fn(),
+        generatePilotBatch: vi.fn(),
+    };
+});
 
 function renderGeneration(record = templateRecord({ approval: "approved" })) {
     const client = new QueryClient({

@@ -4,6 +4,7 @@
 // client shape rather than a hand-edited generated API module.
 
 export type QualificationStatus = "passed" | "failed" | "inconclusive" | "error";
+export type QualificationPhase = "compilation" | "sampling";
 
 export interface CheckRef {
     check_id: string;
@@ -13,6 +14,8 @@ export interface CheckRef {
 
 export interface Qualification {
     status: QualificationStatus;
+    // Older backend records omit the phase; they are sampled qualifications.
+    phase?: QualificationPhase;
     checking_mode: "property_based";
     accepted_cases: number;
     execution_calls: number;

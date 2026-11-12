@@ -61,10 +61,13 @@ export function usePilotCheck(checkId: string | undefined) {
     });
 }
 
-export function useCreatePilotTemplate() {
+export function useCreatePilotTemplate(
+    options: { timeoutMs?: number } = {},
+) {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (input: CreatePilotTemplateInput) => createPilotTemplate(input),
+        mutationFn: (input: CreatePilotTemplateInput) =>
+            createPilotTemplate(input, { timeoutMs: options.timeoutMs }),
         onSuccess: () => {
             void queryClient.invalidateQueries({
                 queryKey: queryKeys.checkPilot.templates(),

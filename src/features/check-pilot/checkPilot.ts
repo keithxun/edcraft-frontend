@@ -9,6 +9,22 @@ export interface QualificationSummary {
     explanation: string;
 }
 
+/**
+ * True when a check was rejected before any case ran: either the backend marked
+ * a compilation phase, or it is a legacy zero-execution failed record with no
+ * preserved counterexample.
+ */
+export function qualificationRejectedBeforeSampling(
+    qualification: Qualification,
+): boolean {
+    return (
+        qualification.phase === "compilation" ||
+        (qualification.status === "failed" &&
+            qualification.execution_calls === 0 &&
+            !qualification.counterexample)
+    );
+}
+
 export function qualificationSummary(
     qualification: Qualification | null | undefined,
 ): QualificationSummary {
@@ -18,6 +34,13 @@ export function qualificationSummary(
             explanation: "No qualification evidence has been recorded for this version.",
         };
     }
+    if (qualificationRejectedBeforeSampling(qualification)) {
+        return {
+            label: "Rejected before sampling",
+            explanation:
+                "The check did not compile into supported operations, so no sampled cases ran. No mathematical verdict was produced.",
+        };
+    }
     switch (qualification.status) {
         case "passed":
             return {
@@ -25,6 +48,13 @@ export function qualificationSummary(
                 explanation: "No counterexample found in sampled cases.",
             };
         case "failed":
+            if (!qualification.counterexample) {
+                return {
+                    label: "Sampled checks failed",
+                    explanation:
+                        "The sampled checks did not confirm the recipe and no counterexample was preserved. This is not a mathematical verdict.",
+                };
+            }
             return {
                 label: "Sampled checks failed",
                 explanation: "The sampled cases found a counterexample.",

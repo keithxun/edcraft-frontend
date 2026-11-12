@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { formatValue } from "@/features/ai-authoring/format";
 import {
     qualificationBadgeVariant,
+    qualificationRejectedBeforeSampling,
     qualificationSummary,
 } from "../checkPilot";
 import type { Qualification } from "../types";
@@ -41,6 +42,7 @@ export function QualificationEvidence({
     }
 
     const summary = qualificationSummary(qualification);
+    const beforeSampling = qualificationRejectedBeforeSampling(qualification);
     const findings = qualification.findings.filter((finding) => finding.trim().length > 0);
     const versions = Object.entries(qualification.versions);
 
@@ -54,7 +56,9 @@ export function QualificationEvidence({
             </div>
             <p className="text-sm">{summary.explanation}</p>
             <p className="text-xs text-muted-foreground">
-                Based on the sampled cases below. This is not an exhaustive verification.
+                {beforeSampling
+                    ? "No sampled cases ran for this version."
+                    : "Based on the sampled cases below. This is not an exhaustive verification."}
             </p>
 
             <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">

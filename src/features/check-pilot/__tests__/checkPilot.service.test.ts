@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { axiosInstance } from "@/api/axiosInstance";
 import {
+    checkPilotTimeoutMs,
     createPilotTemplate,
     decidePilotTemplate,
     generatePilotBatch,
@@ -43,10 +44,22 @@ describe("check pilot client", () => {
                 model: "gpt-test",
                 num_distractors: 3,
             },
-            // Authoring runs in a bounded worker; the client must wait longer
-            // than the default 30 second request timeout.
-            timeout: 180_000,
+            // Older backends report a combined 185 second bound; wait 15 s longer.
+            timeout: 200_000,
         });
+    });
+
+    it("uses the configured server bound plus transport margin", async () => {
+        await createPilotTemplate(
+            { prompt: "Differentiate polynomials." },
+            { timeoutMs: 3_675_000 },
+        );
+
+        expect(axiosInstance).toHaveBeenCalledWith(
+            expect.objectContaining({ timeout: 3_675_000 }),
+        );
+        expect(checkPilotTimeoutMs(3660)).toBe(3_675_000);
+        expect(checkPilotTimeoutMs(undefined)).toBe(200_000);
     });
 
     it("omits an unset model profile rather than sending undefined fields", async () => {

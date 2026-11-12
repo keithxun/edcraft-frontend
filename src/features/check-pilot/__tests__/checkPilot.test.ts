@@ -78,6 +78,34 @@ describe("check pilot status language", () => {
         ).not.toBe(qualificationSummary(passed).label);
     });
 
+    it("labels compilation rejection before sampling without claiming a counterexample", () => {
+        const summary = qualificationSummary({
+            ...passed,
+            status: "error",
+            phase: "compilation",
+            accepted_cases: 0,
+            execution_calls: 0,
+            counterexample: null,
+            findings: ["Development needed: poly.integrate"],
+        });
+        expect(summary.label).toMatch(/before sampling/i);
+        expect(summary.explanation).toMatch(/no mathematical verdict/i);
+        expect(summary.explanation).not.toMatch(/counterexample/i);
+    });
+
+    it("does not claim a counterexample for legacy zero-execution failed evidence", () => {
+        const summary = qualificationSummary({
+            ...passed,
+            status: "failed",
+            accepted_cases: 0,
+            execution_calls: 0,
+            counterexample: null,
+        });
+        expect(summary.label).toMatch(/before sampling/i);
+        expect(summary.explanation).toMatch(/no mathematical verdict/i);
+        expect(summary.explanation).not.toMatch(/counterexample/i);
+    });
+
     it("labels reused and newly authored checks distinctly", () => {
         expect(reuseLabel(true)).toBe("Reused saved check");
         expect(reuseLabel(false)).toBe("New check authored");

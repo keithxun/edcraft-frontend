@@ -23,6 +23,7 @@ import { ROUTES } from "@/router/paths";
 import { getCheckPilotErrorMessage } from "../errors";
 import { PILOT_MAX_DISTRACTORS } from "../checkPilot";
 import { useCreatePilotTemplate } from "../hooks/useCheckPilot";
+import { checkPilotTimeoutMs } from "../services/checkPilot.service";
 import {
     buildModelRequest,
     parseModelSource,
@@ -103,7 +104,9 @@ export function CheckPilotCreateForm({
     capabilities,
     onCreated,
 }: CheckPilotCreateFormProps) {
-    const createTemplate = useCreatePilotTemplate();
+    const createTemplate = useCreatePilotTemplate({
+        timeoutMs: checkPilotTimeoutMs(capabilities.check_pilot_timeout_seconds),
+    });
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [successId, setSuccessId] = useState<string | null>(null);
     const connections = capabilities.connections ?? [];

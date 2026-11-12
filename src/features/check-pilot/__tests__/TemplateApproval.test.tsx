@@ -7,15 +7,20 @@ import { TemplateApproval } from "../components/TemplateApproval";
 import { decidePilotTemplate } from "../services/checkPilot.service";
 import { templateRecord } from "./fixtures";
 
-vi.mock("../services/checkPilot.service", () => ({
-    createPilotTemplate: vi.fn(),
-    listPilotTemplates: vi.fn(),
-    getPilotTemplate: vi.fn(),
-    listPilotChecks: vi.fn(),
-    getPilotCheck: vi.fn(),
-    decidePilotTemplate: vi.fn(),
-    generatePilotBatch: vi.fn(),
-}));
+vi.mock("../services/checkPilot.service", async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import("../services/checkPilot.service")>();
+    return {
+        ...actual,
+        createPilotTemplate: vi.fn(),
+        listPilotTemplates: vi.fn(),
+        getPilotTemplate: vi.fn(),
+        listPilotChecks: vi.fn(),
+        getPilotCheck: vi.fn(),
+        decidePilotTemplate: vi.fn(),
+        generatePilotBatch: vi.fn(),
+    };
+});
 
 function renderApproval(record = templateRecord()) {
     const client = new QueryClient({

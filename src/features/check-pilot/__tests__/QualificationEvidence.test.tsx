@@ -100,6 +100,34 @@ describe("QualificationEvidence", () => {
         expect(screen.getByText(/distinct choice/)).toBeInTheDocument();
     });
 
+    it("shows compilation rejection counts and findings without a sampled-counterexample claim", () => {
+        render(
+            <QualificationEvidence
+                title="Draft check qualification"
+                qualification={{
+                    ...passed,
+                    status: "error",
+                    phase: "compilation",
+                    accepted_cases: 0,
+                    execution_calls: 0,
+                    counterexample: null,
+                    findings: ["Development needed: poly.integrate"],
+                }}
+            />,
+        );
+
+        expect(screen.getByText("Rejected before sampling")).toBeInTheDocument();
+        expect(screen.getByText(/no mathematical verdict/i)).toBeInTheDocument();
+        expect(
+            screen.getByText("No sampled cases ran for this version."),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/sampled cases found a counterexample/i)).not.toBeInTheDocument();
+        expect(screen.getByText("0 of at most 200")).toBeInTheDocument();
+        expect(
+            screen.getByText("Development needed: poly.integrate"),
+        ).toBeInTheDocument();
+    });
+
     it("does not present inconclusive or error evidence as passing", () => {
         const { rerender } = render(
             <QualificationEvidence

@@ -14,17 +14,27 @@ import {
 } from "../services/checkPilot.service";
 import { getAuthoringCapabilities } from "@/features/ai-authoring/services/ai-authoring.service";
 import { capabilities, makeUser } from "@/features/ai-authoring/__tests__/fixtures";
-import { checkRecord, failedDraftTemplate, templateRecord } from "./fixtures";
+import {
+    checkRecord,
+    failedCheckQualification,
+    failedDraftTemplate,
+    templateRecord,
+} from "./fixtures";
 
-vi.mock("../services/checkPilot.service", () => ({
-    createPilotTemplate: vi.fn(),
-    listPilotTemplates: vi.fn(),
-    getPilotTemplate: vi.fn(),
-    listPilotChecks: vi.fn(),
-    getPilotCheck: vi.fn(),
-    decidePilotTemplate: vi.fn(),
-    generatePilotBatch: vi.fn(),
-}));
+vi.mock("../services/checkPilot.service", async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import("../services/checkPilot.service")>();
+    return {
+        ...actual,
+        createPilotTemplate: vi.fn(),
+        listPilotTemplates: vi.fn(),
+        getPilotTemplate: vi.fn(),
+        listPilotChecks: vi.fn(),
+        getPilotCheck: vi.fn(),
+        decidePilotTemplate: vi.fn(),
+        generatePilotBatch: vi.fn(),
+    };
+});
 
 vi.mock("@/features/ai-authoring/services/ai-authoring.service", () => ({
     getAuthoringCapabilities: vi.fn(),
@@ -178,6 +188,50 @@ describe("CheckPilotPage", () => {
         ).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Approve template" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Generate questions" })).toBeDisabled();
+    });
+
+    it("shows a compilation rejection from a real failed draft without sampled-counterexample language", async () => {
+        const draft = failedDraftTemplate({
+            check_qualification: {
+                ...failedCheckQualification,
+                status: "error",
+                phase: "compilation",
+                accepted_cases: 0,
+                execution_calls: 0,
+                counterexample: null,
+                findings: ["Development needed: poly.integrate"],
+            },
+        });
+        vi.mocked(listPilotTemplates).mockResolvedValue([draft]);
+        vi.mocked(getPilotTemplate).mockResolvedValue(draft);
+        const user = userEvent.setup();
+        renderPage();
+
+        await user.click(
+            await screen.findByRole("button", {
+                name: /Differentiate bounded quadratic polynomials/,
+            }),
+        );
+
+        await waitFor(() => expect(getPilotTemplate).toHaveBeenCalledWith(draft.template_id));
+        expect(await screen.findByText("Draft check qualification")).toBeInTheDocument();
+        expect(screen.getByText("Rejected before sampling")).toBeInTheDocument();
+        expect(screen.getByText(/no mathematical verdict/i)).toBeInTheDocument();
+        expect(
+            screen.getByText("No sampled cases ran for this version."),
+        ).toBeInTheDocument();
+        expect(screen.queryByText("Preserved counterexample")).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(/sampled cases found a counterexample/i),
+        ).not.toBeInTheDocument();
+        expect(screen.getByText("Development needed: poly.integrate")).toBeInTheDocument();
+        expect(screen.getByText("0 of at most 200")).toBeInTheDocument();
+        expect(
+            screen.getByRole("button", { name: "Approve template" }),
+        ).toBeDisabled();
+        expect(
+            screen.getByRole("button", { name: "Generate questions" }),
+        ).toBeDisabled();
     });
 
     it("selects a qualified check from the check library and shows its definition", async () => {

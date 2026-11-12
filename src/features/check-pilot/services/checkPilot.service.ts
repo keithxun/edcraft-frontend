@@ -9,11 +9,26 @@ import type {
 } from "../types";
 
 const BASE = "/ai-authoring/check-pilot";
-// Template authoring can run two bounded repair attempts plus qualification in
-// a worker. The shared axios instance defaults to 30 seconds, which is shorter
-// than the server-side bound.
-const AUTHOR_TIMEOUT_MS = 180_000;
+// Older backends expose no combined check-pilot bound; their default was 185 s.
+const DEFAULT_CHECK_PILOT_SERVER_TIMEOUT_SECONDS = 185;
+// Leave the browser waiting after the server's own deadline so its 504 wins.
+export const CHECK_PILOT_TRANSPORT_MARGIN_MS = 15_000;
 const GENERATE_TIMEOUT_MS = 60_000;
+
+export function checkPilotTimeoutMs(serverTimeoutSeconds?: number | null): number {
+    const seconds =
+        typeof serverTimeoutSeconds === "number" &&
+        Number.isFinite(serverTimeoutSeconds) &&
+        serverTimeoutSeconds > 0
+            ? serverTimeoutSeconds
+            : DEFAULT_CHECK_PILOT_SERVER_TIMEOUT_SECONDS;
+    return Math.ceil(seconds * 1000) + CHECK_PILOT_TRANSPORT_MARGIN_MS;
+}
+
+export interface CheckPilotRequestOptions {
+    /** Client wait in milliseconds; defaults to the server bound plus margin. */
+    timeoutMs?: number;
+}
 
 function segment(value: string): string {
     // Keep an identifier a single path segment even if a malformed record id
@@ -40,12 +55,13 @@ function createRequestBody(input: CreatePilotTemplateInput): CreatePilotTemplate
 
 export async function createPilotTemplate(
     input: CreatePilotTemplateInput,
+    options: CheckPilotRequestOptions = {},
 ): Promise<PilotTemplateRecord> {
     const response = await axiosInstance<PilotTemplateRecord>({
         url: `${BASE}/templates`,
         method: "POST",
         ...jsonBody(createRequestBody(input)),
-        timeout: AUTHOR_TIMEOUT_MS,
+        timeout: options.timeoutMs ?? checkPilotTimeoutMs(),
     });
     return response.data;
 }
