@@ -30,17 +30,18 @@ export default function AiAuthoringPage() {
                 <CardContent className="flex flex-wrap items-center justify-between gap-3">
                     <div className="space-y-1">
                         <p className="text-sm font-medium">
-                            Private pilot · polynomials in x
+                            Private pilot · polynomials and equations
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            Try the reusable differentiation check authoring flow. It is
-                            separate from normal code and math authoring.
+                            Try reusable maths checks for polynomial differentiation and
+                            bounded real linear/quadratic equations and inequalities. It
+                            is separate from normal code and math authoring.
                         </p>
                     </div>
                     <Button asChild variant="outline">
                         <Link to={ROUTES.AI_AUTHORING_CHECK_PILOT}>
                             <Sparkles className="h-4 w-4" />
-                            Try the differentiation pilot
+                            Try reusable maths checks
                         </Link>
                     </Button>
                 </CardContent>

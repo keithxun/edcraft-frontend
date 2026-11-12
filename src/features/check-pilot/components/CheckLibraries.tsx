@@ -6,6 +6,7 @@ import {
     qualificationBadgeVariant,
     qualificationSummary,
     reuseLabel,
+    selectionSourceLabel,
     templateApprovalBadgeVariant,
     templateApprovalLabel,
     templateStatusLabel,
@@ -93,6 +94,12 @@ export function TemplateLibrary({
                                             {reuseLabel(record.reused_check)}
                                         </Badge>
                                     </span>
+                                    {record.selection && (
+                                        <span className="mt-2 block text-xs text-muted-foreground">
+                                            Contract: {record.selection.contract_id} ·{" "}
+                                            {selectionSourceLabel(record.selection.source)}
+                                        </span>
+                                    )}
                                     {record.check && (
                                         <span className="mt-2 block text-xs text-muted-foreground">
                                             Check: {record.check.title} · version{" "}

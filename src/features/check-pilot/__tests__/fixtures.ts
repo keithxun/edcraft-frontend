@@ -2,6 +2,7 @@ import type {
     CheckRecord,
     PilotBatch,
     PilotQuestion,
+    PilotSelection,
     PilotTemplateRecord,
     Qualification,
 } from "../types";
@@ -124,6 +125,24 @@ export function failedDraftTemplate(
         ...overrides,
     };
 }
+
+export const savedSelection: PilotSelection = {
+    contract_id: "univariate-polynomial-differentiation",
+    reason: "The request asks for derivatives of bounded polynomials in x.",
+    source: "saved",
+    check_ref: checkRecord.check_ref,
+};
+
+export const authoredSelection: PilotSelection = {
+    contract_id: "real-polynomial-equation-solution-set",
+    reason: "The request asks for the complete real solution set of a quadratic equation.",
+    source: "authored",
+    check_ref: {
+        check_id: "polynomial-equation-solution-v1",
+        version: "1",
+        sha256: "e".repeat(64),
+    },
+};
 
 export function templateRecord(
     overrides: Partial<PilotTemplateRecord> = {},

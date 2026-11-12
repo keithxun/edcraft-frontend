@@ -1,4 +1,4 @@
-// Exact wire contract for the private polynomial-differentiation pilot.
+// Exact wire contract for the private reusable-maths-check pilot.
 // These names and field spellings are frozen by SPEC.md and must not be
 // renamed. The backend/AI models are authoritative; this file is a local typed
 // client shape rather than a hand-edited generated API module.
@@ -41,6 +41,19 @@ export interface CheckRecord {
 
 export type PilotTemplateStatus = "ready" | "needs_review" | "error";
 export type PilotApprovalDecision = "unreviewed" | "approved" | "rejected";
+export type PilotSelectionSource = "saved" | "authored";
+
+/**
+ * Structured model planning metadata. The application validates the contract
+ * and reference; the UI only displays the decision for human review. Older
+ * records predate this additive field and may omit it or store null.
+ */
+export interface PilotSelection {
+    contract_id: string;
+    reason: string;
+    source: PilotSelectionSource;
+    check_ref: CheckRef | null;
+}
 
 export interface PilotTemplateRecord {
     template_id: string;
@@ -49,6 +62,9 @@ export interface PilotTemplateRecord {
     status: PilotTemplateStatus;
     approval: PilotApprovalDecision;
     reused_check: boolean;
+    // Additive planning metadata. Legacy records omit it; failed drafts may
+    // store null because no contract was accepted.
+    selection?: PilotSelection | null;
     check: CheckRecord | null;
     template: Record<string, unknown> | null;
     qualification: Qualification | null;

@@ -40,7 +40,7 @@ describe("AI authoring discoverability", () => {
 
     afterEach(cleanup);
 
-    it("links to the private differentiation pilot from the existing authoring page", async () => {
+    it("links to private reusable maths checks from the existing authoring page", async () => {
         const client = new QueryClient({
             defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
         });
@@ -53,9 +53,15 @@ describe("AI authoring discoverability", () => {
         );
 
         expect(
-            await screen.findByRole("link", { name: /Try the differentiation pilot/i }),
+            await screen.findByRole("link", { name: /Try reusable maths checks/i }),
         ).toHaveAttribute("href", "/ai-authoring/check-pilot");
-        expect(screen.getByText(/Private pilot · polynomials in x/)).toBeInTheDocument();
+        expect(
+            screen.getByText(/Private pilot · polynomials and equations/),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/differentiation and bounded real linear\/quadratic equations/i),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/arbitrary maths|LU decomposition/i)).not.toBeInTheDocument();
         expect(ROUTES.AI_AUTHORING_CHECK_PILOT).toBe("/ai-authoring/check-pilot");
         expect(routePaths(router.routes)).toContain("ai-authoring/check-pilot");
     });

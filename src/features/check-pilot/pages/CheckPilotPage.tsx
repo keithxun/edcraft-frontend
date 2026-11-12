@@ -77,14 +77,16 @@ export default function CheckPilotPage() {
                 </Link>
                 <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-2xl font-semibold">
-                        Differentiation check pilot
+                        Reusable maths checks
                     </h1>
                     <Badge variant="outline">Private pilot</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Author and review a reusable polynomial differentiation check, then
-                    generate seeded practice privately. Qualification is sampled
-                    evidence, not an exhaustive check.
+                    Author and review a private reusable maths check for polynomial
+                    differentiation (degree 1–5) and bounded real linear/quadratic
+                    equations and inequalities (degree at most 2), then generate seeded
+                    practice privately. Qualification is sampled evidence, not an
+                    exhaustive check.
                 </p>
             </div>
 

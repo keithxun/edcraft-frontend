@@ -65,16 +65,33 @@ describe("CheckPilotCreateForm", () => {
 
     afterEach(cleanup);
 
-    it("shows the supported pilot scope before submit", () => {
+    it("shows the supported reusable maths scope before submit", () => {
         renderForm();
 
         expect(screen.getByText(/Univariate real polynomials in x/)).toBeInTheDocument();
         expect(screen.getByText(/degree at most 5/i)).toBeInTheDocument();
         expect(screen.getByText(/bounded integer coefficients/i)).toBeInTheDocument();
+        expect(
+            screen.getByText(/linear or quadratic equations and inequalities/i),
+        ).toBeInTheDocument();
+        expect(screen.getByText(/complete real solution set/i)).toBeInTheDocument();
         expect(screen.getByText(/sampled, not exhaustive/i)).toBeInTheDocument();
+        expect(
+            screen.getByText(/LU decomposition|general integration/i),
+        ).toBeInTheDocument();
         expect(screen.getByRole("combobox", { name: "Check-author model" })).toHaveTextContent(
             "Default authoring model",
         );
+    });
+
+    it("offers freeform examples instead of a syllabus topic dropdown", () => {
+        renderForm();
+
+        expect(screen.getByLabelText("Template request")).toHaveAttribute(
+            "placeholder",
+            expect.stringContaining("quadratic"),
+        );
+        expect(screen.queryByRole("combobox", { name: /topic|task/i })).not.toBeInTheDocument();
     });
 
     it("authors with the existing profile selection and explicit wrong-choice count", async () => {

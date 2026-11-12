@@ -18,6 +18,7 @@ import {
     checkRecord,
     failedCheckQualification,
     failedDraftTemplate,
+    savedSelection,
     templateRecord,
 } from "./fixtures";
 
@@ -89,6 +90,25 @@ describe("CheckPilotPage", () => {
 
     afterEach(cleanup);
 
+    it("presents the pilot as reusable maths checks with an honest scope", async () => {
+        renderPage();
+
+        expect(
+            screen.getByRole("heading", { name: "Reusable maths checks" }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/polynomial differentiation/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/real linear\/quadratic equations and inequalities/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/sampled evidence, not an exhaustive check/i),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/arbitrary maths|any maths/i)).not.toBeInTheDocument();
+        await screen.findByText("No saved templates yet.");
+    });
+
     it("distinguishes loading from an empty private library", async () => {
         const templates = deferred<ReturnType<typeof templateRecord>[]>();
         const checks = deferred<(typeof checkRecord)[]>();
@@ -156,6 +176,64 @@ describe("CheckPilotPage", () => {
         expect(screen.getByRole("button", { name: "Approve template" })).toBeInTheDocument();
         expect(screen.getAllByText("Awaiting review").length).toBeGreaterThan(0);
         expect(screen.getByRole("button", { name: "Generate questions" })).toBeDisabled();
+    });
+
+    it("shows the model's selected contract, reason, source and pinned reference", async () => {
+        const record = templateRecord({ selection: savedSelection });
+        vi.mocked(listPilotTemplates).mockResolvedValue([record]);
+        vi.mocked(listPilotChecks).mockResolvedValue([checkRecord]);
+        vi.mocked(getPilotTemplate).mockResolvedValue(record);
+        const user = userEvent.setup();
+        renderPage();
+
+        await user.click(
+            await screen.findByRole("button", {
+                name: /Differentiate bounded cubic polynomials/,
+            }),
+        );
+
+        await waitFor(() => expect(getPilotTemplate).toHaveBeenCalledWith("template-1"));
+        expect(await screen.findByText("Model selection")).toBeInTheDocument();
+        expect(
+            screen.getByText("univariate-polynomial-differentiation"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/derivatives of bounded polynomials/i),
+        ).toBeInTheDocument();
+        expect(screen.getByText("Saved check")).toBeInTheDocument();
+        expect(screen.getAllByTitle(checkRecord.check_ref.sha256).length).toBeGreaterThan(0);
+        // The existing scope, recipe and sampled evidence stay visible.
+        expect(screen.getByText("Check scope")).toBeInTheDocument();
+        expect(
+            screen.getByText("Differentiate each term, then combine like terms."),
+        ).toBeInTheDocument();
+        expect(
+            (await screen.findAllByText("No counterexample found in sampled cases."))
+                .length,
+        ).toBeGreaterThan(0);
+    });
+
+    it("keeps a legacy template readable when selection metadata is absent", async () => {
+        const legacy = templateRecord();
+        vi.mocked(listPilotTemplates).mockResolvedValue([legacy]);
+        vi.mocked(getPilotTemplate).mockResolvedValue(legacy);
+        const user = userEvent.setup();
+        renderPage();
+
+        await user.click(
+            await screen.findByRole("button", {
+                name: /Differentiate bounded cubic polynomials/,
+            }),
+        );
+
+        await waitFor(() => expect(getPilotTemplate).toHaveBeenCalledWith("template-1"));
+        expect(
+            await screen.findByText(/no model selection metadata was recorded/i),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText("Differentiate each term, then combine like terms."),
+        ).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Approve template" })).toBeInTheDocument();
     });
 
     it("shows failed draft check evidence when no qualified check was saved", async () => {

@@ -1,4 +1,5 @@
 import type {
+    PilotSelectionSource,
     PilotTemplateRecord,
     Qualification,
     QualificationStatus,
@@ -95,6 +96,10 @@ export function reuseLabel(reusedCheck: boolean): string {
     return reusedCheck ? "Reused saved check" : "New check authored";
 }
 
+export function selectionSourceLabel(source: PilotSelectionSource): string {
+    return source === "saved" ? "Saved check" : "Authored check";
+}
+
 const APPROVAL_LABELS: Record<PilotTemplateRecord["approval"], string> = {
     unreviewed: "Awaiting review",
     approved: "Approved",
@@ -107,7 +112,7 @@ export function templateApprovalLabel(
     return APPROVAL_LABELS[approval];
 }
 
-/** The differentiation pilot's authoring model accepts at most five wrong choices. */
+/** The reusable-maths pilot's authoring model accepts at most five wrong choices. */
 export const PILOT_MAX_DISTRACTORS = 5;
 
 const UNSAFE_PROVENANCE_KEY =

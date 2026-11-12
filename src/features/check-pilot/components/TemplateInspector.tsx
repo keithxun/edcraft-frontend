@@ -14,6 +14,7 @@ import { PilotGeneration } from "./PilotGeneration";
 import { QualificationEvidence } from "./QualificationEvidence";
 import { ReadableDefinition } from "./ReadableDefinition";
 import { TemplateApproval } from "./TemplateApproval";
+import { TemplateSelection } from "./TemplateSelection";
 
 interface TemplateInspectorProps {
     record: PilotTemplateRecord;
@@ -28,7 +29,7 @@ function statusVariant(
     return "outline";
 }
 
-/** Complete private template inspector: family, check, approval and generation. */
+/** Complete private template inspector: selection, family, check, approval and generation. */
 export function TemplateInspector({ record, maxQuantity }: TemplateInspectorProps) {
     const findings = record.findings.filter((finding) => finding.trim().length > 0);
     const draftProvenance = record.check ? null : safeProvenance(record.provenance);
@@ -80,6 +81,8 @@ export function TemplateInspector({ record, maxQuantity }: TemplateInspectorProp
                         </div>
                     </div>
                 )}
+
+                <TemplateSelection selection={record.selection} />
 
                 <ReadableDefinition
                     title="Template family"

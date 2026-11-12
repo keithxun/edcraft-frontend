@@ -44,7 +44,7 @@ function createPilotSchema(minDistractors: number, maxDistractors: number) {
             prompt: z
                 .string()
                 .trim()
-                .min(1, "Describe the polynomial differentiation template you want.")
+                .min(1, "Describe the maths template you want.")
                 .max(4000, "Keep the request to 4000 characters or fewer."),
             num_distractors: z
                 .number()
@@ -89,11 +89,24 @@ function PilotScope() {
                     integer coefficients.
                 </li>
                 <li>
+                    Differentiation with degree 1–5, or linear or quadratic equations
+                    and inequalities with degree at most 2.
+                </li>
+                <li>
+                    Equation and inequality checks compare the complete real solution
+                    set, including repeated or no real roots, endpoints and interval
+                    unions.
+                </li>
+                <li>
                     New checks use sampled, not exhaustive, property-based evidence.
                 </li>
                 <li>
                     Templates and checks stay private to your account. Nothing is
                     published or shared.
+                </li>
+                <li>
+                    Other operations, such as LU decomposition or general integration,
+                    are not supported and remain development-needed.
                 </li>
             </ul>
         </div>
@@ -194,8 +207,10 @@ export function CheckPilotCreateForm({
         <Card>
             <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle>Request a differentiation template</CardTitle>
-                    <Badge variant="outline">Polynomials · multiple choice</Badge>
+                    <CardTitle>Request a reusable maths template</CardTitle>
+                    <Badge variant="outline">
+                        Differentiation · equations · inequalities
+                    </Badge>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -235,7 +250,7 @@ export function CheckPilotCreateForm({
                                                 rows={6}
                                                 maxLength={4000}
                                                 className="min-h-40 resize-y"
-                                                placeholder="For example: differentiate bounded cubic polynomials with small integer coefficients, using distinct wrong choices."
+                                                placeholder="For example: solve bounded quadratic inequalities and report the complete real solution set; or differentiate cubic polynomials with small integer coefficients and distinct wrong choices."
                                                 disabled={createTemplate.isPending}
                                             />
                                         </FormControl>
@@ -270,7 +285,7 @@ export function CheckPilotCreateForm({
                                         <FormDescription>
                                             {minDistractors}–{maxDistractors} wrong choices,
                                             in addition to the correct answer. The
-                                            differentiation pilot accepts at most{" "}
+                                            maths pilot accepts at most{" "}
                                             {PILOT_MAX_DISTRACTORS} wrong choices, even
                                             when the general authoring form offers more.
                                         </FormDescription>
