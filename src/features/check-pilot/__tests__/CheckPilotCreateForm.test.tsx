@@ -96,6 +96,42 @@ describe("CheckPilotCreateForm", () => {
         expect(onCreated).toHaveBeenCalledWith(templateRecord());
     });
 
+    it("narrows the global distractors maximum to the pilot limit while keeping three", async () => {
+        const user = userEvent.setup();
+        renderForm();
+
+        const distractors = screen.getByLabelText("Wrong choices per question");
+        expect(distractors).toHaveAttribute("max", "5");
+        expect(distractors).toHaveValue(3);
+        expect(screen.getByText(/1–5 wrong choices/i)).toBeInTheDocument();
+        expect(screen.getByText(/pilot accepts at most 5 wrong choices/i)).toBeInTheDocument();
+
+        await user.type(screen.getByLabelText("Template request"), "Differentiate.");
+        await user.click(screen.getByRole("button", { name: "Author template" }));
+
+        await waitFor(() => {
+            expect(createPilotTemplate).toHaveBeenCalledWith({
+                prompt: "Differentiate.",
+                model_profile: "default",
+                num_distractors: 3,
+            });
+        });
+    });
+
+    it("rejects a value above the pilot limit even when global authoring allows it", async () => {
+        const user = userEvent.setup();
+        renderForm();
+
+        const distractors = screen.getByLabelText("Wrong choices per question");
+        await user.clear(distractors);
+        await user.type(distractors, "6");
+        await user.type(screen.getByLabelText("Template request"), "Differentiate.");
+        await user.click(screen.getByRole("button", { name: "Author template" }));
+
+        expect(await screen.findByText("Enter at most 5 wrong choices.")).toBeInTheDocument();
+        expect(createPilotTemplate).not.toHaveBeenCalled();
+    });
+
     it("reuses a BYOK connection and its selected model", async () => {
         const user = userEvent.setup();
         renderForm(connectionCapabilities);

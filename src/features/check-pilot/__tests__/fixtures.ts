@@ -65,6 +65,66 @@ export const checkRecord: CheckRecord = {
     created_at: "2026-11-12T09:00:00Z",
 };
 
+export const failedCheckQualification: Qualification = {
+    status: "failed",
+    checking_mode: "property_based",
+    accepted_cases: 7,
+    execution_calls: 24,
+    seed: 11,
+    max_examples: 100,
+    max_execution_calls: 200,
+    timeout_seconds: 10,
+    counterexample: {
+        reason: "The candidate derivative dropped a term.",
+        problem: { coefficients: [0, 2, 1], degree: 2 },
+        expected: "2x + 2",
+        candidate: "2x",
+    },
+    findings: ["Independent coefficient arithmetic disagreed with the candidate."],
+    versions: {
+        check_engine: "1.2.0",
+        polynomial_ir: "0.1",
+        recipe_compiler: "1",
+        polynomial_oracle: "coefficient-arithmetic/1",
+    },
+};
+
+export function failedDraftTemplate(
+    overrides: Partial<PilotTemplateRecord> = {},
+): PilotTemplateRecord {
+    return {
+        template_id: "tpl_0123456789abcdef",
+        template_sha256:
+            "9c39467a59e194135a32b9cc48562ee3b53728e46b126e3bb55739ca94300aed",
+        prompt: "Differentiate bounded quadratic polynomials.",
+        status: "needs_review",
+        approval: "unreviewed",
+        reused_check: false,
+        check: null,
+        template: null,
+        qualification: null,
+        findings: [
+            "The check recipe did not pass sampled qualification after bounded repair.",
+        ],
+        created_at: "2026-11-12T10:00:00Z",
+        scope: {
+            subject: "univariate-real-polynomial",
+            operation: "differentiate",
+            variable: "x",
+            max_degree: 5,
+            max_abs_coefficient: 20,
+        },
+        provenance: {
+            role: "check-author",
+            provider: "configured-provider",
+            model: "configured-model",
+            prompt_version: "check-author/1",
+        },
+        check_qualification: failedCheckQualification,
+        ...overrides,
+    };
+}
+
 export function templateRecord(
     overrides: Partial<PilotTemplateRecord> = {},
 ): PilotTemplateRecord {

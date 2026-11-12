@@ -67,6 +67,38 @@ export function templateApprovalLabel(
     return APPROVAL_LABELS[approval];
 }
 
+/** The differentiation pilot's authoring model accepts at most five wrong choices. */
+export const PILOT_MAX_DISTRACTORS = 5;
+
+const UNSAFE_PROVENANCE_KEY =
+    /(api[_-]?key|authorization|credential|password|secret|token)/i;
+
+function scrubProvenance(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(scrubProvenance);
+    if (typeof value === "object" && value !== null) {
+        return Object.fromEntries(
+            Object.entries(value)
+                .filter(([key]) => !UNSAFE_PROVENANCE_KEY.test(key))
+                .map(([key, entry]) => [key, scrubProvenance(entry)]),
+        );
+    }
+    return value;
+}
+
+/** Hide credential-like keys defensively before rendering draft provenance. */
+export function safeProvenance(
+    provenance: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null {
+    if (!provenance) return null;
+    const sanitized = scrubProvenance(provenance);
+    if (!sanitized || typeof sanitized !== "object" || Array.isArray(sanitized)) {
+        return null;
+    }
+    return Object.keys(sanitized).length > 0
+        ? (sanitized as Record<string, unknown>)
+        : null;
+}
+
 export function templateStatusLabel(
     status: PilotTemplateRecord["status"],
 ): string {

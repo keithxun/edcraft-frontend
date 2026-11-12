@@ -5,6 +5,7 @@ import {
     generationBlockReason,
     qualificationSummary,
     reuseLabel,
+    safeProvenance,
     templateApprovalLabel,
 } from "../checkPilot";
 import { getCheckPilotErrorMessage } from "../errors";
@@ -86,6 +87,22 @@ describe("check pilot status language", () => {
         expect(templateApprovalLabel("approved")).toBe("Approved");
         expect(templateApprovalLabel("rejected")).toBe("Rejected");
         expect(templateApprovalLabel("unreviewed")).toBe("Awaiting review");
+    });
+});
+
+describe("draft provenance", () => {
+    it("drops credential-like keys before display", () => {
+        expect(
+            safeProvenance({
+                role: "check-author",
+                api_key: "hidden",
+                nested: { token: "hidden", model: "configured-model" },
+            }),
+        ).toEqual({
+            role: "check-author",
+            nested: { model: "configured-model" },
+        });
+        expect(safeProvenance(null)).toBeNull();
     });
 });
 

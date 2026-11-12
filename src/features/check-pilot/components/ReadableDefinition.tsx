@@ -22,6 +22,8 @@ const FIELD_LABELS: Record<string, string> = {
     check_sha256: "Check SHA-256",
     degree_max: "Degree max",
     degree_min: "Degree min",
+    max_degree: "Max degree",
+    max_abs_coefficient: "Max absolute coefficient",
     coefficient_domains: "Coefficient domains",
 };
 

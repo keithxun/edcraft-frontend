@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/features/ai-authoring/format";
 import {
     reuseLabel,
+    safeProvenance,
     templateApprovalLabel,
     templateStatusLabel,
 } from "../checkPilot";
@@ -37,6 +38,7 @@ function statusVariant(
 /** Complete private template inspector: family, check, approval and generation. */
 export function TemplateInspector({ record, maxQuantity }: TemplateInspectorProps) {
     const findings = record.findings.filter((finding) => finding.trim().length > 0);
+    const draftProvenance = record.check ? null : safeProvenance(record.provenance);
 
     return (
         <div className="space-y-6">
@@ -102,16 +104,46 @@ export function TemplateInspector({ record, maxQuantity }: TemplateInspectorProp
                 </p>
             </section>
 
-            <section aria-labelledby="pilot-attached-check-heading" className="space-y-3">
-                <h3 id="pilot-attached-check-heading" className="text-sm font-medium">
-                    Attached saved check
+            <section aria-labelledby="pilot-check-evidence-heading" className="space-y-3">
+                <h3 id="pilot-check-evidence-heading" className="text-sm font-medium">
+                    Check evidence
                 </h3>
                 {record.check ? (
                     <CheckInspector record={record.check} headingLevel="h4" />
                 ) : (
-                    <p className="text-sm text-muted-foreground">
-                        No saved check is attached to this template.
-                    </p>
+                    <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            This draft has no saved qualified check, so it is not in the
+                            qualified check library.
+                        </p>
+
+                        <QualificationEvidence
+                            title="Draft check qualification"
+                            qualification={record.check_qualification}
+                            headingLevel="h4"
+                        />
+
+                        {record.scope && (
+                            <ReadableDefinition
+                                title="Draft check scope"
+                                value={record.scope}
+                                headingLevel="h4"
+                            />
+                        )}
+
+                        {draftProvenance && (
+                            <ReadableDefinition
+                                title="Draft check provenance"
+                                value={draftProvenance}
+                                headingLevel="h4"
+                            />
+                        )}
+
+                        <p className="text-sm text-muted-foreground">
+                            No saved qualified check exists for this draft, so it cannot
+                            be approved or used for generation.
+                        </p>
+                    </div>
                 )}
             </section>
 

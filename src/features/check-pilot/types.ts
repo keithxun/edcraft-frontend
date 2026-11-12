@@ -51,6 +51,11 @@ export interface PilotTemplateRecord {
     qualification: Qualification | null;
     findings: string[];
     created_at: string;
+    // Additive diagnostics added by the validator for draft inspection. A failed
+    // draft has check/template/qualification as null but retains these fields.
+    scope?: Record<string, unknown> | null;
+    provenance?: Record<string, unknown> | null;
+    check_qualification?: Qualification | null;
 }
 
 export interface PilotQuestion {

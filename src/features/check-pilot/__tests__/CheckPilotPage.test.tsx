@@ -14,7 +14,7 @@ import {
 } from "../services/checkPilot.service";
 import { getAuthoringCapabilities } from "@/features/ai-authoring/services/ai-authoring.service";
 import { capabilities, makeUser } from "@/features/ai-authoring/__tests__/fixtures";
-import { checkRecord, templateRecord } from "./fixtures";
+import { checkRecord, failedDraftTemplate, templateRecord } from "./fixtures";
 
 vi.mock("../services/checkPilot.service", () => ({
     createPilotTemplate: vi.fn(),
@@ -144,6 +144,38 @@ describe("CheckPilotPage", () => {
         ).toBeGreaterThan(0);
         expect(screen.getByRole("button", { name: "Approve template" })).toBeInTheDocument();
         expect(screen.getAllByText("Awaiting review").length).toBeGreaterThan(0);
+        expect(screen.getByRole("button", { name: "Generate questions" })).toBeDisabled();
+    });
+
+    it("shows failed draft check evidence when no qualified check was saved", async () => {
+        const draft = failedDraftTemplate();
+        vi.mocked(listPilotTemplates).mockResolvedValue([draft]);
+        vi.mocked(getPilotTemplate).mockResolvedValue(draft);
+        const user = userEvent.setup();
+        renderPage();
+
+        await user.click(
+            await screen.findByRole("button", {
+                name: /Differentiate bounded quadratic polynomials/,
+            }),
+        );
+
+        await waitFor(() => expect(getPilotTemplate).toHaveBeenCalledWith(draft.template_id));
+        expect(await screen.findByText("Draft check qualification")).toBeInTheDocument();
+        expect(screen.getByText("Sampled checks failed")).toBeInTheDocument();
+        expect(screen.getByText("Preserved counterexample")).toBeInTheDocument();
+        expect(screen.getByText(/candidate derivative dropped a term/i)).toBeInTheDocument();
+        expect(screen.getByText("Draft check scope")).toBeInTheDocument();
+        expect(screen.getByText("Max degree")).toBeInTheDocument();
+        expect(screen.getByText("Draft check provenance")).toBeInTheDocument();
+        expect(screen.getByText("check-author")).toBeInTheDocument();
+        expect(
+            screen.getAllByText(/no saved qualified check/i).length,
+        ).toBeGreaterThan(0);
+        expect(
+            screen.getByText(/cannot be approved or used for generation/i),
+        ).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Approve template" })).toBeDisabled();
         expect(screen.getByRole("button", { name: "Generate questions" })).toBeDisabled();
     });
 

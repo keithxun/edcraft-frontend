@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ROUTES } from "@/router/paths";
 import { getCheckPilotErrorMessage } from "../errors";
+import { PILOT_MAX_DISTRACTORS } from "../checkPilot";
 import { useCreatePilotTemplate } from "../hooks/useCheckPilot";
 import {
     buildModelRequest,
@@ -107,8 +108,13 @@ export function CheckPilotCreateForm({
     const [successId, setSuccessId] = useState<string | null>(null);
     const connections = capabilities.connections ?? [];
     const profiles = capabilities.model_profiles;
-    const minDistractors = capabilities.min_distractors ?? 1;
-    const maxDistractors = capabilities.max_distractors ?? 10;
+    const minDistractors = Math.max(1, capabilities.min_distractors ?? 1);
+    // The pilot's authoring model accepts 1..5 distractors even when the
+    // general authoring capabilities allow up to 10.
+    const maxDistractors = Math.min(
+        PILOT_MAX_DISTRACTORS,
+        capabilities.max_distractors ?? PILOT_MAX_DISTRACTORS,
+    );
     const defaultDistractors = Math.min(
         maxDistractors,
         Math.max(minDistractors, capabilities.default_distractors ?? 3),
@@ -260,7 +266,10 @@ export function CheckPilotCreateForm({
                                         </FormControl>
                                         <FormDescription>
                                             {minDistractors}–{maxDistractors} wrong choices,
-                                            in addition to the correct answer.
+                                            in addition to the correct answer. The
+                                            differentiation pilot accepts at most{" "}
+                                            {PILOT_MAX_DISTRACTORS} wrong choices, even
+                                            when the general authoring form offers more.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
