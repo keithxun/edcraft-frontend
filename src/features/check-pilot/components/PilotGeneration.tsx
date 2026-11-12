@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -108,7 +108,10 @@ export function PilotGeneration({ record, maxQuantity }: PilotGenerationProps) {
     const [quantityInput, setQuantityInput] = useState("1");
     const [inputError, setInputError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
-    const [batch, setBatch] = useState<PilotBatch | null>(null);
+    const [batchState, setBatchState] = useState<{
+        approvalKey: string;
+        batch: PilotBatch;
+    } | null>(null);
     const generation = useGeneratePilotBatch();
 
     const approvalKey = [
@@ -117,8 +120,12 @@ export function PilotGeneration({ record, maxQuantity }: PilotGenerationProps) {
         record.check?.check_ref.sha256 ?? "",
         record.approval,
     ].join(":");
+    const approvalKeyRef = useRef(approvalKey);
+    approvalKeyRef.current = approvalKey;
+    const batch = batchState?.approvalKey === approvalKey ? batchState.batch : null;
+
     useEffect(() => {
-        setBatch(null);
+        setBatchState(null);
         setActionError(null);
         setInputError(null);
     }, [approvalKey]);
@@ -149,12 +156,17 @@ export function PilotGeneration({ record, maxQuantity }: PilotGenerationProps) {
 
         setInputError(null);
         setActionError(null);
+        const requestApprovalKey = approvalKey;
         generation.mutate(
             { templateId: record.template_id, input: { seed, quantity } },
             {
-                onSuccess: (result) => setBatch(result),
+                onSuccess: (result) => {
+                    if (approvalKeyRef.current !== requestApprovalKey) return;
+                    setBatchState({ approvalKey: requestApprovalKey, batch: result });
+                },
                 onError: (error) => {
-                    setBatch(null);
+                    if (approvalKeyRef.current !== requestApprovalKey) return;
+                    setBatchState(null);
                     setActionError(
                         getCheckPilotErrorMessage(
                             error,

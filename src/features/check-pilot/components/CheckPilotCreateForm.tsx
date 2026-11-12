@@ -139,9 +139,9 @@ export function CheckPilotCreateForm({
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">
-                        Add your own OpenAI or SocLaas connection before authoring a
-                        check template. The check author is a separate prompt role using
-                        the same configured provider.
+                        Add your own model connection before authoring a check template.
+                        The check author is a separate prompt role using the same
+                        configured provider.
                     </p>
                     <Button asChild>
                         <Link to={ROUTES.MODEL_CONNECTIONS}>Add a model connection</Link>

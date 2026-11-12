@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApiError } from "@/api/axiosInstance";
@@ -21,11 +21,29 @@ function renderGeneration(record = templateRecord({ approval: "approved" })) {
     const client = new QueryClient({
         defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
-    render(
+    const view = render(
         <QueryClientProvider client={client}>
             <PilotGeneration record={record} maxQuantity={20} />
         </QueryClientProvider>,
     );
+    return {
+        rerender: (nextRecord: ReturnType<typeof templateRecord>) =>
+            view.rerender(
+                <QueryClientProvider client={client}>
+                    <PilotGeneration record={nextRecord} maxQuantity={20} />
+                </QueryClientProvider>,
+            ),
+    };
+}
+
+function deferred<T>() {
+    let resolve!: (value: T) => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return { promise, resolve, reject };
 }
 
 describe("PilotGeneration", () => {
@@ -104,5 +122,24 @@ describe("PilotGeneration", () => {
             await screen.findByText(/changed, or the approval is stale/i),
         ).toBeInTheDocument();
         expect(screen.queryByText("3x^2 + 2x + 1")).not.toBeInTheDocument();
+    });
+
+    it("drops a late batch if the approval changed while it was generating", async () => {
+        const pending = deferred<typeof pilotBatch>();
+        vi.mocked(generatePilotBatch).mockReturnValue(pending.promise);
+        const user = userEvent.setup();
+        const { rerender } = renderGeneration();
+
+        await user.click(screen.getByRole("button", { name: "Generate questions" }));
+        rerender(templateRecord({ approval: "rejected" }));
+
+        await act(async () => {
+            pending.resolve(pilotBatch);
+        });
+
+        expect(screen.queryByText("3x^2 + 2x + 1")).not.toBeInTheDocument();
+        expect(
+            screen.getByText(/Approve this exact template and check version before generation/),
+        ).toBeInTheDocument();
     });
 });

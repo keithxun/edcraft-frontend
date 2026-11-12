@@ -75,4 +75,21 @@ describe("ReadableDefinition", () => {
         expect(screen.getByText("Constant")).toBeInTheDocument();
         expect(screen.getByText("Leading")).toBeInTheDocument();
     });
+
+    it("recognizes an operations plan as readable steps", () => {
+        render(
+            <ReadableDefinition
+                title="Check recipe"
+                value={{
+                    operations: [
+                        { id: "diff", operation: "differentiate_term_v1", output: "derivative" },
+                    ],
+                }}
+            />,
+        );
+
+        expect(screen.getByText("Step 1")).toBeInTheDocument();
+        expect(screen.getByText("differentiate_term_v1")).toBeInTheDocument();
+        expect(screen.getByText("derivative")).toBeInTheDocument();
+    });
 });

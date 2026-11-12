@@ -92,9 +92,16 @@ function findRecipe(value: Record<string, unknown>): Record<string, unknown> | n
     return isRecord(value.recipe) ? value.recipe : null;
 }
 
+const STEP_KEYS = ["steps", "operations", "plan"];
+
 function findSteps(value: Record<string, unknown>, recipe: Record<string, unknown> | null) {
-    if (Array.isArray(recipe?.steps)) return recipe.steps;
-    if (Array.isArray(value.steps)) return value.steps;
+    const sources = [recipe, value];
+    for (const source of sources) {
+        if (!source) continue;
+        for (const key of STEP_KEYS) {
+            if (Array.isArray(source[key])) return source[key];
+        }
+    }
     return null;
 }
 
@@ -162,8 +169,16 @@ export function ReadableDefinition({
     const recipe = findRecipe(value);
     const steps = findSteps(value, recipe);
     const summary = findSummary(value, recipe);
-    const topLevel = exclusion(value, ["recipe", "steps", "summary", "description", "explanation"]);
-    const recipeFields = recipe ? exclusion(recipe, ["steps", "summary", "description", "explanation"]) : {};
+    const topLevel = exclusion(value, [
+        "recipe",
+        ...STEP_KEYS,
+        "summary",
+        "description",
+        "explanation",
+    ]);
+    const recipeFields = recipe
+        ? exclusion(recipe, [...STEP_KEYS, "summary", "description", "explanation"])
+        : {};
 
     return (
         <section className={cn("space-y-3", className)} aria-label={title}>
