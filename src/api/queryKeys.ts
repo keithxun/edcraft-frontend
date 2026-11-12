@@ -92,6 +92,15 @@ export const queryKeys = {
             ["ai-authoring", "job", id, "preview", artifactSha256, seed] as const,
     },
 
+    // Private reusable-check pilot queries. Owner IDs are appended by the
+    // hooks so cached artifacts can never cross accounts.
+    checkPilot: {
+        templates: () => ["check-pilot", "templates"] as const,
+        template: (id: string) => ["check-pilot", "templates", id] as const,
+        checks: () => ["check-pilot", "checks"] as const,
+        check: (id: string) => ["check-pilot", "checks", id] as const,
+    },
+
     // User-owned model provider connections
     providerConnections: {
         all: () => ["provider-connections"] as const,
