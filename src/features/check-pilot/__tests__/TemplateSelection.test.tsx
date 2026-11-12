@@ -65,6 +65,9 @@ describe("TemplateSelection", () => {
 
         expect(screen.getByText("No check reference pinned")).toBeInTheDocument();
         expect(
+            screen.queryByText(/the application validated the selected contract/i),
+        ).not.toBeInTheDocument();
+        expect(
             screen.queryByText(/polynomial-derivative-v1/),
         ).not.toBeInTheDocument();
     });

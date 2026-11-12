@@ -78,9 +78,9 @@ export function TemplateSelection({ selection }: TemplateSelectionProps) {
             </dl>
 
             <p className="text-xs text-muted-foreground">
-                The application validated the selected contract against the template
-                scope. This metadata does not replace approval of the exact template
-                and check digests.
+                The application checks applicability before a template can become
+                ready. Review the evidence and approve the exact template and check
+                versions before generating questions.
             </p>
         </section>
     );
