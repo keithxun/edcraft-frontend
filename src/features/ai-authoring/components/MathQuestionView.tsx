@@ -28,7 +28,10 @@ export function MathQuestionView({
     // heading and the equation stays available to assistive technology.
     const normalizedQuestion = instance.question.replace(/\s+/g, " ").trim();
     const normalizedEquation = instance.equation.replace(/\s+/g, " ").trim();
-    const equationIsInQuestion = normalizedQuestion.includes(normalizedEquation);
+    // Only generic IR prompts restate the rendered equation; legacy linear
+    // questions keep their existing presentation.
+    const equationIsInQuestion =
+        Boolean(instance.topic) && normalizedQuestion.includes(normalizedEquation);
 
     return (
         <>

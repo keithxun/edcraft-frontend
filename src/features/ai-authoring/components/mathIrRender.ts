@@ -23,18 +23,18 @@ const RELATION_OPERATORS: Record<string, string> = {
     ge: "≥",
 };
 
-const FUNCTION_OPERATORS = new Set([
-    "sqrt",
-    "abs",
-    "exp",
-    "sin",
-    "cos",
-    "tan",
-    "asin",
-    "acos",
-    "atan",
-    "log",
-]);
+const FUNCTION_OPERATORS: Record<string, string> = {
+    sqrt: "sqrt",
+    abs: "Abs",
+    exp: "exp",
+    sin: "sin",
+    cos: "cos",
+    tan: "tan",
+    asin: "asin",
+    acos: "acos",
+    atan: "atan",
+    log: "log",
+};
 
 const PRECEDENCE: Record<string, number> = {
     add: 1,
@@ -197,8 +197,8 @@ export function renderIrExpression(
 
     const op = expr.op ?? "";
     const args = expr.args ?? [];
-    if (FUNCTION_OPERATORS.has(op)) {
-        return `${op}(${args
+    if (op in FUNCTION_OPERATORS) {
+        return `${FUNCTION_OPERATORS[op]}(${args
             .map((arg) => renderIrExpression(arg, values))
             .join(", ")})`;
     }
