@@ -30,12 +30,12 @@ export default function AiAuthoringPage() {
                 <CardContent className="flex flex-wrap items-center justify-between gap-3">
                     <div className="space-y-1">
                         <p className="text-sm font-medium">
-                            Private pilot · polynomials and equations
+                            Private pilot · reusable maths checks
                         </p>
                         <p className="text-sm text-muted-foreground">
-                            Try reusable maths checks for polynomial differentiation and
-                            bounded real linear/quadratic equations and inequalities. It
-                            is separate from normal code and math authoring.
+                            Try reusable maths checks for bounded algebra, calculus,
+                            linear systems and matrices. Review each selected check’s
+                            supported scope before approving a template.
                         </p>
                     </div>
                     <Button asChild variant="outline">

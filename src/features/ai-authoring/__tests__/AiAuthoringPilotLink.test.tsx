@@ -56,10 +56,10 @@ describe("AI authoring discoverability", () => {
             await screen.findByRole("link", { name: /Try reusable maths checks/i }),
         ).toHaveAttribute("href", "/ai-authoring/check-pilot");
         expect(
-            screen.getByText(/Private pilot · polynomials and equations/),
+            screen.getByText(/Private pilot · reusable maths checks/),
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/differentiation and bounded real linear\/quadratic equations/i),
+            screen.getByText(/bounded algebra, calculus, linear systems and matrices/i),
         ).toBeInTheDocument();
         expect(screen.queryByText(/arbitrary maths|LU decomposition/i)).not.toBeInTheDocument();
         expect(ROUTES.AI_AUTHORING_CHECK_PILOT).toBe("/ai-authoring/check-pilot");

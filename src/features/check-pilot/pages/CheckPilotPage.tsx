@@ -82,10 +82,10 @@ export default function CheckPilotPage() {
                     <Badge variant="outline">Private pilot</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Author and review a private reusable maths check for polynomial
-                    differentiation (degree 1–5) and bounded real linear/quadratic
-                    equations and inequalities (degree at most 2), then generate seeded
-                    practice privately. Qualification is sampled evidence, not an
+                    Author and review private reusable checks for bounded algebra,
+                    calculus, linear systems and matrices, then generate seeded
+                    practice privately. Review the selected check’s scope before
+                    approving a template. Qualification is sampled evidence, not an
                     exhaustive check.
                 </p>
             </div>

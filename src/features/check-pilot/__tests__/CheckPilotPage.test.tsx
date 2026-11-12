@@ -97,10 +97,10 @@ describe("CheckPilotPage", () => {
             screen.getByRole("heading", { name: "Reusable maths checks" }),
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/polynomial differentiation/i),
+            screen.getByText(/bounded algebra, calculus, linear systems and matrices/i),
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/real linear\/quadratic equations and inequalities/i),
+            screen.getByText(/review the selected check’s scope/i),
         ).toBeInTheDocument();
         expect(
             screen.getByText(/sampled evidence, not an exhaustive check/i),
