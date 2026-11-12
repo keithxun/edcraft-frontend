@@ -1,7 +1,9 @@
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertCircle, RefreshCw, Sparkles } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ROUTES } from "@/router/paths";
 import { AuthorForm } from "../components/AuthorForm";
 import { FlowSteps } from "../components/FlowSteps";
 import { PageShell } from "../components/PageShell";
@@ -23,6 +25,26 @@ export default function AiAuthoringPage() {
                     </p>
                 </div>
             </header>
+
+            <Card>
+                <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium">
+                            Private pilot · polynomials in x
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            Try the reusable differentiation check authoring flow. It is
+                            separate from normal code and math authoring.
+                        </p>
+                    </div>
+                    <Button asChild variant="outline">
+                        <Link to={ROUTES.AI_AUTHORING_CHECK_PILOT}>
+                            <Sparkles className="h-4 w-4" />
+                            Try the differentiation pilot
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
 
             {capabilitiesQuery.isPending && (
                 <Card>

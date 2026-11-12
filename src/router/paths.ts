@@ -21,6 +21,7 @@ export const ROUTES = {
   QUESTION_BANK: (id: string) => `/question-banks/${id}`,
   QUESTION_TEMPLATE_BANK: (id: string) => `/question-template-banks/${id}`,
   AI_AUTHORING: "/ai-authoring",
+  AI_AUTHORING_CHECK_PILOT: "/ai-authoring/check-pilot",
   AI_AUTHORING_JOB: (id: string) => `/ai-authoring/${id}`,
   AI_AUTHORING_GENERATE: (id: string) => `/ai-authoring/${id}/generate`,
   MODEL_CONNECTIONS: "/settings/model-connections",

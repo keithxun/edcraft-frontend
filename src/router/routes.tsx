@@ -20,6 +20,9 @@ const QuestionTemplateBankPage = lazy(
     () => import("@/features/question-template-banks/pages/QuestionTemplateBankPage"),
 );
 const AiAuthoringPage = lazy(() => import("@/features/ai-authoring/pages/AiAuthoringPage"));
+const CheckPilotPage = lazy(
+    () => import("@/features/check-pilot/pages/CheckPilotPage"),
+);
 const AiAuthoringJobPage = lazy(
     () => import("@/features/ai-authoring/pages/AiAuthoringJobPage"),
 );
@@ -157,6 +160,10 @@ export const router = createBrowserRouter([
                     {
                         path: "ai-authoring",
                         element: lazyRoute(AiAuthoringPage),
+                    },
+                    {
+                        path: "ai-authoring/check-pilot",
+                        element: lazyRoute(CheckPilotPage),
                     },
                     {
                         path: "ai-authoring/:jobId",

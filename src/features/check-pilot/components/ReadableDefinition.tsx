@@ -25,7 +25,7 @@ const FIELD_LABELS: Record<string, string> = {
     coefficient_domains: "Coefficient domains",
 };
 
-export function humanizeKey(key: string): string {
+function humanizeKey(key: string): string {
     if (FIELD_LABELS[key]) return FIELD_LABELS[key];
     return key
         .replaceAll("_", " ")

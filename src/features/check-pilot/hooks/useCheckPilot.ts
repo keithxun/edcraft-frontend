@@ -11,7 +11,6 @@ import {
     listPilotTemplates,
 } from "../services/checkPilot.service";
 import type {
-    CheckRecord,
     CreatePilotTemplateInput,
     PilotApprovalInput,
     PilotBatch,
@@ -31,7 +30,6 @@ export function usePilotTemplates() {
     return useQuery({
         queryKey: [...queryKeys.checkPilot.templates(), ownerId],
         queryFn: listPilotTemplates,
-        retry: 1,
     });
 }
 
@@ -50,7 +48,6 @@ export function usePilotChecks() {
     return useQuery({
         queryKey: [...queryKeys.checkPilot.checks(), ownerId],
         queryFn: listPilotChecks,
-        retry: 1,
     });
 }
 
