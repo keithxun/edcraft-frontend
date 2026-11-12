@@ -4,13 +4,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    canApproveTemplate,
+    approveBlockReason,
+    rejectBlockReason,
     templateApprovalBadgeVariant,
     templateApprovalLabel,
 } from "../checkPilot";
 import { getCheckPilotErrorMessage } from "../errors";
 import { useDecidePilotTemplate } from "../hooks/useCheckPilot";
-import type { PilotTemplateRecord } from "../types";
+import type { PilotApprovalInput, PilotTemplateRecord } from "../types";
 
 interface TemplateApprovalProps {
     record: PilotTemplateRecord;
@@ -21,33 +22,35 @@ function shortDigest(digest: string): string {
 }
 
 /**
- * Immutable-version approval. Both current digests are visible and sent with
- * every decision; approval never publishes the template.
+ * Immutable-version approval. Both current digests are visible; the check digest
+ * is sent only when a saved check exists. Approval never publishes the template.
  */
 export function TemplateApproval({ record }: TemplateApprovalProps) {
     const [actionError, setActionError] = useState<string | null>(null);
     const [showReject, setShowReject] = useState(false);
     const decision = useDecidePilotTemplate();
-    const approvable = canApproveTemplate(record);
     const checkSha = record.check?.check_ref.sha256 ?? null;
-    // Rejection only needs the exact versions being rejected, not passing
-    // sampled evidence. Qualification stays a separate signal.
-    const rejectable = Boolean(record.template_sha256 && checkSha && record.template);
+    const approveReason = approveBlockReason(record);
+    // Rejection only needs the exact template version being rejected, not
+    // passing sampled evidence or a saved check.
+    const rejectReason = rejectBlockReason(record);
+    const approvable = approveReason === null;
+    const rejectable = rejectReason === null;
 
     const decide = (next: "approved" | "rejected") => {
         if (decision.isPending) return;
         if (next === "approved" && !approvable) return;
         if (next === "rejected" && !rejectable) return;
-        if (!checkSha) return;
         setActionError(null);
+        const input: PilotApprovalInput = {
+            template_sha256: record.template_sha256,
+            decision: next,
+        };
+        if (checkSha) input.check_sha256 = checkSha;
         decision.mutate(
             {
                 templateId: record.template_id,
-                input: {
-                    template_sha256: record.template_sha256,
-                    check_sha256: checkSha,
-                    decision: next,
-                },
+                input,
             },
             {
                 onSuccess: () => setShowReject(false),
@@ -93,10 +96,18 @@ export function TemplateApproval({ record }: TemplateApprovalProps) {
                 </dd>
             </dl>
 
-            {!approvable && (
-                <p className="text-sm text-muted-foreground">
-                    Approval is unavailable until the template and check have passing
-                    sampled evidence with matching versions.
+            {approveReason && (
+                <p className="text-sm text-muted-foreground">{approveReason}</p>
+            )}
+
+            {rejectReason && (
+                <p className="text-sm text-muted-foreground">{rejectReason}</p>
+            )}
+
+            {record.approval === "rejected" && (
+                <p className="text-sm">
+                    This template version is rejected. Its findings and saved evidence
+                    remain visible for review.
                 </p>
             )}
 
@@ -111,8 +122,9 @@ export function TemplateApproval({ record }: TemplateApprovalProps) {
             {showReject ? (
                 <div className="space-y-2 rounded-md border p-3">
                     <p className="text-sm">
-                        Rejection is separate from check qualification. The saved check
-                        stays available for another template.
+                        Rejection binds to the current template version and needs no
+                        qualified check. Any saved check stays available for another
+                        template.
                     </p>
                     <div className="flex flex-wrap gap-2">
                         <Button

@@ -53,6 +53,21 @@ function createRequestBody(input: CreatePilotTemplateInput): CreatePilotTemplate
     return body;
 }
 
+/**
+ * A rejection can target a draft with no qualified check. Omit the check digest
+ * entirely rather than sending null or an empty string, which the wire contract
+ * would reject as a malformed digest.
+ */
+function approvalRequestBody(input: PilotApprovalInput): PilotApprovalInput {
+    const body: PilotApprovalInput = {
+        template_sha256: input.template_sha256,
+        decision: input.decision,
+    };
+    const checkSha = input.check_sha256?.trim();
+    if (checkSha) body.check_sha256 = checkSha;
+    return body;
+}
+
 export async function createPilotTemplate(
     input: CreatePilotTemplateInput,
     options: CheckPilotRequestOptions = {},
@@ -105,7 +120,7 @@ export async function decidePilotTemplate(
     const response = await axiosInstance<PilotTemplateRecord>({
         url: `${BASE}/templates/${segment(templateId)}/approval`,
         method: "POST",
-        ...jsonBody(input),
+        ...jsonBody(approvalRequestBody(input)),
     });
     return response.data;
 }

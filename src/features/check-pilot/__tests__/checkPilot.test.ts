@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "@/api/axiosInstance";
 import {
+    approveBlockReason,
     canApproveTemplate,
     generationBlockReason,
     qualificationSummary,
+    rejectBlockReason,
     reuseLabel,
     safeProvenance,
     templateApprovalLabel,
@@ -150,6 +152,21 @@ describe("approval and generation gating", () => {
             ),
         ).toBe(false);
         expect(canApproveTemplate(template({ status: "needs_review" }))).toBe(false);
+    });
+
+    it("explains approval and rejection gates explicitly", () => {
+        expect(approveBlockReason(template())).toBeNull();
+        expect(approveBlockReason(template({ check: null }))).toBe(
+            "Approve unavailable: no qualified check.",
+        );
+        expect(approveBlockReason(template({ status: "error" }))).toMatch(
+            /authoring error/i,
+        );
+        expect(rejectBlockReason(template())).toBeNull();
+        expect(rejectBlockReason(template({ check: null }))).toBeNull();
+        expect(
+            rejectBlockReason(template({ template_sha256: "" })),
+        ).toMatch(/template digest/i);
     });
 
     it("blocks generation until the exact ready template is approved", () => {

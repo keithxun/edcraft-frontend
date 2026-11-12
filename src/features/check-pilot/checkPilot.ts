@@ -157,17 +157,53 @@ export function templateStatusLabel(
     }
 }
 
+/**
+ * Explain why approval is unavailable. A draft without a qualified check can
+ * still be rejected; only approval needs the check digest and passing evidence.
+ */
+export function approveBlockReason(
+    record: PilotTemplateRecord,
+): string | null {
+    if (!record.check) {
+        return "Approve unavailable: no qualified check.";
+    }
+    if (!record.check.check_ref.sha256) {
+        return "Approve unavailable: the check digest is missing.";
+    }
+    if (!record.template_sha256) {
+        return "Approve unavailable: the template digest is missing.";
+    }
+    if (!record.template) {
+        return "Approve unavailable: the template family is unavailable.";
+    }
+    if (record.status === "error") {
+        return "Approve unavailable: resolve the authoring error and retry.";
+    }
+    if (record.check.qualification.status !== "passed") {
+        return "Approve unavailable: the saved check has not passed sampled qualification.";
+    }
+    if (record.qualification?.status !== "passed") {
+        return "Approve unavailable: the template has not passed sampled qualification.";
+    }
+    if (record.status !== "ready") {
+        return "Approve unavailable: only a ready template can be approved.";
+    }
+    return null;
+}
+
+/** Rejection binds to the current template version and needs no saved check. */
+export function rejectBlockReason(
+    record: PilotTemplateRecord,
+): string | null {
+    if (!record.template_sha256) {
+        return "Reject unavailable: the template digest is missing.";
+    }
+    return null;
+}
+
 /** Approval binds to the current immutable template and check digests. */
 export function canApproveTemplate(record: PilotTemplateRecord): boolean {
-    return Boolean(
-        record.status === "ready" &&
-            record.template_sha256 &&
-            record.template &&
-            record.check &&
-            record.check.check_ref.sha256 &&
-            record.check.qualification.status === "passed" &&
-            record.qualification?.status === "passed",
-    );
+    return approveBlockReason(record) === null;
 }
 
 /**

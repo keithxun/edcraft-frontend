@@ -268,6 +268,35 @@ describe("CheckPilotPage", () => {
         expect(screen.getByRole("button", { name: "Generate questions" })).toBeDisabled();
     });
 
+    it("shows an automatically rejected failed draft while keeping its findings visible", async () => {
+        const draft = failedDraftTemplate({ approval: "rejected" });
+        vi.mocked(listPilotTemplates).mockResolvedValue([draft]);
+        vi.mocked(getPilotTemplate).mockResolvedValue(draft);
+        const user = userEvent.setup();
+        renderPage();
+
+        await user.click(
+            await screen.findByRole("button", {
+                name: /Differentiate bounded quadratic polynomials/,
+            }),
+        );
+
+        await waitFor(() => expect(getPilotTemplate).toHaveBeenCalledWith(draft.template_id));
+        expect(
+            (await screen.findAllByText("Rejected")).length,
+        ).toBeGreaterThan(0);
+        expect(
+            screen.getByText(
+                "The check recipe did not pass sampled qualification after bounded repair.",
+            ),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/findings and saved evidence\s+remain visible/i),
+        ).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Approve template" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Reject template" })).toBeEnabled();
+    });
+
     it("shows a compilation rejection from a real failed draft without sampled-counterexample language", async () => {
         const draft = failedDraftTemplate({
             check_qualification: {
