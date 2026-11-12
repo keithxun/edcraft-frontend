@@ -35,7 +35,11 @@ describe("QualificationEvidence", () => {
         expect(screen.getByText("Sampled checks passed")).toBeInTheDocument();
         expect(screen.getByText("No counterexample found in sampled cases.")).toBeInTheDocument();
         expect(screen.getByText("Accepted cases")).toBeInTheDocument();
-        expect(screen.getByText("48 of at most 100")).toBeInTheDocument();
+        expect(screen.getByText("48")).toBeInTheDocument();
+        expect(
+            screen.getByText("Generated examples per property run"),
+        ).toBeInTheDocument();
+        expect(screen.getByText("100")).toBeInTheDocument();
         expect(screen.getByText("Execution calls")).toBeInTheDocument();
         expect(screen.getByText("63 of at most 200")).toBeInTheDocument();
         expect(screen.getByText("Seed")).toBeInTheDocument();
@@ -50,6 +54,32 @@ describe("QualificationEvidence", () => {
             screen.getByText("Two boundary samples were skipped as outside scope."),
         ).toBeInTheDocument();
         expect(screen.queryByText(/proved|fully checked|confidence/i)).not.toBeInTheDocument();
+    });
+
+    it("shows accepted cases independently from the per-run generated-examples setting", () => {
+        render(
+            <QualificationEvidence
+                title="Check qualification"
+                qualification={{
+                    ...passed,
+                    accepted_cases: 79,
+                    max_examples: 50,
+                    execution_calls: 80,
+                    max_execution_calls: 200,
+                }}
+            />,
+        );
+
+        expect(screen.getByText("Accepted cases")).toBeInTheDocument();
+        expect(screen.getByText("79")).toBeInTheDocument();
+        expect(screen.queryByText("79 of at most 50")).not.toBeInTheDocument();
+        expect(
+            screen.getByText("Generated examples per property run"),
+        ).toBeInTheDocument();
+        expect(screen.getByText("50")).toBeInTheDocument();
+        expect(screen.getByText(/explicit boundary/i)).toBeInTheDocument();
+        expect(screen.getByText(/additional qualification runs/i)).toBeInTheDocument();
+        expect(screen.getByText("80 of at most 200")).toBeInTheDocument();
     });
 
     it("shows a preserved counterexample for a failed sample", () => {

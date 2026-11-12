@@ -140,8 +140,9 @@ describe("CheckPilotPage", () => {
                 .length,
         ).toBeGreaterThan(0);
         expect(
-            (await screen.findAllByText("48 of at most 100")).length,
+            (await screen.findAllByText("Generated examples per property run")).length,
         ).toBeGreaterThan(0);
+        expect((await screen.findAllByText("48")).length).toBeGreaterThan(0);
         expect(screen.getByRole("button", { name: "Approve template" })).toBeInTheDocument();
         expect(screen.getAllByText("Awaiting review").length).toBeGreaterThan(0);
         expect(screen.getByRole("button", { name: "Generate questions" })).toBeDisabled();

@@ -59,9 +59,11 @@ export function QualificationEvidence({
 
             <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
                 <dt className="font-medium text-muted-foreground">Accepted cases</dt>
-                <dd>
-                    {qualification.accepted_cases} of at most {qualification.max_examples}
-                </dd>
+                <dd>{qualification.accepted_cases}</dd>
+                <dt className="font-medium text-muted-foreground">
+                    Generated examples per property run
+                </dt>
+                <dd>{qualification.max_examples}</dd>
                 <dt className="font-medium text-muted-foreground">Execution calls</dt>
                 <dd>
                     {qualification.execution_calls} of at most{" "}
@@ -74,6 +76,12 @@ export function QualificationEvidence({
                 <dt className="font-medium text-muted-foreground">Checking mode</dt>
                 <dd>Property-based sampling</dd>
             </dl>
+
+            <p className="text-xs text-muted-foreground">
+                Accepted cases include explicit boundary examples and cases from
+                additional qualification runs, so the total can exceed the generated
+                examples setting for one property run.
+            </p>
 
             {versions.length > 0 && (
                 <div className="space-y-1">
