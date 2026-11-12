@@ -10,7 +10,7 @@ import type { Qualification } from "../types";
 interface QualificationEvidenceProps {
     title: string;
     qualification: Qualification | null | undefined;
-    headingLevel?: "h2" | "h3" | "h4";
+    headingLevel?: "h2" | "h3" | "h4" | "h5" | "h6";
     className?: string;
 }
 

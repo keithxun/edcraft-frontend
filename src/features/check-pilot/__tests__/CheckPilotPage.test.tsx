@@ -143,7 +143,8 @@ describe("CheckPilotPage", () => {
             (await screen.findAllByText("48 of at most 100")).length,
         ).toBeGreaterThan(0);
         expect(screen.getByRole("button", { name: "Approve template" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Generate questions" })).toBeInTheDocument();
+        expect(screen.getAllByText("Awaiting review").length).toBeGreaterThan(0);
+        expect(screen.getByRole("button", { name: "Generate questions" })).toBeDisabled();
     });
 
     it("selects a qualified check from the check library and shows its definition", async () => {

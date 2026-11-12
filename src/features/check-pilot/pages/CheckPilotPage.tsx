@@ -84,7 +84,7 @@ export default function CheckPilotPage() {
                 <p className="text-sm text-muted-foreground">
                     Author and review a reusable polynomial differentiation check, then
                     generate seeded practice privately. Qualification is sampled
-                    evidence, not a universal proof.
+                    evidence, not an exhaustive check.
                 </p>
             </div>
 

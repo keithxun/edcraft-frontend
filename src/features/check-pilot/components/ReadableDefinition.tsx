@@ -5,7 +5,7 @@ import { formatValue } from "@/features/ai-authoring/format";
 interface ReadableDefinitionProps {
     title: string;
     value: Record<string, unknown> | null | undefined;
-    headingLevel?: "h2" | "h3" | "h4";
+    headingLevel?: "h2" | "h3" | "h4" | "h5" | "h6";
     className?: string;
 }
 

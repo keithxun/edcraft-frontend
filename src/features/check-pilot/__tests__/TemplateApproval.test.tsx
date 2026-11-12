@@ -88,6 +88,29 @@ describe("TemplateApproval", () => {
         ).toBeInTheDocument();
     });
 
+    it("allows rejecting an unqualified version when both digests are present", async () => {
+        const user = userEvent.setup();
+        renderApproval(templateRecord({ status: "needs_review" }));
+
+        expect(screen.getByRole("button", { name: "Approve template" })).toBeDisabled();
+        await user.click(screen.getByRole("button", { name: "Reject template" }));
+        await user.click(screen.getByRole("button", { name: "Confirm rejection" }));
+
+        await waitFor(() => {
+            expect(decidePilotTemplate).toHaveBeenCalledWith("template-1", {
+                template_sha256: "a".repeat(64),
+                check_sha256: "c".repeat(64),
+                decision: "rejected",
+            });
+        });
+    });
+
+    it("requires both exact digests before a rejection can be recorded", () => {
+        renderApproval(templateRecord({ check: null }));
+
+        expect(screen.getByRole("button", { name: "Reject template" })).toBeDisabled();
+    });
+
     it("shows a safe stale-version error instead of claiming success", async () => {
         vi.mocked(decidePilotTemplate).mockRejectedValue(
             new ApiError(409, "template digest does not match current version"),

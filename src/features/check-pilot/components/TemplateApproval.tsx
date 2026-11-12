@@ -37,9 +37,15 @@ export function TemplateApproval({ record }: TemplateApprovalProps) {
     const decision = useDecidePilotTemplate();
     const approvable = canApproveTemplate(record);
     const checkSha = record.check?.check_ref.sha256 ?? null;
+    // Rejection only needs the exact versions being rejected, not passing
+    // sampled evidence. Qualification stays a separate signal.
+    const rejectable = Boolean(record.template_sha256 && checkSha && record.template);
 
     const decide = (next: "approved" | "rejected") => {
-        if (!approvable || !checkSha || decision.isPending) return;
+        if (decision.isPending) return;
+        if (next === "approved" && !approvable) return;
+        if (next === "rejected" && !rejectable) return;
+        if (!checkSha) return;
         setActionError(null);
         decision.mutate(
             {
@@ -120,7 +126,7 @@ export function TemplateApproval({ record }: TemplateApprovalProps) {
                             type="button"
                             variant="destructive"
                             onClick={() => decide("rejected")}
-                            disabled={decision.isPending}
+                            disabled={!rejectable || decision.isPending}
                         >
                             {decision.isPending && (
                                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -157,7 +163,7 @@ export function TemplateApproval({ record }: TemplateApprovalProps) {
                             setActionError(null);
                             setShowReject(true);
                         }}
-                        disabled={!approvable || decision.isPending}
+                        disabled={!rejectable || decision.isPending}
                     >
                         Reject template
                     </Button>

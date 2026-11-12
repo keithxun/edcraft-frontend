@@ -4,9 +4,17 @@ import type { CheckRecord } from "../types";
 import { QualificationEvidence } from "./QualificationEvidence";
 import { ReadableDefinition } from "./ReadableDefinition";
 
+const HEADING_LEVELS = ["h2", "h3", "h4", "h5", "h6"] as const;
+type HeadingLevel = (typeof HEADING_LEVELS)[number];
+
 interface CheckInspectorProps {
     record: CheckRecord;
-    headingLevel?: "h2" | "h3" | "h4";
+    headingLevel?: HeadingLevel;
+}
+
+function childHeadingLevel(level: HeadingLevel): HeadingLevel {
+    const index = HEADING_LEVELS.indexOf(level);
+    return HEADING_LEVELS[Math.min(index + 1, HEADING_LEVELS.length - 1)];
 }
 
 function shortDigest(digest: string): string {
@@ -16,6 +24,7 @@ function shortDigest(digest: string): string {
 /** Readable immutable saved-check view with sampled evidence and exact JSON. */
 export function CheckInspector({ record, headingLevel = "h3" }: CheckInspectorProps) {
     const Heading = headingLevel;
+    const childHeading = childHeadingLevel(headingLevel);
 
     return (
         <section aria-labelledby={`check-${record.check_ref.check_id}`} className="space-y-4">
@@ -47,18 +56,26 @@ export function CheckInspector({ record, headingLevel = "h3" }: CheckInspectorPr
                 <dd>{formatDate(record.created_at)}</dd>
             </dl>
 
-            <ReadableDefinition title="Check scope" value={record.scope} headingLevel="h4" />
-            <ReadableDefinition title="Check recipe" value={record.definition} headingLevel="h4" />
+            <ReadableDefinition
+                title="Check scope"
+                value={record.scope}
+                headingLevel={childHeading}
+            />
+            <ReadableDefinition
+                title="Check recipe"
+                value={record.definition}
+                headingLevel={childHeading}
+            />
             <ReadableDefinition
                 title="Check provenance"
                 value={record.provenance}
-                headingLevel="h4"
+                headingLevel={childHeading}
             />
 
             <QualificationEvidence
                 title="Check qualification"
                 qualification={record.qualification}
-                headingLevel="h4"
+                headingLevel={childHeading}
             />
 
             <p className="text-xs text-muted-foreground">
