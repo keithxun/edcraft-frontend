@@ -1,26 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { TemplateSelection } from "../components/TemplateSelection";
-import type { PilotSelection } from "../types";
-import { checkRecord } from "./fixtures";
-
-const savedSelection: PilotSelection = {
-    contract_id: "univariate-polynomial-differentiation",
-    reason: "The request asks for derivatives of bounded polynomials in x.",
-    source: "saved",
-    check_ref: checkRecord.check_ref,
-};
-
-const authoredSelection: PilotSelection = {
-    contract_id: "real-polynomial-equation-solution-set",
-    reason: "The request asks for the complete real solution set of a quadratic equation.",
-    source: "authored",
-    check_ref: {
-        check_id: "polynomial-equation-solution-v1",
-        version: "1",
-        sha256: "e".repeat(64),
-    },
-};
+import { authoredSelection, checkRecord, savedSelection } from "./fixtures";
 
 describe("TemplateSelection", () => {
     afterEach(cleanup);
