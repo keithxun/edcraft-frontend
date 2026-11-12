@@ -70,7 +70,9 @@ describe("TemplateApproval", () => {
         renderApproval();
 
         await user.click(screen.getByRole("button", { name: "Reject template" }));
-        expect(screen.getByText(/Rejection is separate from check qualification/)).toBeInTheDocument();
+        expect(
+            screen.getByText(/Rejection binds to the current template version/),
+        ).toBeInTheDocument();
         expect(decidePilotTemplate).not.toHaveBeenCalled();
 
         await user.click(screen.getByRole("button", { name: "Confirm rejection" }));
@@ -89,7 +91,9 @@ describe("TemplateApproval", () => {
 
         expect(screen.getByRole("button", { name: "Approve template" })).toBeDisabled();
         expect(
-            screen.getByText(/Approval is unavailable until the template and check/),
+            screen.getByText(
+                "Approve unavailable: only a ready template can be approved.",
+            ),
         ).toBeInTheDocument();
     });
 
@@ -110,10 +114,44 @@ describe("TemplateApproval", () => {
         });
     });
 
-    it("requires both exact digests before a rejection can be recorded", () => {
+    it("allows rejecting a draft with no qualified check and omits the absent digest", async () => {
+        vi.mocked(decidePilotTemplate).mockResolvedValue(
+            templateRecord({ check: null, approval: "rejected" }),
+        );
+        const user = userEvent.setup();
         renderApproval(templateRecord({ check: null }));
 
-        expect(screen.getByRole("button", { name: "Reject template" })).toBeDisabled();
+        expect(
+            screen.getByText("Approve unavailable: no qualified check."),
+        ).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Approve template" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Reject template" })).toBeEnabled();
+
+        await user.click(screen.getByRole("button", { name: "Reject template" }));
+        await user.click(screen.getByRole("button", { name: "Confirm rejection" }));
+
+        await waitFor(() => {
+            expect(decidePilotTemplate).toHaveBeenCalledWith("template-1", {
+                template_sha256: "a".repeat(64),
+                decision: "rejected",
+            });
+        });
+    });
+
+    it("renders a rejected badge and keeps rejected versions visibly distinct", () => {
+        renderApproval(
+            templateRecord({
+                status: "error",
+                approval: "rejected",
+                check: null,
+                template: null,
+            }),
+        );
+
+        expect(screen.getByText("Rejected")).toBeInTheDocument();
+        expect(
+            screen.getByText(/findings and saved evidence\s+remain visible/i),
+        ).toBeInTheDocument();
     });
 
     it("shows a safe stale-version error instead of claiming success", async () => {

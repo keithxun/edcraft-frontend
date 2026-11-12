@@ -106,7 +106,8 @@ export interface CreatePilotTemplateInput {
 
 export interface PilotApprovalInput {
     template_sha256: string;
-    check_sha256: string;
+    // Drafts rejected without a qualified saved check have no check digest.
+    check_sha256?: string | null;
     decision: "approved" | "rejected";
 }
 

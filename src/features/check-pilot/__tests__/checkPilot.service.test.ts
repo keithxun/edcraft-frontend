@@ -125,6 +125,49 @@ describe("check pilot client", () => {
         });
     });
 
+    it("omits an absent check digest when rejecting a draft without a qualified check", async () => {
+        await decidePilotTemplate("template-1", {
+            template_sha256: "a".repeat(64),
+            decision: "rejected",
+        });
+        expect(axiosInstance).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                data: {
+                    template_sha256: "a".repeat(64),
+                    decision: "rejected",
+                },
+            }),
+        );
+
+        await decidePilotTemplate("template-1", {
+            template_sha256: "a".repeat(64),
+            check_sha256: null,
+            decision: "rejected",
+        });
+        expect(axiosInstance).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                data: {
+                    template_sha256: "a".repeat(64),
+                    decision: "rejected",
+                },
+            }),
+        );
+
+        await decidePilotTemplate("template-1", {
+            template_sha256: "a".repeat(64),
+            check_sha256: "   ",
+            decision: "rejected",
+        });
+        expect(axiosInstance).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                data: {
+                    template_sha256: "a".repeat(64),
+                    decision: "rejected",
+                },
+            }),
+        );
+    });
+
     it("sends seed and quantity only to the generation route", async () => {
         await generatePilotBatch("template-1", { seed: 42, quantity: 4 });
 
