@@ -43,11 +43,21 @@ export function qualificationSummary(
     }
 }
 
+export type BadgeVariant = "success" | "destructive" | "outline";
+
 export function qualificationBadgeVariant(
     status: QualificationStatus,
-): "success" | "destructive" | "outline" {
+): BadgeVariant {
     if (status === "passed") return "success";
     if (status === "failed" || status === "error") return "destructive";
+    return "outline";
+}
+
+export function templateApprovalBadgeVariant(
+    approval: PilotTemplateRecord["approval"],
+): BadgeVariant {
+    if (approval === "approved") return "success";
+    if (approval === "rejected") return "destructive";
     return "outline";
 }
 

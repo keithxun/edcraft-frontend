@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
     canApproveTemplate,
+    templateApprovalBadgeVariant,
     templateApprovalLabel,
 } from "../checkPilot";
 import { getCheckPilotErrorMessage } from "../errors";
@@ -17,14 +18,6 @@ interface TemplateApprovalProps {
 
 function shortDigest(digest: string): string {
     return `${digest.slice(0, 12)}…`;
-}
-
-function approvalVariant(
-    approval: PilotTemplateRecord["approval"],
-): "success" | "destructive" | "outline" {
-    if (approval === "approved") return "success";
-    if (approval === "rejected") return "destructive";
-    return "outline";
 }
 
 /**
@@ -75,7 +68,7 @@ export function TemplateApproval({ record }: TemplateApprovalProps) {
                 <h2 id="template-approval-heading" className="text-sm font-medium">
                     Template approval
                 </h2>
-                <Badge variant={approvalVariant(record.approval)}>
+                <Badge variant={templateApprovalBadgeVariant(record.approval)}>
                     {templateApprovalLabel(record.approval)}
                 </Badge>
             </div>

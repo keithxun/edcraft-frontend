@@ -3,8 +3,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+    qualificationBadgeVariant,
     qualificationSummary,
     reuseLabel,
+    templateApprovalBadgeVariant,
     templateApprovalLabel,
     templateStatusLabel,
 } from "../checkPilot";
@@ -19,14 +21,6 @@ interface TemplateLibraryProps {
     error: unknown;
     onSelect: (templateId: string) => void;
     onRetry: () => void;
-}
-
-function templateApprovalVariant(
-    approval: PilotTemplateRecord["approval"],
-): "success" | "destructive" | "outline" {
-    if (approval === "approved") return "success";
-    if (approval === "rejected") return "destructive";
-    return "outline";
 }
 
 export function TemplateLibrary({
@@ -89,7 +83,9 @@ export function TemplateLibrary({
                                             {templateStatusLabel(record.status)}
                                         </Badge>
                                         <Badge
-                                            variant={templateApprovalVariant(record.approval)}
+                                            variant={templateApprovalBadgeVariant(
+                                                record.approval,
+                                            )}
                                         >
                                             {templateApprovalLabel(record.approval)}
                                         </Badge>
@@ -121,14 +117,6 @@ interface CheckLibraryProps {
     error: unknown;
     onSelect: (checkId: string) => void;
     onRetry: () => void;
-}
-
-function qualificationVariant(
-    status: CheckRecord["qualification"]["status"],
-): "success" | "destructive" | "outline" {
-    if (status === "passed") return "success";
-    if (status === "failed" || status === "error") return "destructive";
-    return "outline";
 }
 
 export function CheckLibrary({
@@ -188,7 +176,7 @@ export function CheckLibrary({
                                     </span>
                                     <span className="mt-2 flex flex-wrap items-center gap-1.5">
                                         <Badge
-                                            variant={qualificationVariant(
+                                            variant={qualificationBadgeVariant(
                                                 check.qualification.status,
                                             )}
                                         >

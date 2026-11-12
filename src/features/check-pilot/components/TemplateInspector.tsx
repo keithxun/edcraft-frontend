@@ -4,6 +4,7 @@ import { formatDate } from "@/features/ai-authoring/format";
 import {
     reuseLabel,
     safeProvenance,
+    templateApprovalBadgeVariant,
     templateApprovalLabel,
     templateStatusLabel,
 } from "../checkPilot";
@@ -17,14 +18,6 @@ import { TemplateApproval } from "./TemplateApproval";
 interface TemplateInspectorProps {
     record: PilotTemplateRecord;
     maxQuantity: number;
-}
-
-function approvalVariant(
-    approval: PilotTemplateRecord["approval"],
-): "success" | "destructive" | "outline" {
-    if (approval === "approved") return "success";
-    if (approval === "rejected") return "destructive";
-    return "outline";
 }
 
 function statusVariant(
@@ -53,7 +46,9 @@ export function TemplateInspector({ record, maxQuantity }: TemplateInspectorProp
                     <Badge variant={statusVariant(record.status)}>
                         {templateStatusLabel(record.status)}
                     </Badge>
-                    <Badge variant={approvalVariant(record.approval)}>
+                    <Badge
+                        variant={templateApprovalBadgeVariant(record.approval)}
+                    >
                         {templateApprovalLabel(record.approval)}
                     </Badge>
                     <Badge variant="secondary">{reuseLabel(record.reused_check)}</Badge>
