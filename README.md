@@ -73,6 +73,14 @@ Author a checked code question with a server-configured model, review the eviden
 
 Model connections, judge configuration and generation limits come from the backend. The frontend never asks for API keys or provider endpoints.
 
+### Reusable maths checks pilot
+
+The private `/ai-authoring/check-pilot` flow authors a reusable maths check, shows the model's selected contract and reason, and lets you review the pinned check reference, saved scope, recipe and sampled qualification evidence before approving the exact template and check digests. Templates remain unreviewed even when they reuse a passing check, and generated questions are seeded and provider-free.
+
+The pilot supports bounded univariate real polynomials in x: differentiation with degree 1–5, and linear or quadratic equations/inequalities with degree at most 2. Equation and inequality checks compare complete real solution sets, including repeated or no real roots, endpoints and interval unions. Other operations (for example LU decomposition or general integration) are not supported. Qualification is sampled property-based evidence, not a proof or an exhaustive check.
+
+New records include an additive optional `selection` metadata object (`contract_id`, `reason`, `source` and `check_ref`). Older records omit it; the inspector keeps them readable and does not invent a selection.
+
 ### Resource Management
 
 Organize all resources in a hierarchical folder structure. Organize questions and question templates into banks.
