@@ -1,5 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { findingText } from "../checkMetadata";
+import { checkDescription, findingText, friendlyCheckLabel } from "../checkMetadata";
+
+describe("math check labels", () => {
+    it("maps the math validation tools to friendly wording", () => {
+        expect(friendlyCheckLabel("math_verify_template_structure")).toBe(
+            "Question template",
+        );
+        expect(friendlyCheckLabel("math_validate_answers_and_distractors")).toBe(
+            "Answers and wrong choices",
+        );
+        expect(friendlyCheckLabel("math_assess_template_difficulty")).toBe("Difficulty");
+        expect(friendlyCheckLabel("assess_template_relevance")).toBe("Relevance");
+        expect(friendlyCheckLabel("math_verify_item_spec")).toBe("Math item");
+        expect(friendlyCheckLabel("math_validate_options")).toBe("Answer choices");
+        expect(
+            checkDescription({
+                tool: "math_validate_answers_and_distractors",
+            } as Parameters<typeof checkDescription>[0]),
+        ).toContain("distinct");
+    });
+
+    it("keeps the raw identifier for unknown tools", () => {
+        expect(friendlyCheckLabel("math_unknown_tool")).toBe("math unknown tool");
+        expect(
+            checkDescription({
+                tool: "math_unknown_tool",
+            } as Parameters<typeof checkDescription>[0]),
+        ).toBeNull();
+    });
+});
 
 describe("findingText", () => {
     it("drops a long echoed expression and keeps the actionable sentence", () => {

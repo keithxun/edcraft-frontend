@@ -151,6 +151,29 @@ describe("AuthorForm", () => {
         });
     });
 
+    it("submits the mathematics domain when selected", async () => {
+        const user = userEvent.setup();
+        renderForm(undefined, {
+            ...connectionCapabilities,
+            enabled_domains: ["code", "math"],
+        });
+
+        await user.click(screen.getByRole("combobox", { name: "Domain" }));
+        await user.click(screen.getByRole("option", { name: "Mathematics" }));
+
+        await user.type(screen.getByLabelText("Prompt"), "Create a linear equation question.");
+        await user.click(screen.getByRole("button", { name: "Create question" }));
+
+        await waitFor(() => {
+            expect(createAuthoringJob).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    domain: "math",
+                    prompt: "Create a linear equation question.",
+                }),
+            );
+        });
+    });
+
     it("hides the domain selector when only one domain is enabled", () => {
         renderForm();
 

@@ -6,6 +6,13 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
     code_require_features: "Required features",
     code_validate_answers_and_distractors: "Answers and wrong choices",
     code_verify_template_structure: "Question template",
+    math_verify_template_structure: "Question template",
+    math_validate_answers_and_distractors: "Answers and wrong choices",
+    math_assess_template_difficulty: "Difficulty",
+    math_verify_item_spec: "Math item",
+    math_validate_options: "Answer choices",
+    math_verify_text_fidelity: "Question wording",
+    assess_template_relevance: "Relevance",
 };
 
 const CHECK_DESCRIPTIONS: Record<string, string> = {
@@ -13,6 +20,18 @@ const CHECK_DESCRIPTIONS: Record<string, string> = {
     code_validate_answers_and_distractors:
         "The answer and every wrong choice evaluate correctly and are distinct.",
     code_verify_template_structure: "The template is structurally valid and renders.",
+    math_verify_template_structure:
+        "The equation and question template are structurally valid and render.",
+    math_validate_answers_and_distractors:
+        "The answer and every wrong choice evaluate correctly and are distinct.",
+    math_assess_template_difficulty: "The estimated difficulty matches the request.",
+    math_verify_item_spec:
+        "The typed math item compiles, solves, and its declared answer agrees.",
+    math_validate_options:
+        "Every wrong choice is demonstrably wrong and no two choices are equivalent.",
+    math_verify_text_fidelity:
+        "A blind parse of the wording reconstructs the same problem.",
+    assess_template_relevance: "The template is relevant to the request.",
 };
 
 export function friendlyCheckLabel(tool: string): string {

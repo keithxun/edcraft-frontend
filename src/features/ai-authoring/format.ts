@@ -38,6 +38,7 @@ export function capitalize(value: string): string {
 
 const DOMAIN_LABELS: Record<string, string> = {
     code: "Code",
+    math: "Mathematics",
 };
 
 /** Readable label for an authoring domain; unknown domains keep their identifier. */

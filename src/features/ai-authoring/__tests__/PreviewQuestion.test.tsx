@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { PreviewQuestion } from "../components/PreviewQuestion";
 import { ReadableValue } from "../components/ReadableValue";
 import type { CodeQuestionInstance } from "../types";
-import { previewInstance, stubQuestionInstance } from "./fixtures";
+import { mathQuestionInstance, previewInstance, stubQuestionInstance } from "./fixtures";
 
 vi.mock("../components/ReadOnlyCode", () => ({
     ReadOnlyCode: ({ code, label }: { code: string; label: string }) => (
@@ -176,6 +176,55 @@ describe("PreviewQuestion", () => {
         expect(screen.queryByText("Inputs and raw data")).not.toBeInTheDocument();
         expect(screen.queryByLabelText("Question inputs")).not.toBeInTheDocument();
         expect(screen.queryByText("Raw question data")).not.toBeInTheDocument();
+    });
+
+    it("renders a math question with the equation, choices and bound inputs", () => {
+        render(<PreviewQuestion instance={mathQuestionInstance} domain="math" />);
+
+        expect(
+            screen.getByRole("heading", { name: mathQuestionInstance.equation }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getAllByText(mathQuestionInstance.question).length,
+        ).toBeGreaterThan(0);
+        // Check the rendered option values, not the raw-data disclosure: flat
+        // choices are display strings and must not keep JSON quotes.
+        for (const [index, choice] of mathQuestionInstance.choices.entries()) {
+            const label = screen.getByText(`${String.fromCharCode(65 + index)}.`, {
+                exact: true,
+            });
+            const value = label.parentElement?.querySelector("div");
+            expect(value).not.toBeNull();
+            expect(value?.textContent).toBe(choice);
+        }
+        expect(screen.getByText("✓")).toBeInTheDocument();
+        const inputs = screen.getByLabelText("Question inputs");
+        expect(within(inputs).getByText("a")).toBeInTheDocument();
+        expect(within(inputs).getByText("seed")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Question code")).not.toBeInTheDocument();
+        expect(screen.queryByText(/\.py$/)).not.toBeInTheDocument();
+    });
+
+    it("keeps math review neutral until the answer is revealed", async () => {
+        const user = userEvent.setup();
+        render(
+            <PreviewQuestion
+                instance={mathQuestionInstance}
+                domain="math"
+                variant="review"
+            />,
+        );
+
+        expect(
+            screen.getByRole("heading", { name: mathQuestionInstance.equation }),
+        ).toBeInTheDocument();
+        expect(screen.queryByText("✓")).not.toBeInTheDocument();
+        expect(screen.queryByText(/The correct choice is highlighted below/)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Question inputs")).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", { name: "Show Answer" }));
+
+        expect(screen.getByText("✓")).toBeInTheDocument();
     });
 
     it("renders a stub-domain payload through the generic fallback", () => {

@@ -8,6 +8,9 @@ import type {
     AuthoringQuestionPayload,
     AuthoringReview,
     CodeQuestionInstance,
+    IrMathTemplateCandidate,
+    MathQuestionInstance,
+    MathTemplateCandidate,
 } from "../types";
 
 const digest = "a".repeat(64);
@@ -431,4 +434,160 @@ export const stubBatch: AuthoringBatch = {
         stubQuestionInstance,
         { ...stubQuestionInstance, seed: 3 } as AuthoringQuestionPayload,
     ],
+};
+
+/** A math question uses a flat envelope instead of the code question object. */
+export const mathQuestionInstance: MathQuestionInstance = {
+    template_id: "linear-one-step",
+    artifact_id: "artifact-math",
+    seed: 4,
+    parameters: { a: 2, b: 1, c: 5 },
+    equation: "2x + 1 = 5",
+    question: "Solve for x.",
+    choices: ["2", "3", "-2"],
+    correct_index: 0,
+    answer: "2",
+    requires_manual_review: true,
+};
+
+export const mathPreview: AuthoringPreview = {
+    ...preview,
+    domain: "math",
+    artifact_id: "artifact-math",
+    question: mathQuestionInstance,
+};
+
+export const mathTemplateCandidate: MathTemplateCandidate = {
+    template_id: "linear-one-step",
+    difficulty: "easy",
+    question_type: "mcq",
+    equation_template: "{a}x + {b} = {c}",
+    question_template: "Solve for x.",
+    parameters: [
+        { name: "a", values: [2, 3] },
+        { name: "b", values: [1, 4] },
+        { name: "c", values: [5, 7] },
+    ],
+    answer_expression: "(c - b) / a",
+    distractors: [
+        {
+            expression: "c - b",
+            reason_template: "Forgets to divide by the coefficient of x.",
+        },
+        {
+            expression: "c + b",
+            reason_template: "Adds the constant instead of subtracting it.",
+        },
+    ],
+};
+
+export const mathIrTemplateCandidate: IrMathTemplateCandidate = {
+    template_id: "ir-quadratic",
+    difficulty: "easy",
+    question_type: "mcq",
+    item: {
+        schema_version: "math-ir/0.1",
+        topic: "school.quadratic",
+        parameters: [
+            { name: "p", values: ["2", "3"] },
+            { name: "q", values: ["-7", "-5"] },
+        ],
+        body: {
+            topic: "school.quadratic",
+            symbols: [{ name: "x", domain: "real" }],
+            givens: [
+                {
+                    id: "equation",
+                    kind: "relation",
+                    relation: {
+                        kind: "eq",
+                        lhs: {
+                            op: "add",
+                            args: [
+                                {
+                                    op: "pow",
+                                    args: [{ sym: "x" }, { num: "2" }],
+                                },
+                                {
+                                    op: "mul",
+                                    args: [
+                                        {
+                                            op: "sub",
+                                            args: [
+                                                { num: "0" },
+                                                {
+                                                    op: "add",
+                                                    args: [
+                                                        { param: "p" },
+                                                        { param: "q" },
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                        { sym: "x" },
+                                    ],
+                                },
+                                { op: "mul", args: [{ param: "p" }, { param: "q" }] },
+                            ],
+                        },
+                        rhs: { num: "0" },
+                    },
+                },
+            ],
+            text: { mode: "symbolic", template: "Solve {equation}." },
+            goal: { kind: "solve", symbol: "x" },
+            distractors: [
+                {
+                    value: {
+                        op: "sub",
+                        args: [{ num: "0" }, { param: "p" }],
+                    },
+                    misconception: "SIGN_ERROR",
+                    reason: "Flips the sign of one root",
+                },
+                {
+                    value: { op: "add", args: [{ param: "p" }, { param: "q" }] },
+                    misconception: "SUM_AS_ROOT",
+                    reason: "Reports the sum of the roots as a root",
+                },
+            ],
+        },
+    },
+};
+
+export const mathIrReview: AuthoringReview = {
+    ...approvedReview,
+    artifact_id: "artifact-math-ir",
+    request: {
+        ...approvedReview.request,
+        domain: "math",
+        prompt: "Write a quadratic equation question.",
+    },
+    template: {
+        template_id: "ir-quadratic",
+        candidate: mathIrTemplateCandidate,
+    },
+    candidate: null,
+};
+
+export const mathReview: AuthoringReview = {
+    ...approvedReview,
+    artifact_id: "artifact-math",
+    request: {
+        ...approvedReview.request,
+        domain: "math",
+        prompt: "Write a one-step linear equation question.",
+    },
+    template: {
+        template_id: "linear-one-step",
+        candidate: mathTemplateCandidate,
+    },
+    candidate: null,
+};
+
+export const mathBatch: AuthoringBatch = {
+    ...batch,
+    domain: "math",
+    artifact_id: "artifact-math",
+    questions: [mathQuestionInstance, { ...mathQuestionInstance, seed: 5 }],
 };
