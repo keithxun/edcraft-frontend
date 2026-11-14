@@ -40,7 +40,10 @@ import type {
 } from "../types";
 import { ModelPicker } from "./ModelPicker";
 
-function createAuthoringSchema(minChoices: number, maxChoices: number) {
+function createAuthoringSchema(
+    minDistractors: number,
+    maxDistractors: number,
+) {
     return z
         .object({
             prompt: z
@@ -49,11 +52,17 @@ function createAuthoringSchema(minChoices: number, maxChoices: number) {
                 .min(1, "Describe the question you want to create.")
                 .max(4000, "Keep the request to 4000 characters or fewer."),
             difficulty: z.enum(["easy", "medium", "hard"]),
-            choices: z
+            distractors: z
                 .number()
-                .int("Enter a whole number of choices.")
-                .min(minChoices, `Enter at least ${minChoices} choices.`)
-                .max(maxChoices, `Enter at most ${maxChoices} choices.`),
+                .int("Enter a whole number of wrong choices.")
+                .min(
+                    minDistractors,
+                    `Enter at least ${minDistractors} wrong ${minDistractors === 1 ? "choice" : "choices"}.`,
+                )
+                .max(
+                    maxDistractors,
+                    `Enter at most ${maxDistractors} wrong choices.`,
+                ),
             model_source: z.string().min(1, "Choose a question-writing model."),
             model: z.string(),
             difficulty_source: z.string(),
@@ -114,12 +123,12 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     const defaultDifficulty = difficultyOptions[0] ?? "easy";
     const connections = capabilities.connections ?? [];
     const profiles = capabilities.model_profiles;
-    const minChoices = (capabilities.min_distractors ?? 1) + 1;
-    const maxChoices = (capabilities.max_distractors ?? 10) + 1;
-    const defaultChoices = (capabilities.default_distractors ?? 3) + 1;
+    const minDistractors = capabilities.min_distractors ?? 1;
+    const maxDistractors = capabilities.max_distractors ?? 10;
+    const defaultDistractors = capabilities.default_distractors ?? 3;
     const authoringSchema = useMemo(
-        () => createAuthoringSchema(minChoices, maxChoices),
-        [minChoices, maxChoices],
+        () => createAuthoringSchema(minDistractors, maxDistractors),
+        [minDistractors, maxDistractors],
     );
 
     const state = location.state as { authoringPrefill?: Partial<AuthoringRetryPrefill> } | null;
@@ -130,13 +139,13 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         prefill?.difficulty && difficultyOptions.includes(prefill.difficulty)
             ? prefill.difficulty
             : defaultDifficulty;
-    const prefilledChoices =
+    const prefilledDistractors =
         typeof prefill?.num_distractors === "number"
             ? Math.min(
-                  maxChoices,
-                  Math.max(minChoices, prefill.num_distractors + 1),
+                  maxDistractors,
+                  Math.max(minDistractors, prefill.num_distractors),
               )
-            : defaultChoices;
+            : defaultDistractors;
     const initialSelection = resolveStoredModelSelection({
         connections,
         profiles,
@@ -172,7 +181,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         defaultValues: {
             prompt: prefilledPrompt,
             difficulty: prefilledDifficulty,
-            choices: prefilledChoices,
+            distractors: prefilledDistractors,
             model_source: initialSelection.source,
             model: initialSelection.model,
             difficulty_source: initialDifficultySelection.source,
@@ -195,7 +204,6 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     const onInvalid = (errors: FieldErrors<AuthoringFormValues>) => {
         setSubmitError("Check the highlighted fields and try again.");
         const advancedFields: Array<keyof AuthoringFormValues> = [
-            "choices",
             "model_source",
             "model",
             "difficulty_source",
@@ -215,7 +223,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                 domain: "code",
                 prompt: values.prompt,
                 difficulty: values.difficulty,
-                num_distractors: values.choices - 1,
+                num_distractors: values.distractors,
                 ...buildModelRequest(values.model_source, values.model),
                 judges: buildJudgeSelections(
                     {
@@ -378,6 +386,39 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                     </FormItem>
                                 )}
                             />
+
+                            <FormField
+                                control={form.control}
+                                name="distractors"
+                                render={({ field }) => (
+                                    <FormItem className="max-w-56">
+                                        <FormLabel htmlFor="distractors">
+                                            Wrong choices (distractors)
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                id="distractors"
+                                                type="number"
+                                                min={minDistractors}
+                                                max={maxDistractors}
+                                                step={1}
+                                                {...field}
+                                                onChange={(event) =>
+                                                    field.onChange(
+                                                        Number(event.target.value),
+                                                    )
+                                                }
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            {minDistractors}–{maxDistractors} wrong
+                                            choices. The correct answer is added
+                                            automatically.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
 
                         <div className="mt-6 flex flex-wrap items-center gap-4 border-t pt-4">
@@ -409,36 +450,6 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                 id="advanced-settings"
                                 className="mt-4 space-y-5 rounded-lg border bg-muted/20 p-4"
                             >
-                                <FormField
-                                    control={form.control}
-                                    name="choices"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel htmlFor="choices">Choices</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    id="choices"
-                                                    type="number"
-                                                    min={minChoices}
-                                                    max={maxChoices}
-                                                    step={1}
-                                                    {...field}
-                                                    onChange={(event) =>
-                                                        field.onChange(
-                                                            Number(event.target.value),
-                                                        )
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormDescription>
-                                                {minChoices}–{maxChoices} options, including the
-                                                correct answer.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
                                 <ModelPicker
                                     connections={connections}
                                     profiles={profiles}
