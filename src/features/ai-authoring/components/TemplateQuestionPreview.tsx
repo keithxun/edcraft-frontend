@@ -9,6 +9,7 @@ import type {
 import { EvidenceDetails } from "./EvidenceDetails";
 import {
     firstParameterValues,
+    renderIrAnswerRecipe,
     renderIrDistractor,
     renderIrSample,
 } from "./mathIrRender";
@@ -131,9 +132,9 @@ function LegacyMathTemplateView({
 }
 
 /**
- * Generic IR template rendered as one representative instance. The solver
- * derives the real answer per generated question, so this view shows the
- * authored text and the wrong choices rather than claiming a key.
+ * Generic IR template rendered as one representative instance. The answer is
+ * the authored recipe the deterministic engine grades, so this view can show
+ * it without deriving anything from the problem statement.
  */
 function IrMathTemplateView({
     candidate,
@@ -143,6 +144,7 @@ function IrMathTemplateView({
     const template = candidate.item;
     const values = firstParameterValues(template);
     const sample = renderIrSample(template);
+    const answer = renderIrAnswerRecipe(template.body.answer_recipe, values);
     const parameters = Object.fromEntries(
         template.parameters.map((parameter) => [parameter.name, parameter.values]),
     );
@@ -165,7 +167,8 @@ function IrMathTemplateView({
 
             <p className="text-xs text-muted-foreground">
                 Sample instance uses the first value of each parameter. The
-                validator derives the correct answer for every combination.
+                deterministic engine grades the authored answer recipe for
+                every combination.
             </p>
 
             <section aria-label="Template parameters" className="space-y-1">
@@ -176,6 +179,19 @@ function IrMathTemplateView({
             <section aria-label="Goal" className="space-y-1">
                 <h4 className="text-sm font-medium">Goal</h4>
                 <p className="font-mono text-sm">{template.body.goal.kind}</p>
+            </section>
+
+            <section aria-label="Correct answer" className="space-y-1">
+                <h4 className="text-sm font-medium">
+                    Correct answer (authored recipe)
+                </h4>
+                {answer !== null ? (
+                    <p className="break-words font-mono text-sm">{answer}</p>
+                ) : (
+                    <p className="text-sm text-muted-foreground">
+                        No answer recipe declared.
+                    </p>
+                )}
             </section>
 
             <section aria-label="Distractors" className="space-y-2">

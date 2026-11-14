@@ -83,6 +83,10 @@ describe("TemplateQuestionPreview", () => {
         expect(screen.getByText("Parameters")).toBeInTheDocument();
         expect(screen.getByText("Goal")).toBeInTheDocument();
         expect(screen.getByText("solve")).toBeInTheDocument();
+        expect(
+            screen.getByText("Correct answer (authored recipe)"),
+        ).toBeInTheDocument();
+        expect(screen.getByText("{2, -7}")).toBeInTheDocument();
         expect(screen.getByText("Wrong choices")).toBeInTheDocument();
         expect(screen.getByText("-2")).toBeInTheDocument();
         expect(screen.getByText("-5")).toBeInTheDocument();

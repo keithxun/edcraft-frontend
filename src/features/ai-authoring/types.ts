@@ -146,6 +146,23 @@ export type MathIrGoal = {
     matrix?: MathIrExpression[][] | null;
 };
 
+export type MathIrRecipeInterval = {
+    lower?: MathIrExpression | null;
+    upper?: MathIrExpression | null;
+    lower_open?: boolean;
+    upper_open?: boolean;
+};
+
+/** The authored answer, graded by the engine rather than derived by a solver. */
+export type MathIrAnswerRecipe = {
+    kind: "numeric" | "expression" | "set" | "tuple" | "interval" | "matrix" | "boolean";
+    items?: MathIrExpression[];
+    interval?: MathIrRecipeInterval | null;
+    matrix?: MathIrExpression[][] | null;
+    boolean?: boolean | null;
+    display?: string;
+};
+
 /** A reusable generic IR item family authored by the model. */
 export type MathIrTemplate = {
     schema_version: string;
@@ -158,7 +175,7 @@ export type MathIrTemplate = {
         givens?: MathIrGiven[];
         text: { mode: string; template: string };
         goal: MathIrGoal;
-        answer?: { display?: string } | null;
+        answer_recipe?: MathIrAnswerRecipe | null;
         distractors: MathIrDistractor[];
     };
 };

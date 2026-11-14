@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { MathIrExpression } from "../types";
 import {
     firstParameterValues,
+    renderIrAnswerRecipe,
     renderIrDistractor,
     renderIrExpression,
     renderIrSample,
@@ -99,6 +100,57 @@ describe("math IR rendering", () => {
             text: "Solve x^2 + 5*x - 14 = 0.",
             equation: "x^2 + 5*x - 14 = 0",
         });
+    });
+
+    it("keeps the authored structure for the {expr} placeholder", () => {
+        const text = renderIrText(
+            {
+                ...mathIrTemplateCandidate.item.body,
+                text: { mode: "symbolic", template: "What is {expr}?" },
+                goal: {
+                    kind: "evaluate",
+                    expr: { op: "add", args: [{ param: "p" }, { param: "q" }] },
+                },
+            },
+            values,
+        );
+
+        expect(text).toBe("What is 2 - 7?");
+    });
+
+    it("renders the authored answer recipe", () => {
+        expect(
+            renderIrAnswerRecipe(
+                {
+                    kind: "set",
+                    items: [{ param: "p" }, { param: "q" }],
+                },
+                values,
+            ),
+        ).toBe("{2, -7}");
+        expect(
+            renderIrAnswerRecipe(
+                {
+                    kind: "tuple",
+                    items: [{ param: "p" }, { param: "q" }],
+                },
+                values,
+            ),
+        ).toBe("(2, -7)");
+        expect(
+            renderIrAnswerRecipe(
+                {
+                    kind: "interval",
+                    interval: {
+                        lower: { num: "0" },
+                        upper: { num: "1" },
+                        lower_open: false,
+                        upper_open: true,
+                    },
+                },
+                values,
+            ),
+        ).toBe("[0, 1)");
     });
 
     it("renders a tuple distractor componentwise", () => {

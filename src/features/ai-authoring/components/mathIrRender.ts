@@ -1,4 +1,5 @@
 import type {
+    MathIrAnswerRecipe,
     MathIrDistractor,
     MathIrExpression,
     MathIrGiven,
@@ -95,7 +96,7 @@ function formatExact(value: Exact): string {
         : `${value.numerator}/${value.denominator}`;
 }
 
-/** Evaluate a parameter-only subtree so previews keep the solver's clean form. */
+/** Evaluate a parameter-only subtree so equations keep the engine's form. */
 function evaluateConstant(
     expr: MathIrExpression,
     values: ParameterValues,
@@ -178,17 +179,32 @@ function renderChild(
     expr: MathIrExpression,
     values: ParameterValues,
     parentPrecedence: number,
+    foldConstants: boolean,
 ): string {
-    return renderIrExpression(expr, values, parentPrecedence);
+    return renderNode(expr, values, parentPrecedence, foldConstants);
 }
 
-/** Render one closed expression tree using the same notation as the question. */
+/**
+ * Render one closed expression tree using the same notation as the question.
+ * Constant folding is on by default so relations match the engine's canonical
+ * form; pass `false` for authored text that must keep its written structure.
+ */
 export function renderIrExpression(
     expr: MathIrExpression,
     values: ParameterValues = {},
     parentPrecedence = 0,
+    foldConstants = true,
 ): string {
-    const constant = evaluateConstant(expr, values);
+    return renderNode(expr, values, parentPrecedence, foldConstants);
+}
+
+function renderNode(
+    expr: MathIrExpression,
+    values: ParameterValues,
+    parentPrecedence: number,
+    foldConstants: boolean,
+): string {
+    const constant = foldConstants ? evaluateConstant(expr, values) : null;
     if (constant !== null) return formatExact(constant);
     if (typeof expr.sym === "string") return expr.sym;
     if (typeof expr.param === "string") {
@@ -199,7 +215,7 @@ export function renderIrExpression(
     const args = expr.args ?? [];
     if (op in FUNCTION_OPERATORS) {
         return `${FUNCTION_OPERATORS[op]}(${args
-            .map((arg) => renderIrExpression(arg, values))
+            .map((arg) => renderNode(arg, values, 0, foldConstants))
             .join(", ")})`;
     }
 
@@ -209,7 +225,7 @@ export function renderIrExpression(
         case "add":
             text = args
                 .map((arg, index) => {
-                    const piece = renderChild(arg, values, precedence);
+                    const piece = renderChild(arg, values, precedence, foldConstants);
                     if (index === 0) return piece;
                     return piece.startsWith("-")
                         ? ` - ${piece.slice(1)}`
@@ -219,33 +235,50 @@ export function renderIrExpression(
             break;
         case "sub": {
             const [left, ...rest] = args;
-            text = left ? renderChild(left, values, precedence) : "";
+            text = left ? renderChild(left, values, precedence, foldConstants) : "";
             for (const arg of rest) {
-                const piece = renderChild(arg, values, precedence + 1);
+                const piece = renderChild(
+                    arg,
+                    values,
+                    precedence + 1,
+                    foldConstants,
+                );
                 text += piece.startsWith("-") ? ` + ${piece.slice(1)}` : ` - ${piece}`;
             }
             break;
         }
         case "mul":
-            text = args.map((arg) => renderChild(arg, values, precedence)).join("*");
+            text = args
+                .map((arg) => renderChild(arg, values, precedence, foldConstants))
+                .join("*");
             break;
         case "div":
             text = args
                 .map((arg, index) =>
-                    renderChild(arg, values, index === 0 ? precedence : precedence + 1),
+                    renderChild(
+                        arg,
+                        values,
+                        index === 0 ? precedence : precedence + 1,
+                        foldConstants,
+                    ),
                 )
                 .join("/");
             break;
         case "pow":
             text = args
                 .map((arg, index) =>
-                    renderChild(arg, values, index === 0 ? precedence : precedence + 1),
+                    renderChild(
+                        arg,
+                        values,
+                        index === 0 ? precedence : precedence + 1,
+                        foldConstants,
+                    ),
                 )
                 .join("^");
             break;
         default:
             text = `${op}(${args
-                .map((arg) => renderIrExpression(arg, values))
+                .map((arg) => renderNode(arg, values, 0, foldConstants))
                 .join(", ")})`;
     }
     return precedence < parentPrecedence ? `(${text})` : text;
@@ -333,7 +366,7 @@ export function renderIrText(
         resolved.equations = relations.join(" and ");
     }
     if (body.goal.expr) {
-        resolved.expr = renderIrExpression(body.goal.expr, values);
+        resolved.expr = renderIrExpression(body.goal.expr, values, 0, false);
     }
     if (body.goal.matrix) {
         resolved.matrix = renderIrMatrix(body.goal.matrix, values);
@@ -374,4 +407,45 @@ export function renderIrDistractor(
             .join(", ")}}`;
     }
     return null;
+}
+
+/** Render the authored answer recipe the engine grades for this instance. */
+export function renderIrAnswerRecipe(
+    recipe: MathIrAnswerRecipe | null | undefined,
+    values: ParameterValues = {},
+): string | null {
+    if (!recipe) return null;
+    const items = recipe.items ?? [];
+    const renderItems = () =>
+        items.map((item) => renderIrExpression(item, values));
+    switch (recipe.kind) {
+        case "numeric":
+        case "expression":
+            return items[0] ? renderIrExpression(items[0], values) : null;
+        case "set":
+            return items.length > 0 ? `{${renderItems().join(", ")}}` : null;
+        case "tuple":
+            return items.length > 0 ? `(${renderItems().join(", ")})` : null;
+        case "matrix":
+            return recipe.matrix ? renderIrMatrix(recipe.matrix, values) : null;
+        case "interval": {
+            const interval = recipe.interval;
+            if (!interval) return null;
+            const lower = interval.lower
+                ? renderIrExpression(interval.lower, values)
+                : "-∞";
+            const upper = interval.upper
+                ? renderIrExpression(interval.upper, values)
+                : "∞";
+            const left = interval.lower_open === false ? "[" : "(";
+            const right = interval.upper_open === false ? "]" : ")";
+            return `${left}${lower}, ${upper}${right}`;
+        }
+        case "boolean":
+            return typeof recipe.boolean === "boolean"
+                ? String(recipe.boolean)
+                : null;
+        default:
+            return null;
+    }
 }

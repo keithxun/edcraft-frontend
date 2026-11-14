@@ -536,6 +536,10 @@ export const mathIrTemplateCandidate: IrMathTemplateCandidate = {
             ],
             text: { mode: "symbolic", template: "Solve {equation}." },
             goal: { kind: "solve", symbol: "x" },
+            answer_recipe: {
+                kind: "set",
+                items: [{ param: "p" }, { param: "q" }],
+            },
             distractors: [
                 {
                     value: {
