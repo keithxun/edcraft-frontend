@@ -80,10 +80,10 @@ describe("AuthorForm", () => {
             "Write a question about nested loops.",
         );
         expect(screen.getByRole("radio", { name: "Hard" })).toBeChecked();
+        expect(screen.getByLabelText("Wrong choices (distractors)")).toHaveValue(2);
         expect(screen.queryByText("Prefilled")).not.toBeInTheDocument();
 
         await openAdvanced();
-        expect(screen.getByLabelText("Choices")).toHaveValue(3);
         expect(screen.getByRole("combobox", { name: "Question model" })).toHaveTextContent(
             "Default authoring model",
         );
@@ -94,10 +94,8 @@ describe("AuthorForm", () => {
 
         expect(screen.getByLabelText("Prompt")).toHaveValue("");
         expect(screen.getByRole("radio", { name: "Easy" })).toBeChecked();
+        expect(screen.getByLabelText("Wrong choices (distractors)")).toHaveValue(3);
         expect(screen.queryByText("Prefilled")).not.toBeInTheDocument();
-
-        await openAdvanced();
-        expect(screen.getByLabelText("Choices")).toHaveValue(4);
     });
 
     it("submits with the selected connection and default model", async () => {
@@ -182,14 +180,13 @@ describe("AuthorForm", () => {
         ).not.toBeInTheDocument();
     });
 
-    it("submits a user-entered choice count", async () => {
+    it("submits a user-entered distractor count", async () => {
         const user = userEvent.setup();
         renderForm(undefined, connectionCapabilities);
 
-        await openAdvanced();
-        const choices = screen.getByLabelText("Choices");
-        await user.clear(choices);
-        await user.type(choices, "7");
+        const distractors = screen.getByLabelText("Wrong choices (distractors)");
+        await user.clear(distractors);
+        await user.type(distractors, "6");
         await user.type(screen.getByLabelText("Prompt"), "Create a loop question.");
         await user.click(screen.getByRole("button", { name: "Create question" }));
 
@@ -200,19 +197,18 @@ describe("AuthorForm", () => {
         });
     });
 
-    it("rejects a choice count outside the supported range", async () => {
+    it("rejects a distractor count outside the supported range", async () => {
         const user = userEvent.setup();
         renderForm(undefined, connectionCapabilities);
 
-        await openAdvanced();
-        const choices = screen.getByLabelText("Choices");
-        await user.clear(choices);
-        await user.type(choices, "12");
+        const distractors = screen.getByLabelText("Wrong choices (distractors)");
+        await user.clear(distractors);
+        await user.type(distractors, "11");
         await user.type(screen.getByLabelText("Prompt"), "Create a loop question.");
         await user.click(screen.getByRole("button", { name: "Create question" }));
 
         expect(
-            await screen.findByText("Enter at most 11 choices."),
+            await screen.findByText("Enter at most 10 wrong choices."),
         ).toBeInTheDocument();
         expect(createAuthoringJob).not.toHaveBeenCalled();
     });

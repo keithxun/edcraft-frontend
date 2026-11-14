@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ChecksPanel } from "../components/ChecksPanel";
 import type { AuthoringCheck } from "../types";
 
@@ -73,6 +74,31 @@ describe("ChecksPanel", () => {
         expect(
             screen.getByText(
                 "The answer and every wrong choice evaluate correctly and are distinct.",
+            ),
+        ).toBeInTheDocument();
+    });
+
+    it("explains what a technical check supports", async () => {
+        render(<ChecksPanel checks={checks} />);
+
+        await userEvent
+            .setup()
+            .click(
+                screen.getByRole("button", {
+                    name: "What Question template checks",
+                }),
+            );
+
+        expect(await screen.findByText("Supported")).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                "Placeholders, template rendering, and the structure of the answer expression.",
+            ),
+        ).toBeInTheDocument();
+        expect(screen.getByText("Limits")).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                "Structure and rendering only; code execution happens in the answers check.",
             ),
         ).toBeInTheDocument();
     });

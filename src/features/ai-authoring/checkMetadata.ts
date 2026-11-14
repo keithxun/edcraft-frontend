@@ -38,12 +38,91 @@ export function friendlyCheckLabel(tool: string): string {
     return FRIENDLY_CHECK_LABELS[tool] ?? tool.replaceAll("_", " ");
 }
 
+export interface CheckSupport {
+    supports: string[];
+    limits?: string[];
+}
+
+const CHECK_SUPPORT: Record<string, CheckSupport> = {
+    code_require_features: {
+        supports: ["Python language features named in the authoring request."],
+        limits: [
+            "A static presence check; it does not prove the feature is used correctly.",
+        ],
+    },
+    code_verify_template_structure: {
+        supports: [
+            "Placeholders, template rendering, and the structure of the answer expression.",
+        ],
+        limits: [
+            "Structure and rendering only; code execution happens in the answers check.",
+        ],
+    },
+    code_validate_answers_and_distractors: {
+        supports: [
+            "Deterministic execution of the correct answer and every wrong choice.",
+            "Correctness and distinctness across sampled inputs.",
+        ],
+        limits: ["Uses a bounded sample of inputs rather than every possible value."],
+    },
+    math_verify_template_structure: {
+        supports: [
+            "Equation rendering, parameter substitution, and template structure.",
+        ],
+        limits: ["Applies to legacy bounded equation templates."],
+    },
+    math_validate_answers_and_distractors: {
+        supports: [
+            "Evaluation of the answer and every wrong choice.",
+            "Distinctness across sampled parameter combinations.",
+        ],
+        limits: ["Applies to legacy bounded equation templates."],
+    },
+    math_verify_item_spec: {
+        supports: [
+            "Exact integer and rational arithmetic, expressions, equations, and inequalities.",
+            "Solve goals for one unknown, or an ordered tuple for a linear system.",
+            "Derivatives, antiderivatives, definite integrals, matrices, and determinants.",
+        ],
+        limits: [
+            "Limits, eigenvalues, and symbolic exponents are not graded.",
+            "Multi-symbol solving accepts equality givens only.",
+        ],
+    },
+    math_validate_options: {
+        supports: [
+            "One to ten wrong choices, each graded by the deterministic engine.",
+            "Equivalent-option detection and wrong-answer verification.",
+        ],
+        limits: [
+            "Options are checked on the sampled domain, not every declared parameter combination.",
+        ],
+    },
+    math_verify_text_fidelity: {
+        supports: [
+            "Symbolic templates are rendered and checked without a model call.",
+            "Prose templates add anchor checks and a blind parse-back reconstruction.",
+        ],
+        limits: [
+            "Prose fidelity depends on the selected check model; symbolic templates skip parse-back.",
+        ],
+    },
+    assess_template_relevance: {
+        supports: ["Compares the authored template with the original request."],
+        limits: ["Advisory only; never blocks approval."],
+    },
+};
+
 export function checkLabel(check: AuthoringCheck): string {
     return friendlyCheckLabel(check.tool);
 }
 
 export function checkDescription(check: AuthoringCheck): string | null {
     return CHECK_DESCRIPTIONS[check.tool] ?? null;
+}
+
+export function checkSupport(check: AuthoringCheck): CheckSupport | null {
+    return CHECK_SUPPORT[check.tool] ?? null;
 }
 
 interface FindingLike {
