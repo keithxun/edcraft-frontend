@@ -237,7 +237,7 @@ describe("AuthorForm", () => {
         });
     });
 
-    it("defaults both advisory checks to the question model", async () => {
+    it("defaults difficulty to the question model and relevance to the server judge", async () => {
         renderForm(undefined, connectionCapabilities);
         await openAdvanced();
 
@@ -245,7 +245,7 @@ describe("AuthorForm", () => {
             "Same as question model",
         );
         expect(screen.getByRole("combobox", { name: "Relevance check" })).toHaveTextContent(
-            "Same as question model",
+            "Server default (Default judge)",
         );
     });
 

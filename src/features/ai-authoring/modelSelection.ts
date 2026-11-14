@@ -84,7 +84,8 @@ export function isModelSelectionComplete(source: string, model: string): boolean
 
 /**
  * Build the optional judge overrides. Inherit entries are omitted so the
- * backend keeps following the question model.
+ * backend uses each role's default: the author for difficulty and the
+ * server-configured decision judge for relevance.
  */
 export function buildJudgeSelections(
     difficulty: ModelSelection,

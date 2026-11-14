@@ -94,7 +94,7 @@ function createAuthoringSchema(minChoices: number, maxChoices: number) {
                     ctx.addIssue({
                         code: "custom",
                         path: [sourceKey],
-                        message: "Choose a check model or inherit the question model.",
+                        message: "Choose a check model or use this field's default.",
                     });
                 }
             }
@@ -153,6 +153,9 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     const defaultDifficulty = difficultyOptions[0] ?? "easy";
     const connections = capabilities.connections ?? [];
     const profiles = capabilities.model_profiles;
+    const relevanceDefaultLabel = capabilities.judge
+        ? `Server default (${capabilities.judge.label})`
+        : "Same as question model";
     const minChoices = (capabilities.min_distractors ?? 1) + 1;
     const maxChoices = (capabilities.max_distractors ?? 10) + 1;
     const defaultChoices = (capabilities.default_distractors ?? 3) + 1;
@@ -610,6 +613,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                         idPrefix="relevance-check"
                                         label="Relevance check"
                                         allowInherit
+                                        inheritLabel={relevanceDefaultLabel}
                                     />
                                 </div>
 
