@@ -50,7 +50,7 @@ const checks: AuthoringCheck[] = [
 describe("ChecksPanel", () => {
     afterEach(cleanup);
 
-    it("lists every technical check with labels, screen-reader statuses and descriptions", () => {
+    it("lists every technical check with labels and screen-reader statuses", () => {
         render(<ChecksPanel checks={checks} />);
 
         expect(
@@ -66,41 +66,37 @@ describe("ChecksPanel", () => {
         expect(screen.getByText(/Needs attention:/)).toHaveClass("sr-only");
 
         expect(
-            screen.getByText("The template is structurally valid and renders."),
-        ).toBeInTheDocument();
+            screen.queryByText("The template is structurally valid and renders."),
+        ).not.toBeInTheDocument();
         expect(
-            screen.getByText("The requested Python features are present."),
-        ).toBeInTheDocument();
+            screen.queryByText("The requested Python features are present."),
+        ).not.toBeInTheDocument();
         expect(
-            screen.getByText(
+            screen.queryByText(
                 "The answer and every wrong choice evaluate correctly and are distinct.",
             ),
-        ).toBeInTheDocument();
+        ).not.toBeInTheDocument();
     });
 
-    it("explains what a technical check supports", async () => {
+    it("explains the supported features for a technical check", async () => {
         render(<ChecksPanel checks={checks} />);
 
         await userEvent
             .setup()
             .click(
                 screen.getByRole("button", {
-                    name: "What Question template checks",
+                    name: "What Required features checks",
                 }),
             );
 
         expect(await screen.findByText("Supported")).toBeInTheDocument();
         expect(
-            screen.getByText(
-                "Placeholders, template rendering, and the structure of the answer expression.",
-            ),
+            screen.getByText(/Control flow: conditional \(if\/else\)/),
         ).toBeInTheDocument();
-        expect(screen.getByText("Limits")).toBeInTheDocument();
         expect(
-            screen.getByText(
-                "Structure and rendering only; code execution happens in the answers check.",
-            ),
+            screen.getByText(/Lists: list_index \(indexing\)/),
         ).toBeInTheDocument();
+        expect(screen.queryByText("Limits")).not.toBeInTheDocument();
     });
 
     it("shows the error and findings under a failing technical check", () => {

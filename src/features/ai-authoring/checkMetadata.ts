@@ -40,53 +40,45 @@ export function friendlyCheckLabel(tool: string): string {
 
 export interface CheckSupport {
     supports: string[];
-    limits?: string[];
 }
 
 const CHECK_SUPPORT: Record<string, CheckSupport> = {
     code_require_features: {
-        supports: ["Python language features named in the authoring request."],
-        limits: [
-            "A static presence check; it does not prove the feature is used correctly.",
+        supports: [
+            "Control flow: conditional (if/else), early_return (return inside an if), nested_conditional (if inside an if), sequential_conditionals (two or more sibling ifs).",
+            "Loops: loop (for), nested_loop (loop inside a loop), sequential_loops (two or more sibling loops).",
+            "Functions: helper_function (separate helper called from the entry function), nested_helper (a helper calling another helper).",
+            "Lists: list_index (indexing), list_aggregate (sum, min, max, all, any), list_sort (sorted).",
+            "Expressions: arithmetic (a binary numeric operation).",
         ],
     },
     code_verify_template_structure: {
         supports: [
             "Placeholders, template rendering, and the structure of the answer expression.",
         ],
-        limits: [
-            "Structure and rendering only; code execution happens in the answers check.",
-        ],
     },
     code_validate_answers_and_distractors: {
         supports: [
-            "Deterministic execution of the correct answer and every wrong choice.",
-            "Correctness and distinctness across sampled inputs.",
+            "The correct answer and every wrong choice are executed on a deterministic sample of inputs.",
+            "Answers must be correct and the wrong choices distinct.",
         ],
-        limits: ["Uses a bounded sample of inputs rather than every possible value."],
     },
     math_verify_template_structure: {
         supports: [
             "Equation rendering, parameter substitution, and template structure.",
         ],
-        limits: ["Applies to legacy bounded equation templates."],
     },
     math_validate_answers_and_distractors: {
         supports: [
             "Evaluation of the answer and every wrong choice.",
             "Distinctness across sampled parameter combinations.",
         ],
-        limits: ["Applies to legacy bounded equation templates."],
     },
     math_verify_item_spec: {
         supports: [
             "Exact integer and rational arithmetic, expressions, equations, and inequalities.",
-            "Solve goals for one unknown, or an ordered tuple for a linear system.",
+            "One-unknown solves and ordered-tuple linear systems.",
             "Derivatives, antiderivatives, definite integrals, matrices, and determinants.",
-        ],
-        limits: [
-            "Limits, eigenvalues, and symbolic exponents are not graded.",
-            "Multi-symbol solving accepts equality givens only.",
         ],
     },
     math_validate_options: {
@@ -94,22 +86,15 @@ const CHECK_SUPPORT: Record<string, CheckSupport> = {
             "One to ten wrong choices, each graded by the deterministic engine.",
             "Equivalent-option detection and wrong-answer verification.",
         ],
-        limits: [
-            "Options are checked on the sampled domain, not every declared parameter combination.",
-        ],
     },
     math_verify_text_fidelity: {
         supports: [
             "Symbolic templates are rendered and checked without a model call.",
             "Prose templates add anchor checks and a blind parse-back reconstruction.",
         ],
-        limits: [
-            "Prose fidelity depends on the selected check model; symbolic templates skip parse-back.",
-        ],
     },
     assess_template_relevance: {
         supports: ["Compares the authored template with the original request."],
-        limits: ["Advisory only; never blocks approval."],
     },
 };
 

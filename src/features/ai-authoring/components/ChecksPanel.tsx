@@ -129,34 +129,20 @@ function CheckHelpButton({
                     <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-80 max-w-[calc(100vw-2rem)]">
+            <PopoverContent align="start" className="w-96 max-w-[calc(100vw-2rem)]">
                 <p className="text-sm font-medium">{label}</p>
                 {description && (
                     <p className="mt-1 text-xs text-muted-foreground">{description}</p>
                 )}
-                <div className="mt-3 space-y-3">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Supported
-                        </p>
-                        <ul className="mt-1 list-disc space-y-1 pl-4 text-xs">
-                            {support.supports.map((item) => (
-                                <li key={item}>{item}</li>
-                            ))}
-                        </ul>
-                    </div>
-                    {support.limits && support.limits.length > 0 && (
-                        <div>
-                            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                Limits
-                            </p>
-                            <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-muted-foreground">
-                                {support.limits.map((item) => (
-                                    <li key={item}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                <div className="mt-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Supported
+                    </p>
+                    <ul className="mt-1 list-disc space-y-1 pl-4 text-xs">
+                        {support.supports.map((item) => (
+                            <li key={item}>{item}</li>
+                        ))}
+                    </ul>
                 </div>
             </PopoverContent>
         </Popover>
@@ -235,9 +221,6 @@ export function ChecksPanel({ checks, advisories = [], collapsible = false }: Ch
                                     />
                                 )}
                             </div>
-                            {description && (
-                                <p className="text-xs text-muted-foreground">{description}</p>
-                            )}
                             {!passed && check.error && (
                                 <p className="text-xs text-destructive">{check.error}</p>
                             )}
