@@ -32,6 +32,14 @@ export function formatDate(value: string): string {
     return date.toLocaleString();
 }
 
+/** Render a whole number of seconds as m:ss. */
+export function formatElapsed(totalSeconds: number): string {
+    const safe = Number.isFinite(totalSeconds) ? Math.max(0, Math.floor(totalSeconds)) : 0;
+    const minutes = Math.floor(safe / 60);
+    const seconds = safe % 60;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 export function capitalize(value: string): string {
     return value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
 }

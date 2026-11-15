@@ -46,8 +46,31 @@ export type AuthoringCheck = ReviewCheck;
 export type AuthoringDifficultyOutcome = DifficultyOutcome;
 export type AuthoringRelevanceOutcome = RelevanceOutcome;
 export type AuthoringResult = AuthoringSummary;
-export type AuthoringJob = AuthoringJobStatusResponse;
+/**
+ * The backend is adding `started_at` to the job. Keep it optional until the
+ * generated client catches up; the UI falls back to `created_at`.
+ */
+export type AuthoringJob = AuthoringJobStatusResponse & {
+    started_at?: string | null;
+};
 export type AuthoringJobSummary = ApiAuthoringJobSummary;
+
+/**
+ * The richer progress the backend is starting to send. The generated
+ * `AuthoringProgress` still only knows `phase` and `attempt`, so the UI reads
+ * `job.progress` through this local view. New fields stay optional so older
+ * payloads keep rendering.
+ */
+export interface AuthoringProgressView {
+    phase: "generating" | "checking" | "assessing" | "correcting" | "finalizing";
+    attempt: number;
+    max_attempts?: number | null;
+    checks_total?: number | null;
+    checks_done?: number | null;
+    current_check?: string | null;
+    phase_started_at?: string | null;
+}
+
 export type ReviewAttempt = Omit<ApiReviewAttempt, "candidate"> & {
     candidate?: AuthoringTemplateCandidate | null;
 };
