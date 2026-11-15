@@ -53,6 +53,7 @@ describe("ProgressPanel", () => {
         expect(items[activeIndex]).toHaveTextContent(label);
         expect(items[activeIndex]).toHaveAttribute("aria-current", "step");
         expect(items[activeIndex]).toHaveTextContent("Current stage");
+        expect(stageList()).not.toHaveTextContent("—");
         for (const earlier of items.slice(0, activeIndex)) {
             expect(earlier).toHaveTextContent("Done");
             expect(earlier).not.toHaveAttribute("aria-current");
@@ -94,8 +95,20 @@ describe("ProgressPanel", () => {
         expect(items).toHaveLength(5);
         expect(stage("Revising")).toHaveAttribute("aria-current", "step");
         expect(stage("Revising")).toHaveTextContent("attempt 2 of 4");
-        expect(stage("Checking")).toHaveTextContent("Done");
+        expect(stage("Writing the question")).toHaveTextContent("Done");
+        expect(stage("Checking")).toHaveTextContent("Not started");
         expect(screen.getByRole("status")).toHaveTextContent("Revising: attempt 2 of 4");
+    });
+
+    it("marks revising as done when a later phase follows a second attempt", () => {
+        render(
+            <ProgressPanel job={runningJob({ phase: "checking", attempt: 2 })} />,
+        );
+
+        const items = stageItems();
+        expect(items).toHaveLength(5);
+        expect(stage("Revising")).toHaveTextContent("Done");
+        expect(stage("Checking")).toHaveAttribute("aria-current", "step");
     });
 
     it("shows the waiting message while queued", () => {

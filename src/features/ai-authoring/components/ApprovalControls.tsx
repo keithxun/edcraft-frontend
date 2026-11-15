@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAuthoringErrorMessage, isStaleArtifactError } from "../errors";
-import { capitalize, formatDate } from "../format";
+import { formatDate } from "../format";
 import { getApprovalBlockers } from "../getApprovalBlockers";
 import { useDecideAuthoringApproval } from "../hooks/useAiAuthoring";
+import { statusView } from "../status";
 import type { ApprovalDecision, AuthoringReview } from "../types";
 
 const MAX_NOTE_LENGTH = 2000;
@@ -84,7 +85,8 @@ export function ApprovalControls({
                     )}
                 >
                     <p>
-                        {capitalize(approval.decision)} on {formatDate(approval.decided_at)}
+                        {statusView(approval.decision).label} on{" "}
+                        {formatDate(approval.decided_at)}
                     </p>
                     {approval.note && <p className="mt-1">Note: {approval.note}</p>}
                 </div>
@@ -92,7 +94,7 @@ export function ApprovalControls({
 
             {approval && review.artifact_sha256 && (
                 <p className="text-xs text-muted-foreground">
-                    {capitalize(approval.decision)} version{" "}
+                    {statusView(approval.decision).label} version{" "}
                     <code
                         className="font-mono"
                         title={review.artifact_sha256}

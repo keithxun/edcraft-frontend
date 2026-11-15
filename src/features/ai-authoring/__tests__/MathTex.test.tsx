@@ -20,4 +20,11 @@ describe("MathTex", () => {
         expect(container.querySelector(".katex-error")).toBeNull();
         expect(container.textContent).toBe("\\frac{1}{");
     });
+
+    it("typesets valid LaTeX that contains the text katex-error", () => {
+        const { container } = render(<MathTex latex={"\\text{katex-error}"} />);
+
+        expect(container.querySelector(".katex")).not.toBeNull();
+        expect(container.textContent).toContain("katex-error");
+    });
 });

@@ -41,8 +41,6 @@ export function GenericQuestionView({
     const fields = buildQuestionFields(payload);
     const renderBaseValue = fields.flat ? renderFlatValue : renderReadableValue;
     const hasAnswerLatex = typeof answerLatex === "string" && answerLatex.length > 0;
-    const hasChoiceLatex =
-        choicesLatex !== undefined && choicesLatex.some((latex) => latex.length > 0);
 
     const renderValue = (value: unknown) =>
         hasAnswerLatex ? (
@@ -73,7 +71,7 @@ export function GenericQuestionView({
             showAnswerByDefault={!review}
             hideAnswerSummary
             renderValue={renderValue}
-            renderOption={hasChoiceLatex ? renderOption : undefined}
+            renderOption={renderOption}
         />
     );
 }

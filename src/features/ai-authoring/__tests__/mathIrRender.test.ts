@@ -8,6 +8,7 @@ import {
     renderIrDistractorTex,
     renderIrExpression,
     renderIrSample,
+    renderIrSampleEquationTex,
     renderIrTex,
     renderIrText,
 } from "../components/mathIrRender";
@@ -233,5 +234,45 @@ describe("LaTeX IR rendering", () => {
                 values,
             ),
         ).toBe("(2, -7)");
+    });
+
+    it("returns null instead of raw LaTeX for an unsafe symbol", () => {
+        expect(renderIrTex({ sym: "x}{\\frac{1}{2}" })).toBeNull();
+    });
+
+    it("returns null instead of raw LaTeX for a non-literal number", () => {
+        expect(renderIrTex({ num: "\\frac{1}{2}" })).toBeNull();
+        expect(renderIrTex({ num: "2e3" })).toBeNull();
+    });
+
+    it("returns null for an unknown operation", () => {
+        expect(renderIrTex({ op: "evil", args: [{ sym: "x" }] })).toBeNull();
+        expect(
+            renderIrTex({
+                op: "add",
+                args: [{ sym: "x" }, { op: "evil", args: [{ sym: "y" }] }],
+            }),
+        ).toBeNull();
+    });
+
+    it("returns null for an unknown parameter and resolves a known one", () => {
+        expect(renderIrTex({ param: "missing" }, values)).toBeNull();
+        expect(renderIrTex({ param: "p" }, values)).toBe("2");
+        expect(renderIrTex({ param: "p" }, { p: "\\frac{1}{2}" })).toBeNull();
+    });
+
+    it("renders the sample equation as LaTeX, and not prose", () => {
+        expect(renderIrSampleEquationTex(mathIrTemplateCandidate.item)).toBe(
+            "x^{2} + 5x - 14 = 0",
+        );
+        const prose = {
+            ...mathIrTemplateCandidate.item,
+            body: {
+                ...mathIrTemplateCandidate.item.body,
+                givens: [],
+                goal: { kind: "evaluate" },
+            },
+        };
+        expect(renderIrSampleEquationTex(prose)).toBeNull();
     });
 });

@@ -206,6 +206,25 @@ describe("AiAuthoringJobPage", () => {
         expect(screen.getByRole("link", { name: "Retry request" })).toBeInTheDocument();
     });
 
+    it("shows the backend message with a draft for a non-generation error", async () => {
+        vi.mocked(getAuthoringJob).mockResolvedValue({
+            ...failedJob,
+            error: {
+                code: "AUTHORING_TIMEOUT",
+                message: "Authoring timed out before the job produced a result.",
+            },
+        });
+        vi.mocked(getAuthoringReview).mockResolvedValue(failedWithDraftReview);
+        renderJobPage();
+
+        expect(
+            await screen.findByText(
+                "Authoring timed out before the job produced a result. The last draft and the checks it failed are shown below.",
+            ),
+        ).toBeInTheDocument();
+        expect(screen.getByText("Draft · checks failed")).toBeInTheDocument();
+    });
+
     it("keeps a specific timeout message for a failed job", async () => {
         vi.mocked(getAuthoringJob).mockResolvedValue({
             ...failedJob,

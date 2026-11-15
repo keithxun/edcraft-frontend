@@ -150,10 +150,7 @@ const STAGE_LABELS: Record<AuthoringStageId, string> = {
     finalizing: "Finishing",
 };
 
-/**
- * Read `job.progress` through the richer local view. The generated client still
- * only knows `phase` and `attempt`; the extra fields pass through untouched.
- */
+/** Read `job.progress` through the richer local view. */
 export function getJobProgress(job: AuthoringJob): AuthoringProgressView | null {
     return (job.progress as AuthoringProgressView | null | undefined) ?? null;
 }
@@ -199,17 +196,18 @@ function stageDetail(id: AuthoringStageId, progress: AuthoringProgressView | nul
 }
 
 /**
- * The ordered stages shown while a job is queued or running. "Revising" only
- * appears once a revision is part of this job: while correcting, or after a
- * first attempt has failed. A queued job has no current stage yet.
+ * The ordered stages shown while a job is queued or running. "Revising" sits
+ * between writing and checking and only appears once a revision is part of this
+ * job: while correcting, or after a first attempt has failed. A queued job has
+ * no current stage yet.
  */
 export function getJobStages(job: AuthoringJob): AuthoringStageView[] {
     const progress = getJobProgress(job);
     const includesRevision = progress?.phase === "correcting" || (progress?.attempt ?? 0) > 1;
     const ids: AuthoringStageId[] = [
         "generating",
-        "checking",
         ...(includesRevision ? (["revising"] as const) : []),
+        "checking",
         "assessing",
         "finalizing",
     ];

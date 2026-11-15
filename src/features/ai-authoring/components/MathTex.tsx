@@ -17,15 +17,12 @@ interface MathTexProps {
  */
 function renderMarkup(latex: string, displayMode: boolean): string | null {
     try {
-        const markup = katex.renderToString(latex, {
+        return katex.renderToString(latex, {
             displayMode,
-            throwOnError: false,
+            throwOnError: true,
             output: "htmlAndMathml",
             trust: false,
         });
-        // With `throwOnError: false` KaTeX reports a parse failure by returning
-        // a `katex-error` span rather than throwing, so treat that as failure.
-        return markup.includes("katex-error") ? null : markup;
     } catch {
         return null;
     }

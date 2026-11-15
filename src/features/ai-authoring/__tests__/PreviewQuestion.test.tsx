@@ -214,6 +214,25 @@ describe("PreviewQuestion", () => {
         expect(screen.queryByText(/\.py$/)).not.toBeInTheDocument();
     });
 
+    it("does not use answer_latex for choices when choices_latex is missing", () => {
+        const instance = {
+            ...mathQuestionInstance,
+            answer_latex: "\\frac{1}{2}",
+        };
+        const { container } = render(
+            <PreviewQuestion instance={instance} domain="math" />,
+        );
+
+        for (const [index, choice] of instance.choices.entries()) {
+            const label = screen.getByText(`${String.fromCharCode(65 + index)}.`, {
+                exact: true,
+            });
+            const value = label.parentElement?.querySelector("div");
+            expect(value?.textContent).toBe(choice);
+        }
+        expect(container.querySelector(".katex")).toBeNull();
+    });
+
     it("shows the math prompt once when it already contains the equation", () => {
         const instance = {
             ...mathQuestionInstance,

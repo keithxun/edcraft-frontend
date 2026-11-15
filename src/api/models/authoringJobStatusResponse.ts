@@ -22,6 +22,7 @@ export interface AuthoringJobStatusResponse {
   result?: AuthoringSummary | null;
   error?: PublicAuthoringError | null;
   created_at: string;
+  started_at?: string | null;
   approval?: StoredReviewerApproval | null;
   last_generation?: GenerationMetadata | null;
 }

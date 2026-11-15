@@ -1,6 +1,6 @@
 // UI-facing aliases for the generated AI authoring API models. The backend
-// remains authoritative; normalization only adds optional defaults where the UI
-// needs them. Generated models are never edited by hand.
+// remains authoritative, and normalization only adds optional defaults where
+// the UI needs them. Generated models are never edited by hand.
 import type {
     ApprovalRequest,
     AuthoringCapabilitiesResponse,
@@ -33,7 +33,7 @@ export type AuthoringCapabilities = Omit<AuthoringCapabilitiesResponse, "enabled
     enabled_domains: string[];
 };
 export type AuthoringModelProfile = ApiAuthoringModelProfile;
-// The generated request makes domain optional; the authoring form always
+// The generated request makes domain optional, but the authoring form always
 // supplies one, so keep it required for callers.
 export type CreateAuthoringJobRequest = Omit<SubmitAuthoringJobRequest, "domain"> & {
     domain: string;
@@ -45,8 +45,8 @@ export type AuthoringDifficultyOutcome = DifficultyOutcome;
 export type AuthoringRelevanceOutcome = RelevanceOutcome;
 export type AuthoringResult = AuthoringSummary;
 /**
- * The backend is adding `started_at` to the job. Keep it optional until the
- * generated client catches up; the UI falls back to `created_at`.
+ * The backend now sends `started_at` with the job. It stays optional so older
+ * payloads keep rendering, and the UI falls back to `created_at`.
  */
 export type AuthoringJob = AuthoringJobStatusResponse & {
     started_at?: string | null;
@@ -54,10 +54,8 @@ export type AuthoringJob = AuthoringJobStatusResponse & {
 export type AuthoringJobSummary = ApiAuthoringJobSummary;
 
 /**
- * The richer progress the backend is starting to send. The generated
- * `AuthoringProgress` still only knows `phase` and `attempt`, so the UI reads
- * `job.progress` through this local view. New fields stay optional so older
- * payloads keep rendering.
+ * The richer progress the backend sends. The UI reads `job.progress` through
+ * this local view. New fields stay optional so older payloads keep rendering.
  */
 export interface AuthoringProgressView {
     phase: "generating" | "checking" | "assessing" | "correcting" | "finalizing";
@@ -163,7 +161,7 @@ export type AuthoringReview = Omit<
     template?: ReviewTemplate | null;
 };
 
-/** One piece of a maths prompt; `math` values are LaTeX, `text` is plain. */
+/** One piece of a maths prompt, where `math` values are LaTeX and `text` is plain. */
 export type MathQuestionSegment = {
     kind: "text" | "math";
     value: string;
@@ -276,7 +274,7 @@ export type IrMathTemplateCandidate = {
     item: MathIrTemplate;
 };
 
-/** A deterministic question from any domain; code and math are two shapes. */
+/** A deterministic question from any domain, where code and math are two shapes. */
 export type AuthoringQuestionPayload =
     | CodeQuestionInstance
     | MathQuestionInstance

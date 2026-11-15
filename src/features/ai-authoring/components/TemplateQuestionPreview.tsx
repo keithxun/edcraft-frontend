@@ -14,6 +14,7 @@ import {
     renderIrDistractor,
     renderIrDistractorTex,
     renderIrSample,
+    renderIrSampleEquationTex,
 } from "./mathIrRender";
 import { MathTex } from "./MathTex";
 import { isIrMathTemplateCandidate, isRecord } from "./questionPayload";
@@ -88,6 +89,7 @@ function IrMathTemplateView({
     const template = candidate.item;
     const values = firstParameterValues(template);
     const sample = renderIrSample(template);
+    const equationTex = renderIrSampleEquationTex(template);
     const answer = renderIrAnswerRecipe(template.body.answer_recipe, values);
     const answerTex = renderIrAnswerRecipeTex(template.body.answer_recipe, values);
     const parameters = Object.fromEntries(
@@ -106,7 +108,11 @@ function IrMathTemplateView({
 
             {showEquation && (
                 <p className="break-words text-center text-xl font-medium">
-                    {sample.equation}
+                    {equationTex !== null ? (
+                        <MathTex latex={equationTex} />
+                    ) : (
+                        sample.equation
+                    )}
                 </p>
             )}
 
@@ -132,7 +138,7 @@ function IrMathTemplateView({
                 </h4>
                 {answer !== null ? (
                     <p className="break-words font-mono text-sm">
-                        <MathTex latex={answerTex ?? answer} />
+                        {answerTex !== null ? <MathTex latex={answerTex} /> : answer}
                     </p>
                 ) : (
                     <p className="text-sm text-muted-foreground">
@@ -154,7 +160,11 @@ function IrMathTemplateView({
                             >
                                 {rendered !== null && (
                                     <p className="break-words font-mono text-sm">
-                                        <MathTex latex={renderedTex ?? rendered} />
+                                        {renderedTex !== null ? (
+                                            <MathTex latex={renderedTex} />
+                                        ) : (
+                                            rendered
+                                        )}
                                     </p>
                                 )}
                                 <p className="mt-1 text-xs text-muted-foreground">

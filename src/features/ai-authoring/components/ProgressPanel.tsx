@@ -95,7 +95,7 @@ export function ProgressPanel({ job }: { job: AuthoringJob }) {
                                 >
                                     {stage.label}
                                     <span className="sr-only">
-                                        {" — "}
+                                        {", "}
                                         {stageStateText(stage.state)}
                                     </span>
                                 </p>

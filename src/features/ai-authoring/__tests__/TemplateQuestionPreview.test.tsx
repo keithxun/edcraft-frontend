@@ -66,9 +66,17 @@ describe("TemplateQuestionPreview", () => {
         const answerSection = screen.getByLabelText("Correct answer");
         expect(answerSection.querySelector(".katex")).not.toBeNull();
         expect(answerSection.querySelector("math")).not.toBeNull();
+        expect(answerSection.querySelector("annotation")?.textContent).toBe(
+            "\\left\\{2, -7\\right\\}",
+        );
         expect(screen.getByText("Wrong choices")).toBeInTheDocument();
         const distractorSection = screen.getByLabelText("Distractors");
         expect(distractorSection.querySelectorAll(".katex")).toHaveLength(2);
+        expect(
+            Array.from(distractorSection.querySelectorAll("annotation")).map(
+                (annotation) => annotation.textContent,
+            ),
+        ).toEqual(["-2", "-5"]);
         expect(
             screen.getByText("Reports the sum of the roots as a root"),
         ).toBeInTheDocument();

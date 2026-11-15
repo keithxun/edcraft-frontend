@@ -18,6 +18,7 @@ export interface AuthoringJobSummary {
   state: AuthoringJobSummaryState;
   result_status?: 'checked' | 'needs_review' | 'error' | null;
   created_at: string;
+  started_at?: string | null;
   prompt_preview: string;
   difficulty: AuthoringJobSummaryDifficulty;
   approval?: StoredReviewerApproval | null;

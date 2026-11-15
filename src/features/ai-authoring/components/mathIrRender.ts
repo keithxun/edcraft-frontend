@@ -24,6 +24,15 @@ const RELATION_OPERATORS: Record<string, string> = {
     ge: "≥",
 };
 
+const TEX_RELATION_OPERATORS: Record<string, string> = {
+    eq: "=",
+    ne: "\\ne",
+    lt: "<",
+    le: "\\le",
+    gt: ">",
+    ge: "\\ge",
+};
+
 const FUNCTION_OPERATORS: Record<string, string> = {
     sqrt: "sqrt",
     abs: "Abs",
@@ -37,7 +46,7 @@ const FUNCTION_OPERATORS: Record<string, string> = {
     log: "log",
 };
 
-/** LaTeX commands for the named IR functions; `sqrt` is handled separately. */
+/** LaTeX commands for the named IR functions, with `sqrt` handled separately. */
 const TEX_FUNCTION_NAMES: Record<string, string> = {
     exp: "\\exp",
     sin: "\\sin",
@@ -53,7 +62,7 @@ const TEX_FUNCTION_NAMES: Record<string, string> = {
 type IrExpressionRenderer = (
     expr: MathIrExpression,
     values: ParameterValues,
-) => string;
+) => string | null;
 
 const PRECEDENCE: Record<string, number> = {
     add: 1,
@@ -211,7 +220,7 @@ function renderChild(
 /**
  * Render one closed expression tree using the same notation as the question.
  * Constant folding is on by default so relations match the engine's canonical
- * form; pass `false` for authored text that must keep its written structure.
+ * form. Pass `false` for authored text that must keep its written structure.
  */
 export function renderIrExpression(
     expr: MathIrExpression,
@@ -225,19 +234,47 @@ export function renderIrExpression(
 /**
  * Render the same expression tree as LaTeX. Fractions become `\frac`, roots
  * become `\sqrt`, products keep juxtaposition except between numbers (which use
- * `\cdot`), and named functions use their LaTeX commands.
+ * `\cdot`), and named functions use their LaTeX commands. Returns `null` when
+ * the tree contains anything that cannot be rendered safely.
  */
 export function renderIrTex(
     expr: MathIrExpression,
     values: ParameterValues = {},
     parentPrecedence = 0,
     foldConstants = true,
-): string {
+): string | null {
     return renderTexNode(expr, values, parentPrecedence, foldConstants);
 }
 
+const SAFE_SYMBOL = /^[A-Za-z][A-Za-z0-9_]*$/;
+
 function texIsNumber(text: string): boolean {
     return /^-?\d+(?:\.\d+)?$/.test(text);
+}
+
+/** Resolve one placeholder only when it names a safe, known parameter value. */
+function texParameter(name: string, values: ParameterValues): string | null {
+    if (!Object.prototype.hasOwnProperty.call(values, name)) return null;
+    const value = values[name];
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    if (parseExact(trimmed) !== null) return trimmed;
+    return SAFE_SYMBOL.test(trimmed) ? trimmed : null;
+}
+
+function renderTexChildren(
+    args: MathIrExpression[],
+    values: ParameterValues,
+    parentPrecedence: number,
+    foldConstants: boolean,
+): string[] | null {
+    const pieces: string[] = [];
+    for (const arg of args) {
+        const piece = renderTexNode(arg, values, parentPrecedence, foldConstants);
+        if (piece === null) return null;
+        pieces.push(piece);
+    }
+    return pieces;
 }
 
 function renderTexNode(
@@ -245,63 +282,63 @@ function renderTexNode(
     values: ParameterValues,
     parentPrecedence: number,
     foldConstants: boolean,
-): string {
+): string | null {
     const constant = foldConstants ? evaluateConstant(expr, values) : null;
     if (constant !== null) return formatExactTex(constant);
     if (typeof expr.num === "string") {
         const literal = parseExact(expr.num);
-        return literal ? formatExactTex(literal) : expr.num;
+        return literal ? formatExactTex(literal) : null;
     }
-    if (typeof expr.sym === "string") return expr.sym;
+    if (typeof expr.sym === "string") {
+        return SAFE_SYMBOL.test(expr.sym) ? expr.sym : null;
+    }
     if (typeof expr.param === "string") {
-        return values[expr.param] ?? `{${expr.param}}`;
+        return texParameter(expr.param, values);
     }
 
     const op = expr.op ?? "";
     const args = expr.args ?? [];
     if (op === "sqrt") {
-        const radicand = args[0]
-            ? renderTexNode(args[0], values, 0, foldConstants)
-            : "";
-        return `\\sqrt{${radicand}}`;
+        if (!args[0]) return null;
+        const radicand = renderTexNode(args[0], values, 0, foldConstants);
+        return radicand === null ? null : `\\sqrt{${radicand}}`;
     }
     if (op === "abs") {
-        const inner = args
-            .map((arg) => renderTexNode(arg, values, 0, foldConstants))
-            .join(", ");
-        return `\\left|${inner}\\right|`;
+        const inner = renderTexChildren(args, values, 0, foldConstants);
+        return inner === null ? null : `\\left|${inner.join(", ")}\\right|`;
     }
     if (op in TEX_FUNCTION_NAMES) {
-        const inner = args
-            .map((arg) => renderTexNode(arg, values, 0, foldConstants))
-            .join(", ");
-        return `${TEX_FUNCTION_NAMES[op]}\\left(${inner}\\right)`;
+        const inner = renderTexChildren(args, values, 0, foldConstants);
+        return inner === null
+            ? null
+            : `${TEX_FUNCTION_NAMES[op]}\\left(${inner.join(", ")}\\right)`;
     }
 
     const precedence = PRECEDENCE[op] ?? 5;
     let text: string;
     switch (op) {
-        case "add":
-            text = args
-                .map((arg, index) => {
-                    const piece = renderTexNode(
-                        arg,
-                        values,
-                        precedence,
-                        foldConstants,
-                    );
-                    if (index === 0) return piece;
-                    return piece.startsWith("-")
-                        ? ` - ${piece.slice(1)}`
-                        : ` + ${piece}`;
-                })
-                .join("");
+        case "add": {
+            const pieces: string[] = [];
+            for (const [index, arg] of args.entries()) {
+                const piece = renderTexNode(arg, values, precedence, foldConstants);
+                if (piece === null) return null;
+                pieces.push(
+                    index === 0
+                        ? piece
+                        : piece.startsWith("-")
+                          ? ` - ${piece.slice(1)}`
+                          : ` + ${piece}`,
+                );
+            }
+            text = pieces.join("");
             break;
+        }
         case "sub": {
             const [left, ...rest] = args;
-            text = left
-                ? renderTexNode(left, values, precedence, foldConstants)
-                : "";
+            if (!left) return null;
+            const leftText = renderTexNode(left, values, precedence, foldConstants);
+            if (leftText === null) return null;
+            text = leftText;
             for (const arg of rest) {
                 const piece = renderTexNode(
                     arg,
@@ -309,6 +346,7 @@ function renderTexNode(
                     precedence + 1,
                     foldConstants,
                 );
+                if (piece === null) return null;
                 text += piece.startsWith("-")
                     ? ` + ${piece.slice(1)}`
                     : ` - ${piece}`;
@@ -316,9 +354,8 @@ function renderTexNode(
             break;
         }
         case "mul": {
-            const pieces = args.map((arg) =>
-                renderTexNode(arg, values, precedence, foldConstants),
-            );
+            const pieces = renderTexChildren(args, values, precedence, foldConstants);
+            if (pieces === null) return null;
             text = pieces.reduce((joined, piece, index) => {
                 if (index === 0) return piece;
                 const previous = pieces[index - 1];
@@ -334,47 +371,42 @@ function renderTexNode(
         }
         case "div": {
             const [first, ...rest] = args;
-            text = first
-                ? renderTexNode(first, values, 0, foldConstants)
-                : "";
+            if (!first) return null;
+            let numerator = renderTexNode(first, values, 0, foldConstants);
+            if (numerator === null) return null;
             for (const arg of rest) {
-                text = `\\frac{${text}}{${renderTexNode(
-                    arg,
-                    values,
-                    0,
-                    foldConstants,
-                )}}`;
+                const denominator = renderTexNode(arg, values, 0, foldConstants);
+                if (denominator === null) return null;
+                numerator = `\\frac{${numerator}}{${denominator}}`;
             }
+            text = numerator;
             break;
         }
         case "pow": {
             const [base, exponent] = args;
-            if (!base || !exponent) {
-                text = "";
-                break;
-            }
+            if (!base || !exponent) return null;
             const baseTex = renderTexNode(
                 base,
                 values,
                 precedence + 1,
                 foldConstants,
             );
-            const wrappedBase = baseTex.startsWith("-")
-                ? `\\left(${baseTex}\\right)`
-                : baseTex;
+            if (baseTex === null) return null;
             const exponentTex = renderTexNode(
                 exponent,
                 values,
                 0,
                 foldConstants,
             );
+            if (exponentTex === null) return null;
+            const wrappedBase = baseTex.startsWith("-")
+                ? `\\left(${baseTex}\\right)`
+                : baseTex;
             text = `${wrappedBase}^{${exponentTex}}`;
             break;
         }
         default:
-            text = `\\operatorname{${op}}\\left(${args
-                .map((arg) => renderTexNode(arg, values, 0, foldConstants))
-                .join(", ")}\\right)`;
+            return null;
     }
     return precedence < parentPrecedence ? `\\left(${text}\\right)` : text;
 }
@@ -492,10 +524,17 @@ export function renderIrMatrix(
     matrix: MathIrExpression[][],
     values: ParameterValues = {},
     render: IrExpressionRenderer = renderIrExpression,
-): string {
-    const rows = matrix.map(
-        (row) => `[${row.map((cell) => render(cell, values)).join(", ")}]`,
-    );
+): string | null {
+    const rows: string[] = [];
+    for (const row of matrix) {
+        const cells: string[] = [];
+        for (const cell of row) {
+            const text = render(cell, values);
+            if (text === null) return null;
+            cells.push(text);
+        }
+        rows.push(`[${cells.join(", ")}]`);
+    }
     return `[${rows.join(", ")}]`;
 }
 
@@ -515,7 +554,7 @@ function renderGoalDisplay(
         }
         return expression;
     }
-    if (goal.matrix) return renderIrMatrix(goal.matrix, values);
+    if (goal.matrix) return renderIrMatrix(goal.matrix, values) ?? text;
     return text;
 }
 
@@ -523,7 +562,7 @@ function substitutePlaceholders(
     template: string,
     values: ParameterValues,
 ): string {
-    // Literal braces are doubled in authored text; protect them while the
+    // Literal braces are doubled in authored text. Protect them while the
     // single-brace placeholders are replaced.
     const protectedText = template
         .replaceAll("{{", "\u0001")
@@ -550,7 +589,8 @@ export function renderIrText(
         resolved.expr = renderIrExpression(body.goal.expr, values, 0, false);
     }
     if (body.goal.matrix) {
-        resolved.matrix = renderIrMatrix(body.goal.matrix, values);
+        const matrix = renderIrMatrix(body.goal.matrix, values);
+        if (matrix !== null) resolved.matrix = matrix;
     }
     return substitutePlaceholders(body.text.template, resolved);
 }
@@ -571,6 +611,65 @@ export function renderIrSample(template: MathIrTemplate): MathIrSample {
     };
 }
 
+function renderTexRelation(
+    given: MathIrGiven,
+    values: ParameterValues,
+): string | null {
+    const relation = given.relation;
+    if (!relation) return null;
+    const operator = TEX_RELATION_OPERATORS[relation.kind ?? "eq"];
+    if (!operator) return null;
+    const lhs = renderIrTex(relation.lhs, values);
+    const rhs = renderIrTex(relation.rhs, values);
+    return lhs === null || rhs === null ? null : `${lhs} ${operator} ${rhs}`;
+}
+
+function renderTexRelations(
+    body: IrBody,
+    values: ParameterValues,
+): string[] | null {
+    const relations: string[] = [];
+    const givens = (body.givens ?? []).filter(
+        (given) => given.kind !== "domain" && given.kind !== "dataset",
+    );
+    for (const given of givens) {
+        const relation = renderTexRelation(given, values);
+        if (relation === null) return null;
+        relations.push(relation);
+    }
+    return relations;
+}
+
+/**
+ * Render the sample equation as LaTeX. Returns `null` when the equation is
+ * prose or any part of it cannot be rendered safely.
+ */
+export function renderIrSampleEquationTex(
+    template: MathIrTemplate,
+): string | null {
+    const values = firstParameterValues(template);
+    const relations = renderTexRelations(template.body, values);
+    if (relations === null) return null;
+    if (relations.length > 0) return relations.join(" \\text{ and } ");
+
+    const goal = template.body.goal;
+    if (goal.kind === "evaluate") return null;
+    if (goal.expr) {
+        const expression = renderIrTex(goal.expr, values);
+        if (expression === null) return null;
+        if (
+            (goal.kind === "derivative" || goal.kind === "integral") &&
+            goal.symbol &&
+            SAFE_SYMBOL.test(goal.symbol)
+        ) {
+            return `f(${goal.symbol}) = ${expression}`;
+        }
+        return expression;
+    }
+    if (goal.matrix) return renderIrMatrix(goal.matrix, values, renderIrTex);
+    return null;
+}
+
 interface IrNotation {
     render: IrExpressionRenderer;
     setOpen: string;
@@ -589,6 +688,20 @@ const TEX_NOTATION: IrNotation = {
     setClose: "\\right\\}",
 };
 
+function renderNotationItems(
+    items: MathIrExpression[],
+    values: ParameterValues,
+    notation: IrNotation,
+): string[] | null {
+    const pieces: string[] = [];
+    for (const item of items) {
+        const piece = notation.render(item, values);
+        if (piece === null) return null;
+        pieces.push(piece);
+    }
+    return pieces;
+}
+
 function renderDistractor(
     distractor: MathIrDistractor,
     values: ParameterValues,
@@ -596,14 +709,18 @@ function renderDistractor(
 ): string | null {
     if (distractor.value) return notation.render(distractor.value, values);
     if (distractor.components && distractor.components.length > 0) {
-        return `(${distractor.components
-            .map((component) => notation.render(component, values))
-            .join(", ")})`;
+        const components = renderNotationItems(
+            distractor.components,
+            values,
+            notation,
+        );
+        return components === null ? null : `(${components.join(", ")})`;
     }
     if (distractor.items && distractor.items.length > 0) {
-        return `${notation.setOpen}${distractor.items
-            .map((item) => notation.render(item, values))
-            .join(", ")}${notation.setClose}`;
+        const items = renderNotationItems(distractor.items, values, notation);
+        return items === null
+            ? null
+            : `${notation.setOpen}${items.join(", ")}${notation.setClose}`;
     }
     return null;
 }
@@ -631,18 +748,21 @@ function renderAnswerRecipe(
 ): string | null {
     if (!recipe) return null;
     const items = recipe.items ?? [];
-    const renderItems = () =>
-        items.map((item) => notation.render(item, values));
+    const renderItems = () => renderNotationItems(items, values, notation);
     switch (recipe.kind) {
         case "numeric":
         case "expression":
             return items[0] ? notation.render(items[0], values) : null;
-        case "set":
-            return items.length > 0
-                ? `${notation.setOpen}${renderItems().join(", ")}${notation.setClose}`
-                : null;
-        case "tuple":
-            return items.length > 0 ? `(${renderItems().join(", ")})` : null;
+        case "set": {
+            const rendered = items.length > 0 ? renderItems() : null;
+            return rendered === null
+                ? null
+                : `${notation.setOpen}${rendered.join(", ")}${notation.setClose}`;
+        }
+        case "tuple": {
+            const rendered = items.length > 0 ? renderItems() : null;
+            return rendered === null ? null : `(${rendered.join(", ")})`;
+        }
         case "matrix":
             return recipe.matrix
                 ? renderIrMatrix(recipe.matrix, values, notation.render)
@@ -656,6 +776,7 @@ function renderAnswerRecipe(
             const upper = interval.upper
                 ? notation.render(interval.upper, values)
                 : "∞";
+            if (lower === null || upper === null) return null;
             const left = interval.lower_open === false ? "[" : "(";
             const right = interval.upper_open === false ? "]" : ")";
             return `${left}${lower}, ${upper}${right}`;

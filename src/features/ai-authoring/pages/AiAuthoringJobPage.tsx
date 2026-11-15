@@ -25,24 +25,29 @@ import type { AuthoringJob, AuthoringReview } from "../types";
 
 const NO_DRAFT_FAILURE_MESSAGE =
     "The model did not write a question for this request. It may be outside what EdCraft supports. Try rephrasing it or choose another model.";
+const DRAFT_CHECKS_SUFFIX =
+    "The last draft and the checks it failed are shown below.";
 const DRAFT_FAILURE_MESSAGE =
-    "The model's revision could not be read. The last draft and the checks it failed are shown below.";
-const SPECIFIC_FAILURE =
-    /timeout|timed out|time out|busy|rate.?limit|server restarted/i;
+    `The model's revision could not be read. ${DRAFT_CHECKS_SUFFIX}`;
+const GENERIC_FAILURE_CODE = "AUTHORING_FAILED";
 
-/** Timeouts and busy servers already have useful backend wording. */
-function specificFailureMessage(
+/**
+ * Prefer the error that names the actual failure over the generic job error.
+ * The draft case reads the generation error kept with the review.
+ */
+function failureError(
     job: AuthoringJob,
     review: AuthoringReview | null,
-): string | null {
-    const errors = [job.error, job.result?.error, review?.error];
-    for (const error of errors) {
-        if (!error) continue;
-        if (SPECIFIC_FAILURE.test(`${error.code} ${error.message}`)) {
-            return error.message;
-        }
-    }
-    return null;
+): { code: string; message: string } | null {
+    const errors = [job.error, job.result?.error, review?.error].filter(
+        (error): error is { code: string; message: string } =>
+            error !== null && error !== undefined,
+    );
+    return (
+        errors.find((error) => error.code !== GENERIC_FAILURE_CODE) ??
+        errors[0] ??
+        null
+    );
 }
 
 function failureMessageFor(
@@ -50,16 +55,21 @@ function failureMessageFor(
     review: AuthoringReview | null,
     hasDraft: boolean,
 ): string {
-    const specific = specificFailureMessage(job, review);
-    if (specific) return specific;
-    if (!review) {
-        return (
-            job.error?.message ??
-            job.result?.error?.message ??
-            "The question could not be created."
-        );
+    const error = failureError(job, review);
+    if (hasDraft) {
+        if (error?.code === "GENERATION_ERROR") return DRAFT_FAILURE_MESSAGE;
+        return error
+            ? `${error.message} ${DRAFT_CHECKS_SUFFIX}`
+            : DRAFT_FAILURE_MESSAGE;
     }
-    return hasDraft ? DRAFT_FAILURE_MESSAGE : NO_DRAFT_FAILURE_MESSAGE;
+    if (
+        error &&
+        error.code !== "GENERATION_ERROR" &&
+        error.code !== GENERIC_FAILURE_CODE
+    ) {
+        return error.message;
+    }
+    return NO_DRAFT_FAILURE_MESSAGE;
 }
 
 export default function AiAuthoringJobPage() {
