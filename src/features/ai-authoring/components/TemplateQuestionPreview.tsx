@@ -10,9 +10,12 @@ import { EvidenceDetails } from "./EvidenceDetails";
 import {
     firstParameterValues,
     renderIrAnswerRecipe,
+    renderIrAnswerRecipeTex,
     renderIrDistractor,
+    renderIrDistractorTex,
     renderIrSample,
 } from "./mathIrRender";
+import { MathTex } from "./MathTex";
 import { isIrMathTemplateCandidate, isRecord } from "./questionPayload";
 import { QuestionInputs } from "./QuestionInputs";
 import { ReadOnlyCode } from "./ReadOnlyCode";
@@ -86,6 +89,7 @@ function IrMathTemplateView({
     const values = firstParameterValues(template);
     const sample = renderIrSample(template);
     const answer = renderIrAnswerRecipe(template.body.answer_recipe, values);
+    const answerTex = renderIrAnswerRecipeTex(template.body.answer_recipe, values);
     const parameters = Object.fromEntries(
         template.parameters.map((parameter) => [parameter.name, parameter.values]),
     );
@@ -127,7 +131,9 @@ function IrMathTemplateView({
                     Correct answer (authored recipe)
                 </h4>
                 {answer !== null ? (
-                    <p className="break-words font-mono text-sm">{answer}</p>
+                    <p className="break-words font-mono text-sm">
+                        <MathTex latex={answerTex ?? answer} />
+                    </p>
                 ) : (
                     <p className="text-sm text-muted-foreground">
                         No answer recipe declared.
@@ -140,6 +146,7 @@ function IrMathTemplateView({
                 <ul className="space-y-2">
                     {template.body.distractors.map((distractor, index) => {
                         const rendered = renderIrDistractor(distractor, values);
+                        const renderedTex = renderIrDistractorTex(distractor, values);
                         return (
                             <li
                                 key={index}
@@ -147,7 +154,7 @@ function IrMathTemplateView({
                             >
                                 {rendered !== null && (
                                     <p className="break-words font-mono text-sm">
-                                        {rendered}
+                                        <MathTex latex={renderedTex ?? rendered} />
                                     </p>
                                 )}
                                 <p className="mt-1 text-xs text-muted-foreground">

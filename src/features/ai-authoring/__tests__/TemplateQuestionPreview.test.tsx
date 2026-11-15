@@ -63,10 +63,12 @@ describe("TemplateQuestionPreview", () => {
         expect(
             screen.getByText("Correct answer (authored recipe)"),
         ).toBeInTheDocument();
-        expect(screen.getByText("{2, -7}")).toBeInTheDocument();
+        const answerSection = screen.getByLabelText("Correct answer");
+        expect(answerSection.querySelector(".katex")).not.toBeNull();
+        expect(answerSection.querySelector("math")).not.toBeNull();
         expect(screen.getByText("Wrong choices")).toBeInTheDocument();
-        expect(screen.getByText("-2")).toBeInTheDocument();
-        expect(screen.getByText("-5")).toBeInTheDocument();
+        const distractorSection = screen.getByLabelText("Distractors");
+        expect(distractorSection.querySelectorAll(".katex")).toHaveLength(2);
         expect(
             screen.getByText("Reports the sum of the roots as a root"),
         ).toBeInTheDocument();

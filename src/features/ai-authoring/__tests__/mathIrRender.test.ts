@@ -3,9 +3,12 @@ import type { MathIrExpression } from "../types";
 import {
     firstParameterValues,
     renderIrAnswerRecipe,
+    renderIrAnswerRecipeTex,
     renderIrDistractor,
+    renderIrDistractorTex,
     renderIrExpression,
     renderIrSample,
+    renderIrTex,
     renderIrText,
 } from "../components/mathIrRender";
 import { mathIrTemplateCandidate } from "./fixtures";
@@ -156,6 +159,73 @@ describe("math IR rendering", () => {
     it("renders a tuple distractor componentwise", () => {
         expect(
             renderIrDistractor(
+                {
+                    components: [{ param: "p" }, { param: "q" }],
+                    misconception: "SWAPPED",
+                },
+                values,
+            ),
+        ).toBe("(2, -7)");
+    });
+});
+
+describe("LaTeX IR rendering", () => {
+    it("renders fractions with \\frac", () => {
+        expect(
+            renderIrTex({ op: "div", args: [{ sym: "x" }, { num: "2" }] }),
+        ).toBe("\\frac{x}{2}");
+    });
+
+    it("renders powers with a braced exponent", () => {
+        expect(
+            renderIrTex({ op: "pow", args: [{ sym: "x" }, { num: "2" }] }),
+        ).toBe("x^{2}");
+    });
+
+    it("renders roots with \\sqrt", () => {
+        expect(renderIrTex({ op: "sqrt", args: [{ sym: "x" }] })).toBe(
+            "\\sqrt{x}",
+        );
+    });
+
+    it("uses \\cdot only between numbers", () => {
+        expect(
+            renderIrTex(
+                { op: "mul", args: [{ num: "2" }, { num: "3" }] },
+                {},
+                0,
+                false,
+            ),
+        ).toBe("2 \\cdot 3");
+        expect(
+            renderIrTex({ op: "mul", args: [{ num: "2" }, { sym: "x" }] }),
+        ).toBe("2x");
+        expect(
+            renderIrTex({ op: "mul", args: [{ sym: "x" }, { sym: "y" }] }),
+        ).toBe("xy");
+    });
+
+    it("uses LaTeX function names", () => {
+        expect(renderIrTex({ op: "sin", args: [{ sym: "x" }] })).toBe(
+            "\\sin\\left(x\\right)",
+        );
+        expect(renderIrTex({ op: "log", args: [{ sym: "x" }] })).toBe(
+            "\\log\\left(x\\right)",
+        );
+    });
+
+    it("renders recipes and distractors as LaTeX", () => {
+        expect(
+            renderIrAnswerRecipeTex(
+                {
+                    kind: "set",
+                    items: [{ param: "p" }, { param: "q" }],
+                },
+                values,
+            ),
+        ).toBe("\\left\\{2, -7\\right\\}");
+        expect(
+            renderIrDistractorTex(
                 {
                     components: [{ param: "p" }, { param: "q" }],
                     misconception: "SWAPPED",

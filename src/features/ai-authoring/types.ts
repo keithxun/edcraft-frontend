@@ -163,9 +163,16 @@ export type AuthoringReview = Omit<
     template?: ReviewTemplate | null;
 };
 
+/** One piece of a maths prompt; `math` values are LaTeX, `text` is plain. */
+export type MathQuestionSegment = {
+    kind: "text" | "math";
+    value: string;
+};
+
 /**
  * A flattened math question from the mathematics domain. The backend sends
- * this as a flat object rather than the code question envelope.
+ * this as a flat object rather than the code question envelope. The LaTeX
+ * fields are optional so older payloads keep rendering as plain text.
  */
 export type MathQuestionInstance = {
     template_id: string;
@@ -179,6 +186,10 @@ export type MathQuestionInstance = {
     answer: string;
     topic?: string | null;
     requires_manual_review?: true;
+    equation_latex?: string;
+    choices_latex?: string[];
+    answer_latex?: string;
+    question_segments?: MathQuestionSegment[];
 };
 
 /** One node of the generic IR expression tree. */
