@@ -274,39 +274,73 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
                         <div className="space-y-5">
-                            {domains.length > 1 && (
+                            <div className="flex flex-wrap items-start gap-4">
+                                {domains.length > 1 && (
+                                    <FormField
+                                        control={form.control}
+                                        name="domain"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Domain</FormLabel>
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                    disabled={createJob.isPending}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger className="w-full sm:w-64">
+                                                            <SelectValue placeholder="Choose a domain" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {domains.map((domain) => (
+                                                            <SelectItem
+                                                                key={domain}
+                                                                value={domain}
+                                                            >
+                                                                {domainLabel(domain)}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                                 <FormField
                                     control={form.control}
-                                    name="domain"
+                                    name="distractors"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Domain</FormLabel>
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={field.onChange}
-                                                disabled={createJob.isPending}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="w-full sm:w-64">
-                                                        <SelectValue placeholder="Choose a domain" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {domains.map((domain) => (
-                                                        <SelectItem
-                                                            key={domain}
-                                                            value={domain}
-                                                        >
-                                                            {domainLabel(domain)}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                        <FormItem className="max-w-56">
+                                            <FormLabel htmlFor="distractors">
+                                                Wrong choices (distractors)
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    id="distractors"
+                                                    type="number"
+                                                    min={minDistractors}
+                                                    max={maxDistractors}
+                                                    step={1}
+                                                    {...field}
+                                                    onChange={(event) =>
+                                                        field.onChange(
+                                                            Number(event.target.value),
+                                                        )
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                {minDistractors}–{maxDistractors} wrong
+                                                choices. The correct answer is added
+                                                automatically.
+                                            </FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
-                            )}
+                            </div>
 
                             <FormField
                                 control={form.control}
@@ -360,39 +394,6 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                                 ))}
                                             </RadioGroup>
                                         </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="distractors"
-                                render={({ field }) => (
-                                    <FormItem className="max-w-56">
-                                        <FormLabel htmlFor="distractors">
-                                            Wrong choices (distractors)
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                id="distractors"
-                                                type="number"
-                                                min={minDistractors}
-                                                max={maxDistractors}
-                                                step={1}
-                                                {...field}
-                                                onChange={(event) =>
-                                                    field.onChange(
-                                                        Number(event.target.value),
-                                                    )
-                                                }
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            {minDistractors}–{maxDistractors} wrong
-                                            choices. The correct answer is added
-                                            automatically.
-                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
