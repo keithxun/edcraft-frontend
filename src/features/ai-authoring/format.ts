@@ -36,17 +36,6 @@ export function capitalize(value: string): string {
     return value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-const DOMAIN_LABELS: Record<string, string> = {
-    code: "Code",
-    math: "Mathematics",
-};
-
-/** Readable label for an authoring domain; unknown domains keep their identifier. */
-export function domainLabel(domain: string | null | undefined): string {
-    if (!domain) return "Unknown domain";
-    return DOMAIN_LABELS[domain] ?? capitalize(domain);
-}
-
 /** Prefer the connection model, falling back to a legacy server profile. */
 export function modelLabel(request: {
     model_profile?: string | null;

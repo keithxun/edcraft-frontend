@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/form";
 import { ROUTES } from "@/router/paths";
 import { getAuthoringErrorMessage } from "../errors";
-import { capitalize, domainLabel } from "../format";
+import { domainInfo, domainLabel } from "../domains";
+import { capitalize } from "../format";
 import { useCreateAuthoringJob } from "../hooks/useAiAuthoring";
 import {
     buildJudgeSelections,
@@ -113,35 +114,6 @@ function createAuthoringSchema(
 type AuthoringFormValues = z.infer<ReturnType<typeof createAuthoringSchema>>;
 
 const DIFFICULTY_ORDER: AuthoringDifficulty[] = ["easy", "medium", "hard"];
-
-interface DomainCopy {
-    badge: string;
-    promptPlaceholder: string;
-}
-
-// Domain-specific wording stays data-driven so the form itself has no
-// per-domain branches. Unknown domains use the neutral copy below.
-const DOMAIN_COPY: Record<string, DomainCopy> = {
-    code: {
-        badge: "Python · multiple choice",
-        promptPlaceholder:
-            "Describe the programming concept and what students should reason about.",
-    },
-    math: {
-        badge: "Linear equations · multiple choice",
-        promptPlaceholder:
-            "Describe the equation skill, for example one-step equations of the form ax + b = c with small integer coefficients.",
-    },
-};
-
-const GENERIC_DOMAIN_COPY: DomainCopy = {
-    badge: "Multiple choice",
-    promptPlaceholder: "Describe the question and what students should reason about.",
-};
-
-function domainCopy(domain: string): DomainCopy {
-    return DOMAIN_COPY[domain] ?? GENERIC_DOMAIN_COPY;
-}
 
 interface AuthorFormProps {
     capabilities: AuthoringCapabilities;
@@ -236,7 +208,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     const modelSource = form.watch("model_source");
     const model = form.watch("model");
     const selectedDomain = form.watch("domain");
-    const copy = domainCopy(selectedDomain || defaultDomain);
+    const domain = selectedDomain || defaultDomain;
     const difficultySource = form.watch("difficulty_source");
     const difficultyModel = form.watch("difficulty_model");
     const relevanceSource = form.watch("relevance_source");
@@ -333,7 +305,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
             <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle>New question</CardTitle>
-                    <Badge variant="outline">{copy.badge}</Badge>
+                    <Badge variant="outline">{domainInfo(domain).badge}</Badge>
                 </div>
             </CardHeader>
             <CardContent>
@@ -421,7 +393,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                                 rows={6}
                                                 maxLength={4000}
                                                 className="min-h-40 resize-y"
-                                                placeholder={copy.promptPlaceholder}
+                                                placeholder={domainInfo(domain).promptPlaceholder}
                                             />
                                         </FormControl>
                                         <FormMessage />

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { AuthoringQuestionPayload } from "../types";
+import { showsDomainView } from "../domains";
 import { CodeQuestionView } from "./CodeQuestionView";
 import { EvidenceDetails } from "./EvidenceDetails";
 import { GenericQuestionView } from "./GenericQuestionView";
@@ -40,10 +41,10 @@ export function PreviewQuestion({
     const mathInstance = isMathQuestionPayload(instance) ? instance : null;
     // No domain means a legacy code payload; only show the code view when the
     // payload actually has the code envelope.
-    const showCode = codeInstance !== null && (domain === undefined || domain === "code");
+    const showCode = codeInstance !== null && showsDomainView(domain, "code");
     // A math payload is recognised by its flat envelope even when the domain is
     // absent; an explicit other domain keeps the generic fallback.
-    const showMath = mathInstance !== null && (domain === undefined || domain === "math");
+    const showMath = mathInstance !== null && showsDomainView(domain, "math");
 
     return (
         <article className={review ? "space-y-4" : "space-y-4 rounded-lg border p-4"}>

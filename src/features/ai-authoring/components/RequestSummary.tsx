@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { capitalize, domainLabel, modelLabel } from "../format";
+import { domainLabel } from "../domains";
+import { capitalize, modelLabel } from "../format";
 import type { AuthoringReview } from "../types";
 
 /** The prompt and settings the reviewer used, shown alongside the result. */

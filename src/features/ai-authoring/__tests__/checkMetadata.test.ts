@@ -28,6 +28,23 @@ describe("math check labels", () => {
             } as Parameters<typeof checkDescription>[0]),
         ).toBeNull();
     });
+
+    it("labels the answer form and distractor count checks", () => {
+        expect(friendlyCheckLabel("math_verify_answer_form")).toBe("Answer form");
+        expect(friendlyCheckLabel("application_distractor_count")).toBe(
+            "Number of wrong choices",
+        );
+        expect(
+            checkDescription({
+                tool: "math_verify_answer_form",
+            } as Parameters<typeof checkDescription>[0]),
+        ).toContain("form the goal asks for");
+        expect(
+            checkDescription({
+                tool: "application_distractor_count",
+            } as Parameters<typeof checkDescription>[0]),
+        ).toContain("at least the requested number of wrong choices");
+    });
 });
 
 describe("findingText", () => {

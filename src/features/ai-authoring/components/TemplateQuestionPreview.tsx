@@ -6,6 +6,7 @@ import type {
     LegacyMathTemplateCandidate,
     ReviewTemplate,
 } from "../types";
+import { showsDomainView } from "../domains";
 import { EvidenceDetails } from "./EvidenceDetails";
 import {
     firstParameterValues,
@@ -256,9 +257,9 @@ export function TemplateQuestionPreview({
     // Only the code view assumes the code candidate shape. Unknown domains
     // always take the field-based fallback.
     const showMath =
-        (domain === undefined || domain === "math") && isMathTemplateCandidate(candidate);
+        showsDomainView(domain, "math") && isMathTemplateCandidate(candidate);
     const showCode =
-        (domain === undefined || domain === "code") && isCodeCandidate(candidate);
+        showsDomainView(domain, "code") && isCodeCandidate(candidate);
 
     if (showMath) {
         if (isIrMathTemplateCandidate(candidate)) {
