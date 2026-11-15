@@ -12,6 +12,7 @@ export type AuthoringProgressPhase = typeof AuthoringProgressPhase[keyof typeof 
 export const AuthoringProgressPhase = {
   generating: 'generating',
   checking: 'checking',
+  assessing: 'assessing',
   correcting: 'correcting',
   finalizing: 'finalizing',
 } as const;
