@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
@@ -19,6 +19,7 @@ import {
     completedJob,
     failedJob,
     failedReview,
+    failedWithDraftReview,
     needsReviewJob,
     needsReviewReview,
     preview,
@@ -152,6 +153,73 @@ describe("AiAuthoringJobPage", () => {
             await screen.findByText(`Create page prefill: ${failedReview.request.prompt}`),
         ).toBeInTheDocument();
         expect(createAuthoringJob).not.toHaveBeenCalled();
+    });
+
+    it("explains a failed job that produced no draft", async () => {
+        vi.mocked(getAuthoringJob).mockResolvedValue(failedJob);
+        vi.mocked(getAuthoringReview).mockResolvedValue(failedReview);
+        renderJobPage();
+
+        expect(
+            await screen.findByText(
+                "The model did not write a question for this request. It may be outside what EdCraft supports. Try rephrasing it or choose another model.",
+            ),
+        ).toBeInTheDocument();
+        expect(screen.queryByText("Draft · checks failed")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Template code")).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(
+                "The model's revision could not be read. The last draft and the checks it failed are shown below.",
+            ),
+        ).not.toBeInTheDocument();
+    });
+
+    it("shows the latest draft and each failed check when a failed job has one", async () => {
+        vi.mocked(getAuthoringJob).mockResolvedValue(failedJob);
+        vi.mocked(getAuthoringReview).mockResolvedValue(failedWithDraftReview);
+        renderJobPage();
+
+        expect(
+            await screen.findByText(
+                "The model's revision could not be read. The last draft and the checks it failed are shown below.",
+            ),
+        ).toBeInTheDocument();
+        expect(screen.getByText("Draft · checks failed")).toBeInTheDocument();
+        const templateCode = screen.getByLabelText("Template code");
+        expect(templateCode).toHaveTextContent("def latest_draft(values):");
+        expect(templateCode).not.toHaveTextContent("older_draft");
+
+        const checksHeading = screen.getByRole("heading", { name: "Checks" });
+        const checksPanel = checksHeading.closest("details");
+        expect(checksPanel).not.toBeNull();
+        const checks = within(checksPanel as HTMLElement);
+        expect(checks.getByText("Answers and wrong choices")).toBeInTheDocument();
+        expect(
+            checks.getByText("A sampled example failed to execute."),
+        ).toBeInTheDocument();
+        expect(checks.getByText("Question template")).toBeInTheDocument();
+        expect(
+            checks.getByText("The question template has no placeholder."),
+        ).toBeInTheDocument();
+
+        expect(screen.getByText("Authoring attempts (2)")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Retry request" })).toBeInTheDocument();
+    });
+
+    it("keeps a specific timeout message for a failed job", async () => {
+        vi.mocked(getAuthoringJob).mockResolvedValue({
+            ...failedJob,
+            error: {
+                code: "AUTHORING_TIMEOUT",
+                message: "Authoring timed out before the job produced a result.",
+            },
+        });
+        vi.mocked(getAuthoringReview).mockResolvedValue(failedReview);
+        renderJobPage();
+
+        expect(
+            await screen.findByText("Authoring timed out before the job produced a result."),
+        ).toBeInTheDocument();
     });
 
     it("offers retry when a completed job still needs review", async () => {

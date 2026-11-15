@@ -8,6 +8,7 @@ import type {
     AuthoringQuestionPayload,
     AuthoringReview,
     CodeQuestionInstance,
+    CodeTemplateCandidate,
     IrMathTemplateCandidate,
     MathQuestionInstance,
 } from "../types";
@@ -406,6 +407,63 @@ export const needsReviewReview: AuthoringReview = {
     error: {
         code: "TEMPLATE_CHECKS_FAILED",
         message: "The generated template failed technical checks.",
+    },
+};
+
+/**
+ * A failed job whose latest attempt kept a draft. The review carries no
+ * candidate at the top level, so the page has to read the attempts.
+ */
+export const failedWithDraftReview: AuthoringReview = {
+    ...failedReview,
+    state: "failed",
+    attempts: [
+        {
+            number: 1,
+            candidate: {
+                ...(needsReviewReview.candidate as CodeTemplateCandidate),
+                code: "def older_draft(values):\n    return len(values)",
+                question_template: "What does older_draft({values}) return?",
+            },
+            pending: [],
+            complete: true,
+            passed: false,
+            checks: [failedTechnicalCheck, failedAdvisoryCheck],
+        },
+        {
+            number: 2,
+            candidate: {
+                ...(needsReviewReview.candidate as CodeTemplateCandidate),
+                code: "def latest_draft(values):\n    return max(values)",
+                question_template: "What does latest_draft({values}) return?",
+            },
+            pending: [],
+            complete: true,
+            passed: false,
+            checks: [
+                failedTechnicalCheck,
+                {
+                    tool: "code_verify_template_structure",
+                    status: "failed",
+                    advisory: false,
+                    findings: [
+                        {
+                            code: "PLACEHOLDER_MISSING",
+                            message: "The question template has no placeholder.",
+                            field: "question_template",
+                        },
+                    ],
+                    error: null,
+                },
+                failedAdvisoryCheck,
+            ],
+        },
+    ],
+    checks: [],
+    candidate: null,
+    error: {
+        code: "GENERATION_ERROR",
+        message: "The model could not produce a valid response. Try again or select another model.",
     },
 };
 

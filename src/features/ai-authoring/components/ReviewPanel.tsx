@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/router/paths";
 import { filterMismatchWarnings } from "../warnings";
+import { draftTemplateFor, getReviewDraft } from "../draft";
 import { getApprovalBlockers, isApproved } from "../getApprovalBlockers";
 import type {
     AuthoringDifficultyOutcome,
     AuthoringRelevanceOutcome,
     AuthoringResult,
     AuthoringReview,
-    ReviewTemplate,
 } from "../types";
 import { ApprovalControls } from "./ApprovalControls";
 import { RequestSummary } from "./RequestSummary";
@@ -141,26 +141,16 @@ function relevanceAdvisory(
     };
 }
 
-function candidateTemplateId(candidate: AuthoringReview["candidate"]): string {
-    const templateId = candidate?.template_id;
-    return typeof templateId === "string" ? templateId : "draft";
-}
-
 export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPanelProps) {
     const canApprove = getApprovalBlockers(review).length === 0;
     const difficulty = review.difficulty ?? result?.difficulty;
     const relevance = review.relevance ?? result?.relevance;
     const difficultyFeedback = difficultyAdvisory(difficulty);
     const relevanceFeedback = relevanceAdvisory(relevance);
-    const draftTemplate: ReviewTemplate | null =
-        review.template ??
-        (review.candidate
-            ? {
-                  template_id: candidateTemplateId(review.candidate),
-                  candidate: review.candidate,
-              }
-            : null);
-    const showingDraft = !review.template && Boolean(review.candidate);
+    const draft = getReviewDraft(review);
+    const draftTemplate = review.template ?? (draft ? draftTemplateFor(draft.candidate) : null);
+    const showingDraft = !review.template && Boolean(draft);
+    const checks = review.template ? (review.checks ?? []) : (draft?.checks ?? review.checks ?? []);
     const advisories: ChecksAdvisory[] = [difficultyFeedback, relevanceFeedback];
     const approved = isApproved(review);
 
@@ -173,7 +163,7 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
                     <ReviewQuestionPreview
                         jobId={jobId}
                         domain={review.request.domain}
-                        artifactSha256={review.artifact_sha256}
+                        artifactSha256={showingDraft ? null : review.artifact_sha256}
                         draftTemplate={draftTemplate}
                         showingDraft={showingDraft}
                         onStaleArtifact={onStaleArtifact}
@@ -181,51 +171,49 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
                 </div>
 
                 <aside className="space-y-4 xl:col-span-4">
-                    <ChecksPanel
-                        checks={review.checks ?? []}
-                        advisories={advisories}
-                        collapsible
-                    />
+                    <ChecksPanel checks={checks} advisories={advisories} collapsible />
 
-                    <div className="space-y-4 xl:sticky xl:top-6">
-                        <Card>
-                            <CardContent>
-                                <ApprovalControls
-                                    jobId={jobId}
-                                    review={review}
-                                    canApprove={canApprove}
-                                    onStaleArtifact={onStaleArtifact}
+                    {review.state !== "failed" && (
+                        <div className="space-y-4 xl:sticky xl:top-6">
+                            <Card>
+                                <CardContent>
+                                    <ApprovalControls
+                                        jobId={jobId}
+                                        review={review}
+                                        canApprove={canApprove}
+                                        onStaleArtifact={onStaleArtifact}
+                                    />
+
+                                    {review.error && (
+                                        <Alert variant="destructive" className="mt-4">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <AlertTitle>Review problem</AlertTitle>
+                                            <AlertDescription>
+                                                Create a new question if this persists.
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {review.approval?.decision === "rejected" && (
+                                <RetryRequestLink
+                                    request={review.request}
+                                    title="Start a new question"
+                                    description="Your request and settings will be filled in on the create page."
+                                    actionLabel="Create a new question"
                                 />
+                            )}
 
-                                {review.error && (
-                                    <Alert variant="destructive" className="mt-4">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertTitle>Review problem</AlertTitle>
-                                        <AlertDescription>
-                                            Create a new question if this persists.
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {review.approval?.decision === "rejected" && (
-                            <RetryRequestLink
-                                request={review.request}
-                                title="Start a new question"
-                                description="Your request and settings will be filled in on the create page."
-                                actionLabel="Create a new question"
-                            />
-                        )}
-
-                        {approved && (
-                            <Button asChild className="w-full">
-                                <Link to={ROUTES.AI_AUTHORING_GENERATE(jobId)}>
-                                    Create question set
-                                </Link>
-                            </Button>
-                        )}
-                    </div>
+                            {approved && (
+                                <Button asChild className="w-full">
+                                    <Link to={ROUTES.AI_AUTHORING_GENERATE(jobId)}>
+                                        Create question set
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </aside>
             </div>
 

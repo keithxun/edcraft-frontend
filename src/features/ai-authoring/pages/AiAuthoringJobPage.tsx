@@ -17,9 +17,50 @@ import { ProgressPanel } from "../components/ProgressPanel";
 import { RetryRequestLink } from "../components/RetryRequestLink";
 import { ReviewPanel } from "../components/ReviewPanel";
 import { TechnicalDetails } from "../components/TechnicalDetails";
+import { getReviewDraft } from "../draft";
 import { getReviewHeaderStatus } from "../status";
 import { useAuthoringJob, useAuthoringReview } from "../hooks/useAiAuthoring";
 import { useStaleArtifact } from "../hooks/useStaleArtifact";
+import type { AuthoringJob, AuthoringReview } from "../types";
+
+const NO_DRAFT_FAILURE_MESSAGE =
+    "The model did not write a question for this request. It may be outside what EdCraft supports. Try rephrasing it or choose another model.";
+const DRAFT_FAILURE_MESSAGE =
+    "The model's revision could not be read. The last draft and the checks it failed are shown below.";
+const SPECIFIC_FAILURE =
+    /timeout|timed out|time out|busy|rate.?limit|server restarted/i;
+
+/** Timeouts and busy servers already have useful backend wording. */
+function specificFailureMessage(
+    job: AuthoringJob,
+    review: AuthoringReview | null,
+): string | null {
+    const errors = [job.error, job.result?.error, review?.error];
+    for (const error of errors) {
+        if (!error) continue;
+        if (SPECIFIC_FAILURE.test(`${error.code} ${error.message}`)) {
+            return error.message;
+        }
+    }
+    return null;
+}
+
+function failureMessageFor(
+    job: AuthoringJob,
+    review: AuthoringReview | null,
+    hasDraft: boolean,
+): string {
+    const specific = specificFailureMessage(job, review);
+    if (specific) return specific;
+    if (!review) {
+        return (
+            job.error?.message ??
+            job.result?.error?.message ??
+            "The question could not be created."
+        );
+    }
+    return hasDraft ? DRAFT_FAILURE_MESSAGE : NO_DRAFT_FAILURE_MESSAGE;
+}
 
 export default function AiAuthoringJobPage() {
     const { jobId } = useParams<{ jobId: string }>();
@@ -52,6 +93,9 @@ export default function AiAuthoringJobPage() {
         job.result?.status === "needs_review" &&
         !review?.artifact_sha256;
     const recoverable = job?.state === "failed" || needsReview;
+    const draft = getReviewDraft(review);
+    const hasDraft = Boolean(draft);
+    const failureMessage = job ? failureMessageFor(job, review ?? null, hasDraft) : null;
     const headerStatus =
         job && review ? getReviewHeaderStatus(review, job.result ?? null) : null;
 
@@ -100,20 +144,21 @@ export default function AiAuthoringJobPage() {
                                 <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Question creation failed</AlertTitle>
-                                    <AlertDescription>
-                                        {job.error?.message ??
-                                            job.result?.error?.message ??
-                                            review?.error?.message ??
-                                            "The question could not be created."}
-                                    </AlertDescription>
+                                    <AlertDescription>{failureMessage}</AlertDescription>
                                 </Alert>
                             )}
 
                             {review?.request && <RetryRequestLink request={review.request} />}
 
-                            {job.state === "failed" && review && !reviewQuery.isError && (
-                                <TechnicalDetails review={review} result={job.result ?? null} />
-                            )}
+                            {job.state === "failed" &&
+                                review &&
+                                !hasDraft &&
+                                !reviewQuery.isError && (
+                                    <TechnicalDetails
+                                        review={review}
+                                        result={job.result ?? null}
+                                    />
+                                )}
                         </>
                     )}
 
@@ -128,15 +173,19 @@ export default function AiAuthoringJobPage() {
                         />
                     )}
 
-                    {terminal && review && !reviewQuery.isError && job.state === "completed" && (
-                        <ReviewPanel
-                            key={`review-${jobId}-${reviewEpoch}`}
-                            jobId={jobId}
-                            review={review}
-                            result={job.result ?? null}
-                            onStaleArtifact={handleStaleArtifact}
-                        />
-                    )}
+                    {terminal &&
+                        review &&
+                        !reviewQuery.isError &&
+                        (job.state === "completed" ||
+                            (job.state === "failed" && hasDraft)) && (
+                            <ReviewPanel
+                                key={`review-${jobId}-${reviewEpoch}`}
+                                jobId={jobId}
+                                review={review}
+                                result={job.result ?? null}
+                                onStaleArtifact={handleStaleArtifact}
+                            />
+                        )}
                 </>
             )}
         </PageShell>
