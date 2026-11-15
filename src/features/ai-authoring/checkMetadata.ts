@@ -8,7 +8,7 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
     code_verify_template_structure: "Question template",
     math_verify_template_structure: "Question template",
     math_validate_answers_and_distractors: "Answers and wrong choices",
-    math_assess_template_difficulty: "Difficulty",
+    assess_template_difficulty: "Difficulty",
     math_verify_item_spec: "Math item",
     math_verify_answer_form: "Answer form",
     math_validate_options: "Answer choices",
@@ -26,7 +26,7 @@ const CHECK_DESCRIPTIONS: Record<string, string> = {
         "The equation and question template are structurally valid and render.",
     math_validate_answers_and_distractors:
         "The answer and every wrong choice evaluate correctly and are distinct.",
-    math_assess_template_difficulty: "The estimated difficulty matches the request.",
+    assess_template_difficulty: "The estimated difficulty matches the request.",
     math_verify_item_spec:
         "The typed math item compiles and the engine confirms the declared answer.",
     math_verify_answer_form:

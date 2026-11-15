@@ -9,7 +9,7 @@ describe("math check labels", () => {
         expect(friendlyCheckLabel("math_validate_answers_and_distractors")).toBe(
             "Answers and wrong choices",
         );
-        expect(friendlyCheckLabel("math_assess_template_difficulty")).toBe("Difficulty");
+        expect(friendlyCheckLabel("assess_template_difficulty")).toBe("Difficulty");
         expect(friendlyCheckLabel("assess_template_relevance")).toBe("Relevance");
         expect(friendlyCheckLabel("math_verify_item_spec")).toBe("Math item");
         expect(friendlyCheckLabel("math_validate_options")).toBe("Answer choices");
