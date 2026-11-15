@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { AlertCircle, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -36,82 +35,16 @@ import { useCreateAuthoringJob } from "../hooks/useAiAuthoring";
 import {
     buildJudgeSelections,
     buildModelRequest,
-    isInheritSource,
-    parseModelSource,
     resolveStoredJudgeSelection,
     resolveStoredModelSelection,
 } from "../modelSelection";
+import { createAuthoringSchema, type AuthoringFormValues } from "../authorFormSchema";
 import type {
     AuthoringCapabilities,
     AuthoringDifficulty,
     AuthoringRetryPrefill,
 } from "../types";
-import { ModelPicker } from "./ModelPicker";
-
-function createAuthoringSchema(
-    minDistractors: number,
-    maxDistractors: number,
-) {
-    return z
-        .object({
-            prompt: z
-                .string()
-                .trim()
-                .min(1, "Describe the question you want to create.")
-                .max(4000, "Keep the request to 4000 characters or fewer."),
-            domain: z.string().min(1, "Choose a question domain."),
-            difficulty: z.enum(["easy", "medium", "hard"]),
-            distractors: z
-                .number()
-                .int("Enter a whole number of wrong choices.")
-                .min(
-                    minDistractors,
-                    `Enter at least ${minDistractors} wrong ${minDistractors === 1 ? "choice" : "choices"}.`,
-                )
-                .max(
-                    maxDistractors,
-                    `Enter at most ${maxDistractors} wrong choices.`,
-                ),
-            model_source: z.string().min(1, "Choose a question-writing model."),
-            model: z.string(),
-            difficulty_source: z.string(),
-            difficulty_model: z.string(),
-            relevance_source: z.string(),
-            relevance_model: z.string(),
-        })
-        .superRefine((values, ctx) => {
-            const source = parseModelSource(values.model_source);
-            if (source?.kind === "connection" && !values.model.trim()) {
-                ctx.addIssue({
-                    code: "custom",
-                    path: ["model"],
-                    message: "Choose a model for this connection.",
-                });
-            }
-            for (const [sourceKey, modelKey] of [
-                ["difficulty_source", "difficulty_model"],
-                ["relevance_source", "relevance_model"],
-            ] as const) {
-                const selected = parseModelSource(values[sourceKey]);
-                if (selected?.kind === "connection" && !values[modelKey].trim()) {
-                    ctx.addIssue({
-                        code: "custom",
-                        path: [modelKey],
-                        message: "Choose a model for this connection.",
-                    });
-                }
-                if (!isInheritSource(values[sourceKey]) && !selected) {
-                    ctx.addIssue({
-                        code: "custom",
-                        path: [sourceKey],
-                        message: "Choose a check model or use this field's default.",
-                    });
-                }
-            }
-        });
-}
-
-type AuthoringFormValues = z.infer<ReturnType<typeof createAuthoringSchema>>;
+import { ModelPickerField } from "./ModelPickerField";
 
 const DIFFICULTY_ORDER: AuthoringDifficulty[] = ["easy", "medium", "hard"];
 
@@ -205,14 +138,8 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
             relevance_model: initialRelevanceSelection.model,
         },
     });
-    const modelSource = form.watch("model_source");
-    const model = form.watch("model");
     const selectedDomain = form.watch("domain");
     const domain = selectedDomain || defaultDomain;
-    const difficultySource = form.watch("difficulty_source");
-    const difficultyModel = form.watch("difficulty_model");
-    const relevanceSource = form.watch("relevance_source");
-    const relevanceModel = form.watch("relevance_model");
 
     useEffect(() => {
         if (submitError) summaryRef.current?.focus();
@@ -501,28 +428,13 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                 id="advanced-settings"
                                 className="mt-4 space-y-5 rounded-lg border bg-muted/20 p-4"
                             >
-                                <ModelPicker
+                                <ModelPickerField
+                                    form={form}
                                     connections={connections}
                                     profiles={profiles}
-                                    source={modelSource}
-                                    model={model}
-                                    onSourceChange={(source, nextModel) => {
-                                        form.setValue("model_source", source, {
-                                            shouldValidate: true,
-                                        });
-                                        form.setValue("model", nextModel, {
-                                            shouldValidate: true,
-                                        });
-                                        setAuthorMissing(false);
-                                    }}
-                                    onModelChange={(nextModel) => {
-                                        form.setValue("model", nextModel, {
-                                            shouldValidate: true,
-                                        });
-                                        setAuthorMissing(false);
-                                    }}
-                                    sourceError={form.formState.errors.model_source?.message}
-                                    modelError={form.formState.errors.model?.message}
+                                    sourceField="model_source"
+                                    modelField="model"
+                                    onMissingCleared={() => setAuthorMissing(false)}
                                     disabled={createJob.isPending}
                                 />
 
@@ -535,63 +447,25 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                             never block a technically checked artifact.
                                         </p>
                                     </div>
-                                    <ModelPicker
+                                    <ModelPickerField
+                                        form={form}
                                         connections={connections}
                                         profiles={profiles}
-                                        source={difficultySource}
-                                        model={difficultyModel}
-                                        onSourceChange={(source, nextModel) => {
-                                            form.setValue("difficulty_source", source, {
-                                                shouldValidate: true,
-                                            });
-                                            form.setValue("difficulty_model", nextModel, {
-                                                shouldValidate: true,
-                                            });
-                                            setDifficultyMissing(false);
-                                        }}
-                                        onModelChange={(nextModel) => {
-                                            form.setValue("difficulty_model", nextModel, {
-                                                shouldValidate: true,
-                                            });
-                                            setDifficultyMissing(false);
-                                        }}
-                                        sourceError={
-                                            form.formState.errors.difficulty_source?.message
-                                        }
-                                        modelError={
-                                            form.formState.errors.difficulty_model?.message
-                                        }
+                                        sourceField="difficulty_source"
+                                        modelField="difficulty_model"
+                                        onMissingCleared={() => setDifficultyMissing(false)}
                                         disabled={createJob.isPending}
                                         idPrefix="difficulty-check"
                                         label="Difficulty check"
                                         allowInherit
                                     />
-                                    <ModelPicker
+                                    <ModelPickerField
+                                        form={form}
                                         connections={connections}
                                         profiles={profiles}
-                                        source={relevanceSource}
-                                        model={relevanceModel}
-                                        onSourceChange={(source, nextModel) => {
-                                            form.setValue("relevance_source", source, {
-                                                shouldValidate: true,
-                                            });
-                                            form.setValue("relevance_model", nextModel, {
-                                                shouldValidate: true,
-                                            });
-                                            setRelevanceMissing(false);
-                                        }}
-                                        onModelChange={(nextModel) => {
-                                            form.setValue("relevance_model", nextModel, {
-                                                shouldValidate: true,
-                                            });
-                                            setRelevanceMissing(false);
-                                        }}
-                                        sourceError={
-                                            form.formState.errors.relevance_source?.message
-                                        }
-                                        modelError={
-                                            form.formState.errors.relevance_model?.message
-                                        }
+                                        sourceField="relevance_source"
+                                        modelField="relevance_model"
+                                        onMissingCleared={() => setRelevanceMissing(false)}
                                         disabled={createJob.isPending}
                                         idPrefix="relevance-check"
                                         label="Relevance check"
