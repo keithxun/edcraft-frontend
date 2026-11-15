@@ -129,7 +129,7 @@ export function GeneratePanel({
         seedRangeError(seed, quantity) === null;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 @container/generate">
             <Card>
                 <CardContent className="space-y-4">
                     {!approved && (
@@ -142,8 +142,8 @@ export function GeneratePanel({
                         </Alert>
                     )}
 
-                    <div className="flex flex-wrap items-start gap-4">
-                        <div className="space-y-2">
+                    <div className="grid gap-x-4 gap-y-4 @3xl/generate:grid-cols-[minmax(0,9rem)_minmax(0,11rem)_auto] @3xl/generate:grid-rows-[auto_auto_auto] @3xl/generate:items-start @3xl/generate:gap-y-2">
+                        <div className="grid gap-2 @3xl/generate:row-span-3 @3xl/generate:grid-rows-subgrid">
                             <Label htmlFor="generation-quantity">How many questions?</Label>
                             <Input
                                 id="generation-quantity"
@@ -154,13 +154,13 @@ export function GeneratePanel({
                                 value={quantityInput}
                                 onChange={(event) => setQuantityInput(event.target.value)}
                                 disabled={!approved || generation.isPending}
-                                className="w-28"
+                                className="w-28 @3xl/generate:w-full"
                             />
                             <p className="text-xs text-muted-foreground">1–{maxQuantity}</p>
                         </div>
 
                         {approved && (
-                            <div className="space-y-2">
+                            <div className="grid gap-2 @3xl/generate:row-span-3 @3xl/generate:grid-rows-subgrid">
                                 <Label htmlFor="generation-seed">Starting seed</Label>
                                 <Input
                                     id="generation-seed"
@@ -169,7 +169,7 @@ export function GeneratePanel({
                                     value={seedInput}
                                     onChange={(event) => setSeedInput(event.target.value)}
                                     disabled={generation.isPending}
-                                    className="w-40"
+                                    className="w-40 @3xl/generate:w-full"
                                 />
                                 <p className="text-xs text-muted-foreground">
                                     {canPreviewSeeds
@@ -179,19 +179,12 @@ export function GeneratePanel({
                             </div>
                         )}
 
-                        {/* Reserve the label row so the button lines up with the
-                            inputs rather than the helper text underneath them. */}
-                        <div className="space-y-2">
-                            <div
-                                aria-hidden="true"
-                                className="text-sm font-medium leading-none invisible"
-                            >
-                                Create
-                            </div>
+                        <div className="grid justify-items-start @3xl/generate:row-span-3 @3xl/generate:grid-rows-subgrid">
                             <Button
                                 type="button"
                                 onClick={generate}
                                 disabled={!approved || generation.isPending}
+                                className="@3xl/generate:row-start-2 @3xl/generate:self-start"
                             >
                                 {generation.isPending && (
                                     <Loader2

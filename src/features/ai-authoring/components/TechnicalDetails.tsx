@@ -76,7 +76,7 @@ export function TechnicalDetails({ review, result }: TechnicalDetailsProps) {
         >
             <summary className="cursor-pointer font-medium">Technical details</summary>
             <div className="mt-4 space-y-3">
-                <dl className="grid gap-2 text-xs sm:grid-cols-2">
+                <dl className="grid gap-2 text-xs @sm:grid-cols-2">
                     {metadata.map(([label, value]) => (
                         <div key={label}>
                             <dt className="font-medium text-muted-foreground">{label}</dt>

@@ -141,7 +141,7 @@ function EvidenceFieldList({
     }
 
     return (
-        <dl className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-[minmax(7rem,auto)_1fr]">
+        <dl className="grid gap-x-4 gap-y-1 text-xs @sm:grid-cols-[minmax(7rem,auto)_1fr]">
             {entries.map(([key, entry]) => (
                 <Fragment key={key}>
                     <dt className="font-medium text-muted-foreground">{labelFor(key)}</dt>

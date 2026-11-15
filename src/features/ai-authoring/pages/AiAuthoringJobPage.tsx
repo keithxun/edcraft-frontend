@@ -178,13 +178,15 @@ export default function AiAuthoringJobPage() {
                         !reviewQuery.isError &&
                         (job.state === "completed" ||
                             (job.state === "failed" && hasDraft)) && (
-                            <ReviewPanel
-                                key={`review-${jobId}-${reviewEpoch}`}
-                                jobId={jobId}
-                                review={review}
-                                result={job.result ?? null}
-                                onStaleArtifact={handleStaleArtifact}
-                            />
+                            <div className="@container/review">
+                                <ReviewPanel
+                                    key={`review-${jobId}-${reviewEpoch}`}
+                                    jobId={jobId}
+                                    review={review}
+                                    result={job.result ?? null}
+                                    onStaleArtifact={handleStaleArtifact}
+                                />
+                            </div>
                         )}
                 </>
             )}

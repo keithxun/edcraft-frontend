@@ -14,7 +14,7 @@ export function PageShell({ children, className }: PageShellProps) {
     return (
         <div
             className={cn(
-                "mx-auto w-full max-w-[1440px] space-y-6 p-4 md:p-6",
+                "mx-auto w-full max-w-[1440px] @container/page space-y-6 p-4 md:p-6",
                 className,
             )}
         >

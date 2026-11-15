@@ -228,7 +228,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     }
 
     return (
-        <Card>
+        <Card className="@container/form">
             <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle as="h2">New question</CardTitle>
@@ -274,7 +274,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
                         <div className="space-y-5">
-                            <div className="flex flex-wrap items-start gap-4">
+                            <div className="grid items-start gap-4 @3xl/form:grid-cols-2">
                                 {domains.length > 1 && (
                                     <FormField
                                         control={form.control}
@@ -288,7 +288,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                                     disabled={createJob.isPending}
                                                 >
                                                     <FormControl>
-                                                        <SelectTrigger className="w-full sm:w-64">
+                                                        <SelectTrigger className="w-full">
                                                             <SelectValue placeholder="Choose a domain" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -312,7 +312,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                     control={form.control}
                                     name="distractors"
                                     render={({ field }) => (
-                                        <FormItem className="max-w-56">
+                                        <FormItem>
                                             <FormLabel htmlFor="distractors">
                                                 Wrong choices (distractors)
                                             </FormLabel>

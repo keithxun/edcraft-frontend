@@ -156,8 +156,8 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-12">
-                <div className="space-y-4 xl:col-span-8">
+            <div className="grid gap-6 @3xl/review:grid-cols-12">
+                <div className="space-y-4 @3xl/review:col-span-8">
                     <RequestSummary request={review.request} />
                     <WarningsPanel warnings={filterMismatchWarnings(review.warnings)} />
                     <ReviewQuestionPreview
@@ -170,11 +170,11 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
                     />
                 </div>
 
-                <aside className="space-y-4 xl:col-span-4">
+                <aside className="space-y-4 @3xl/review:col-span-4">
                     <ChecksPanel checks={checks} advisories={advisories} collapsible />
 
                     {review.state !== "failed" && (
-                        <div className="space-y-4 xl:sticky xl:top-6">
+                        <div className="space-y-4 @3xl/review:sticky @3xl/review:top-6">
                             <Card>
                                 <CardContent>
                                     <ApprovalControls
