@@ -32,7 +32,7 @@ export function domainInfo(domain: string): DomainInfo {
     return DOMAINS[domain] ?? { ...GENERIC_DOMAIN, label: capitalize(domain) };
 }
 
-/** Readable label for an authoring domain; unknown domains keep their identifier. */
+/** Readable label for an authoring domain. Unknown domains show their capitalised identifier. */
 export function domainLabel(domain: string | null | undefined): string {
     if (!domain) return "Unknown domain";
     return domainInfo(domain).label;
