@@ -22,6 +22,7 @@ import {
     needsReviewJob,
     needsReviewReview,
     preview,
+    unapprovedReview,
 } from "./fixtures";
 
 vi.mock("../services/ai-authoring.service", () => ({
@@ -110,6 +111,33 @@ describe("AiAuthoringJobPage", () => {
         expect(screen.queryByText("/ai-authoring/job-1")).not.toBeInTheDocument();
     });
 
+    it("shows the agreed review status in the header", async () => {
+        vi.mocked(getAuthoringReview).mockResolvedValue(unapprovedReview);
+        renderJobPage();
+
+        expect(await screen.findByText("Ready for review")).toBeInTheDocument();
+        expect(screen.queryByText("Completed")).not.toBeInTheDocument();
+    });
+
+    it("shows a rejected decision in the header", async () => {
+        vi.mocked(getAuthoringReview).mockResolvedValue({
+            ...unapprovedReview,
+            approval: {
+                decision: "rejected",
+                artifact_sha256: unapprovedReview.artifact_sha256!,
+                reviewer: "teacher@example.com",
+                note: null,
+                decided_at: "2026-11-03T00:00:00Z",
+            },
+        });
+        renderJobPage();
+
+        const rejected = await screen.findAllByText("Rejected");
+        expect(
+            rejected.some((node) => node.className.includes("bg-destructive")),
+        ).toBe(true);
+    });
+
     it("sends a failed request back to the create page with its fields prefilled", async () => {
         vi.mocked(getAuthoringJob).mockResolvedValue(failedJob);
         vi.mocked(getAuthoringReview).mockResolvedValue(failedReview);
@@ -117,6 +145,7 @@ describe("AiAuthoringJobPage", () => {
         renderJobPage();
 
         expect(await screen.findByText("Question creation failed")).toBeInTheDocument();
+        expect(await screen.findByText("Failed")).toBeInTheDocument();
         await user.click(await screen.findByRole("link", { name: "Retry request" }));
 
         expect(

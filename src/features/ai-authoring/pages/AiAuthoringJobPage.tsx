@@ -1,39 +1,30 @@
 import { useCallback, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, ArrowLeft, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { queryKeys } from "@/api";
 import { ROUTES } from "@/router/paths";
 import { FlowSteps } from "../components/FlowSteps";
 import { PageShell } from "../components/PageShell";
+import {
+    JobLoadError,
+    LoadingCard,
+    NoJobSelected,
+    ReviewLoadError,
+    StaleArtifactNotice,
+} from "../components/PageState";
 import { ProgressPanel } from "../components/ProgressPanel";
 import { RetryRequestLink } from "../components/RetryRequestLink";
 import { ReviewPanel } from "../components/ReviewPanel";
 import { TechnicalDetails } from "../components/TechnicalDetails";
-import { getAuthoringErrorMessage, isNotFoundError } from "../errors";
-import { getReviewStatus } from "../status";
+import { getReviewHeaderStatus } from "../status";
 import { useAuthoringJob, useAuthoringReview } from "../hooks/useAiAuthoring";
-
-function LoadingCard({ children }: { children: string }) {
-    return (
-        <Card>
-            <CardContent className="text-sm text-muted-foreground">{children}</CardContent>
-        </Card>
-    );
-}
-
-const STALE_ARTIFACT_MESSAGE =
-    "The checked question changed. The latest review is being loaded and any old preview or generated questions were cleared.";
+import { useStaleArtifact } from "../hooks/useStaleArtifact";
 
 export default function AiAuthoringJobPage() {
     const { jobId } = useParams<{ jobId: string }>();
-    const queryClient = useQueryClient();
     const [reviewEpoch, setReviewEpoch] = useState(0);
-    const [staleJobId, setStaleJobId] = useState<string | null>(null);
+    const { showStaleArtifact, markStale, dismissStale } = useStaleArtifact(jobId);
 
     const jobQuery = useAuthoringJob(jobId);
     const reviewTerminal =
@@ -41,26 +32,14 @@ export default function AiAuthoringJobPage() {
     const reviewQuery = useAuthoringReview(jobId, reviewTerminal);
 
     const handleStaleArtifact = useCallback(() => {
-        setStaleJobId(jobId ?? null);
         setReviewEpoch((epoch) => epoch + 1);
-        if (!jobId) return;
-        queryClient.removeQueries({ queryKey: queryKeys.aiAuthoring.previewRoot(jobId) });
-        // The job key prefix also covers the review and preview child keys.
-        void queryClient.invalidateQueries({ queryKey: queryKeys.aiAuthoring.job(jobId) });
-    }, [jobId, queryClient]);
+        markStale();
+    }, [markStale]);
 
     if (!jobId) {
         return (
             <PageShell>
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>No question selected</AlertTitle>
-                    <AlertDescription>
-                        <Link className="underline underline-offset-2" to={ROUTES.AI_AUTHORING}>
-                            Create a new question
-                        </Link>
-                    </AlertDescription>
-                </Alert>
+                <NoJobSelected />
             </PageShell>
         );
     }
@@ -73,14 +52,8 @@ export default function AiAuthoringJobPage() {
         job.result?.status === "needs_review" &&
         !review?.artifact_sha256;
     const recoverable = job?.state === "failed" || needsReview;
-    const reviewStatus = job && review ? getReviewStatus(review, job.result ?? null) : null;
-    const decision = review?.approval?.decision;
-    const headerStatus = decision
-        ? {
-              label: decision === "approved" ? "Approved" : "Rejected",
-              variant: decision === "approved" ? ("default" as const) : ("destructive" as const),
-          }
-        : reviewStatus;
+    const headerStatus =
+        job && review ? getReviewHeaderStatus(review, job.result ?? null) : null;
 
     return (
         <PageShell>
@@ -106,61 +79,20 @@ export default function AiAuthoringJobPage() {
             {jobQuery.isPending && <LoadingCard>Loading your question…</LoadingCard>}
 
             {jobQuery.isError && (
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>
-                        {isNotFoundError(jobQuery.error)
-                            ? "Question not found"
-                            : "Question could not be loaded"}
-                    </AlertTitle>
-                    <AlertDescription className="space-y-2">
-                        <p>
-                            {getAuthoringErrorMessage(
-                                jobQuery.error,
-                                "The question could not be loaded.",
-                            )}
-                        </p>
-                        {!isNotFoundError(jobQuery.error) && (
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => void jobQuery.refetch()}
-                            >
-                                <RefreshCw className="h-4 w-4" />
-                                Retry
-                            </Button>
-                        )}
-                        <p>
-                            <Link className="underline underline-offset-2" to={ROUTES.AI_AUTHORING}>
-                                Create a new question
-                            </Link>
-                        </p>
-                    </AlertDescription>
-                </Alert>
+                <JobLoadError
+                    error={jobQuery.error}
+                    onRetry={() => void jobQuery.refetch()}
+                />
             )}
 
             {job && (
                 <>
                     <ProgressPanel job={job} />
 
-                    {staleJobId === jobId && (
-                        <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>The question changed</AlertTitle>
-                            <AlertDescription className="space-y-2">
-                                <p>{STALE_ARTIFACT_MESSAGE}</p>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setStaleJobId(null)}
-                                >
-                                    Dismiss
-                                </Button>
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                    <StaleArtifactNotice
+                        visible={showStaleArtifact}
+                        onDismiss={dismissStale}
+                    />
 
                     {recoverable && (
                         <>
@@ -190,27 +122,10 @@ export default function AiAuthoringJobPage() {
                     )}
 
                     {terminal && reviewQuery.isError && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Review could not be loaded</AlertTitle>
-                            <AlertDescription className="space-y-2">
-                                <p>
-                                    {getAuthoringErrorMessage(
-                                        reviewQuery.error,
-                                        "The review could not be loaded.",
-                                    )}
-                                </p>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => void reviewQuery.refetch()}
-                                >
-                                    <RefreshCw className="h-4 w-4" />
-                                    Retry review
-                                </Button>
-                            </AlertDescription>
-                        </Alert>
+                        <ReviewLoadError
+                            error={reviewQuery.error}
+                            onRetry={() => void reviewQuery.refetch()}
+                        />
                     )}
 
                     {terminal && review && !reviewQuery.isError && job.state === "completed" && (

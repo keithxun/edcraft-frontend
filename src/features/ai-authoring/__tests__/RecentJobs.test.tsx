@@ -67,19 +67,41 @@ describe("RecentJobs", () => {
 
         expect(await screen.findByText("Needs review")).toBeInTheDocument();
         expect(screen.getByText("Needs review")).toHaveClass("bg-primary");
-        expect(screen.queryByText("Completed")).not.toBeInTheDocument();
+        expect(screen.queryByText("Ready for review")).not.toBeInTheDocument();
     });
 
-    it("keeps Completed for a checked job and shows it in green", async () => {
+    it("keeps Ready for review for a checked job and shows it in green", async () => {
         vi.mocked(listAuthoringJobs).mockResolvedValue([
             jobSummary({ result_status: "checked" }),
         ]);
 
         renderRecentJobs();
 
-        expect(await screen.findByText("Completed")).toBeInTheDocument();
-        expect(screen.getByText("Completed")).toHaveClass("bg-success");
+        expect(await screen.findByText("Ready for review")).toBeInTheDocument();
+        expect(screen.getByText("Ready for review")).toHaveClass("bg-success");
         expect(screen.queryByText("Needs review")).not.toBeInTheDocument();
+    });
+
+    it("labels queued and running jobs with the same vocabulary as the job page", async () => {
+        vi.mocked(listAuthoringJobs).mockResolvedValue([
+            jobSummary({ job_id: "job-queued", state: "queued", result_status: null }),
+            jobSummary({ job_id: "job-running", state: "running", result_status: null }),
+        ]);
+
+        renderRecentJobs();
+
+        expect(await screen.findByText("Queued")).toBeInTheDocument();
+        expect(screen.getByText("Creating")).toBeInTheDocument();
+    });
+
+    it("labels a failed job as Failed", async () => {
+        vi.mocked(listAuthoringJobs).mockResolvedValue([
+            jobSummary({ state: "failed", result_status: "error" }),
+        ]);
+
+        renderRecentJobs();
+
+        expect(await screen.findByText("Failed")).toHaveClass("bg-destructive");
     });
 
     it("shows an approved decision in green and a rejected decision in red", async () => {

@@ -9,23 +9,6 @@ export function formatValue(value: unknown): string {
     }
 }
 
-export function formatCountSummary(counts: {
-    requested_quantity: number;
-    actual_quantity: number;
-    distinct_count: number;
-    duplicates: number;
-}): string {
-    const different = `${counts.distinct_count} different`;
-    const repeated = counts.duplicates === 1 ? "1 repeated" : `${counts.duplicates} repeated`;
-    const created =
-        counts.actual_quantity === counts.requested_quantity
-            ? `${counts.actual_quantity} created`
-            : `${counts.actual_quantity} of ${counts.requested_quantity} created`;
-    return counts.duplicates > 0
-        ? `${created}, ${different}, ${repeated}.`
-        : `${created}, all different.`;
-}
-
 export function formatDate(value: string): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;

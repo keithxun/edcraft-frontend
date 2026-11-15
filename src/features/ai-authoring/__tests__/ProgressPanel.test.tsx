@@ -45,7 +45,11 @@ describe("ProgressPanel", () => {
         render(<ProgressPanel job={runningJob({ phase, attempt: 1 })} />);
 
         const items = stageItems();
+        expect(
+            screen.getByRole("heading", { level: 2, name: "Question progress" }),
+        ).toBeInTheDocument();
         expect(items).toHaveLength(4);
+        expect(screen.getByText("Creating")).toBeInTheDocument();
         expect(items[activeIndex]).toHaveTextContent(label);
         expect(items[activeIndex]).toHaveAttribute("aria-current", "step");
         expect(items[activeIndex]).toHaveTextContent("Current stage");
@@ -108,6 +112,7 @@ describe("ProgressPanel", () => {
         );
 
         expect(screen.getByText(/waiting for a turn/)).toBeVisible();
+        expect(screen.getByText("Queued")).toBeInTheDocument();
         expect(screen.getByRole("status")).toHaveTextContent("Waiting for a free authoring slot");
         for (const item of stageItems()) {
             expect(item).toHaveTextContent("Not started");

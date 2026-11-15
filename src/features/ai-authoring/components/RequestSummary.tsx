@@ -8,7 +8,7 @@ export function RequestSummary({ request }: { request: AuthoringReview["request"
     return (
         <Card>
             <CardHeader className="pb-3">
-                <CardTitle>Your request</CardTitle>
+                <CardTitle as="h2">Your request</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
                 <p className="whitespace-pre-wrap text-sm">{request.prompt}</p>

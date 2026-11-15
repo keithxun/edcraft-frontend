@@ -7,10 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAuthoringErrorMessage, isStaleArtifactError } from "../errors";
 import { capitalize, formatDate } from "../format";
+import { getApprovalBlockers } from "../getApprovalBlockers";
 import { useDecideAuthoringApproval } from "../hooks/useAiAuthoring";
 import type { ApprovalDecision, AuthoringReview } from "../types";
 
 const MAX_NOTE_LENGTH = 2000;
+
+const APPROVAL_BLOCKER_ID = "approval-blocker";
 
 interface ApprovalControlsProps {
     jobId: string;
@@ -30,6 +33,8 @@ export function ApprovalControls({
     const [rejectionNote, setRejectionNote] = useState("");
     const approval = review.approval;
     const approvalMutation = useDecideAuthoringApproval();
+    const [blocker] = getApprovalBlockers(review);
+    const describedBy = !canApprove && blocker ? APPROVAL_BLOCKER_ID : undefined;
 
     const decide = (decision: ApprovalDecision, note: string | null = null) => {
         if (!review.artifact_sha256 || !canApprove || approvalMutation.isPending) return;
@@ -104,9 +109,9 @@ export function ApprovalControls({
                 </p>
             )}
 
-            {!canApprove && (
-                <p className="text-sm text-muted-foreground">
-                    Approval is unavailable until the technical checks pass.
+            {!canApprove && blocker && (
+                <p id={APPROVAL_BLOCKER_ID} className="text-sm text-muted-foreground">
+                    {blocker}
                 </p>
             )}
 
@@ -174,6 +179,7 @@ export function ApprovalControls({
                             className="w-full"
                             onClick={() => decide("approved")}
                             disabled={!canApprove || approvalMutation.isPending}
+                            aria-describedby={describedBy}
                         >
                             {approvalMutation.isPending && (
                                 <Loader2

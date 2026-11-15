@@ -224,7 +224,7 @@ export function GeneratePanel({
                 <Card>
                     <CardHeader className="pb-3">
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <CardTitle>Generated questions</CardTitle>
+                            <CardTitle as="h2">Generated questions</CardTitle>
                             <Button
                                 type="button"
                                 variant="outline"

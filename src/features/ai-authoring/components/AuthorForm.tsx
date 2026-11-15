@@ -197,7 +197,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         return (
             <Card>
                 <CardHeader className="pb-3">
-                    <CardTitle>Question creation is unavailable</CardTitle>
+                    <CardTitle as="h2">Question creation is unavailable</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">
@@ -212,7 +212,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         return (
             <Card>
                 <CardHeader className="pb-3">
-                    <CardTitle>No question-writing model configured</CardTitle>
+                    <CardTitle as="h2">No question-writing model configured</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">
@@ -231,7 +231,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         <Card>
             <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle>New question</CardTitle>
+                    <CardTitle as="h2">New question</CardTitle>
                     <Badge variant="outline">{domainInfo(domain).badge}</Badge>
                 </div>
             </CardHeader>

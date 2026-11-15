@@ -69,7 +69,7 @@ function AdvisoryItem({ advisory }: { advisory: ChecksAdvisory }) {
                 <div className="min-w-0 space-y-1">
                     <p className="text-sm font-medium">
                         <span className="sr-only">
-                            {passed ? "Passed: " : "Needs attention: "}
+                            {passed ? "Passed: " : "For your review: "}
                         </span>
                         {advisory.title}
                     </p>
@@ -175,11 +175,11 @@ export function ChecksPanel({ checks, advisories = [], collapsible = false }: Ch
             ? null
             : advisories.length === 1
               ? advisoryFailures.length === 0
-                  ? "Advisory passed."
+                  ? "Advisory check passed."
                   : "Advisory needs attention."
               : advisoryFailures.length === 0
-                ? `All ${advisories.length} advisories passed.`
-                : `${advisoryFailures.length} of ${advisories.length} advisories need attention.`;
+                ? `All ${advisories.length} advisory checks passed.`
+                : `${advisoryFailures.length} of ${advisories.length} advisory checks are for your review. They do not block approval.`;
 
     const summary = [technicalSummary, advisorySummary].filter(Boolean).join(" ");
 

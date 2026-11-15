@@ -6,7 +6,6 @@ import type {
     AuthoringCapabilitiesResponse,
     AuthoringJudgeSelections,
     AuthoringJobStatusResponse,
-    AuthoringJobStatusResponseState,
     AuthoringJobSummary as ApiAuthoringJobSummary,
     AuthoringJobSubmittedResponse,
     AuthoringModelProfile as ApiAuthoringModelProfile,
@@ -28,7 +27,6 @@ import type {
 } from "@/api/models";
 
 export type AuthoringDifficulty = SubmitAuthoringJobRequestDifficulty;
-export type AuthoringJobState = AuthoringJobStatusResponseState;
 export type ApprovalDecision = StoredReviewerApproval["decision"];
 
 export type AuthoringCapabilities = Omit<AuthoringCapabilitiesResponse, "enabled_domains"> & {

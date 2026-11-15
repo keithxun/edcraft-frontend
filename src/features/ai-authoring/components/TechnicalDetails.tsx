@@ -88,8 +88,8 @@ export function TechnicalDetails({ review, result }: TechnicalDetailsProps) {
                 {review.candidate_is_historical_attempt && (
                     <p className="text-xs text-muted-foreground">
                         {review.artifact_sha256
-                            ? "Candidates in the authoring attempts are historical. The checked template and seeded preview show the version being reviewed."
-                            : "Candidates in the authoring attempts are historical. The latest draft is shown above; no template passed technical checks."}
+                            ? "Earlier drafts are kept for reference. The checked version and its example question are what you are approving."
+                            : "Earlier drafts are kept for reference. The latest draft is shown above. No draft passed the technical checks."}
                     </p>
                 )}
 

@@ -54,7 +54,7 @@ export function ProgressPanel({ job }: { job: AuthoringJob }) {
         return null;
     }
 
-    const status = getJobStatus(job);
+    const status = getJobStatus(job.state);
     const progress = getJobProgress(job);
     const stages = getJobStages(job);
     const activeStage = stages.find((stage) => stage.state === "active") ?? null;
@@ -70,7 +70,7 @@ export function ProgressPanel({ job }: { job: AuthoringJob }) {
     return (
         <Card aria-busy="true">
             <CardHeader className="flex-row items-center justify-between gap-2 pb-3">
-                <CardTitle>Question progress</CardTitle>
+                <CardTitle as="h2">Question progress</CardTitle>
                 <Badge variant={status.variant}>{status.label}</Badge>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">

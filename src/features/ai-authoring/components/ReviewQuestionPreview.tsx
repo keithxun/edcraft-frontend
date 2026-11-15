@@ -44,7 +44,7 @@ export function ReviewQuestionPreview({
         <Card>
             <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle>Example question</CardTitle>
+                    <CardTitle as="h2">Example question</CardTitle>
                     <div className="flex flex-wrap items-center gap-2">
                         {showingDraft && draftTemplate && (
                             <Badge variant="destructive">Draft · checks failed</Badge>

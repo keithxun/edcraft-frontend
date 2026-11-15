@@ -91,10 +91,10 @@ describe("ChecksPanel", () => {
 
         expect(await screen.findByText("Supported")).toBeInTheDocument();
         expect(
-            screen.getByText(/Control flow: conditional \(if\/else\)/),
+            screen.getByText(/Branches: if and else, an early return/),
         ).toBeInTheDocument();
         expect(
-            screen.getByText(/Lists: list_index \(indexing\)/),
+            screen.getByText(/Lists: indexing, sum, min, max, all, any and sorting/),
         ).toBeInTheDocument();
         expect(screen.queryByText("Limits")).not.toBeInTheDocument();
     });
@@ -185,7 +185,7 @@ describe("ChecksPanel", () => {
 
         expect(
             screen.getByText(
-                "1 of 3 technical checks need attention. 1 of 2 advisories need attention.",
+                "1 of 3 technical checks need attention. 1 of 2 advisory checks are for your review. They do not block approval.",
             ),
         ).toBeInTheDocument();
         expect(
@@ -194,6 +194,7 @@ describe("ChecksPanel", () => {
         expect(screen.getByRole("heading", { name: /Advisories/i })).toBeInTheDocument();
         expect(screen.getByText("Difficulty differs")).toBeInTheDocument();
         expect(screen.getByText("Estimated hard; requested easy.")).toBeInTheDocument();
+        expect(screen.getByText("For your review:")).toHaveClass("sr-only");
         expect(screen.getByText("72%")).toBeInTheDocument();
         expect(screen.getByText("Source: Reasoning judge")).toBeInTheDocument();
         expect(screen.getByText("Relevance looks good")).toBeInTheDocument();
@@ -221,7 +222,7 @@ describe("ChecksPanel", () => {
         );
 
         expect(
-            screen.getByText("All 2 technical checks passed. Advisory passed."),
+            screen.getByText("All 2 technical checks passed. Advisory check passed."),
         ).toBeInTheDocument();
         const details = screen.getByRole("heading", { name: "Checks" }).closest("details");
         expect(details).not.toHaveAttribute("open");

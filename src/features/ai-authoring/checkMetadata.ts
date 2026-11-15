@@ -6,10 +6,8 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
     code_require_features: "Required features",
     code_validate_answers_and_distractors: "Answers and wrong choices",
     code_verify_template_structure: "Question template",
-    math_verify_template_structure: "Question template",
-    math_validate_answers_and_distractors: "Answers and wrong choices",
     assess_template_difficulty: "Difficulty",
-    math_verify_item_spec: "Math item",
+    math_verify_item_spec: "Correct answer",
     math_verify_answer_form: "Answer form",
     math_validate_options: "Answer choices",
     math_verify_text_fidelity: "Question wording",
@@ -18,26 +16,22 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
 };
 
 const CHECK_DESCRIPTIONS: Record<string, string> = {
-    code_require_features: "The requested Python features are present.",
+    code_require_features: "Checks that the code uses the Python features you asked for.",
     code_validate_answers_and_distractors:
-        "The answer and every wrong choice evaluate correctly and are distinct.",
-    code_verify_template_structure: "The template is structurally valid and renders.",
-    math_verify_template_structure:
-        "The equation and question template are structurally valid and render.",
-    math_validate_answers_and_distractors:
-        "The answer and every wrong choice evaluate correctly and are distinct.",
-    assess_template_difficulty: "The estimated difficulty matches the request.",
-    math_verify_item_spec:
-        "The typed math item compiles and the engine confirms the declared answer.",
+        "Checks that the answer is right and every wrong choice is different.",
+    code_verify_template_structure: "Checks that the question template is complete and renders.",
+    assess_template_difficulty:
+        "Checks that the estimated difficulty matches the level you chose.",
+    math_verify_item_spec: "Checks that the maths engine gets the same answer as the template.",
     math_verify_answer_form:
-        "The answer has the form the goal asks for, such as factorised or expanded.",
+        "Checks that the answer is written in the form the question asks for, such as factorised or expanded.",
     math_validate_options:
-        "Every wrong choice is demonstrably wrong and no two choices are equivalent.",
+        "Checks that every wrong choice is wrong and that no two choices are equal.",
     math_verify_text_fidelity:
-        "A blind parse of the wording reconstructs the same problem.",
+        "Checks that the question wording describes the same problem as the maths.",
     application_distractor_count:
-        "The template offers at least the requested number of wrong choices.",
-    assess_template_relevance: "The template is relevant to the request.",
+        "Checks that there are at least as many wrong choices as you asked for.",
+    assess_template_relevance: "Checks that the question matches what you asked for.",
 };
 
 export function friendlyCheckLabel(tool: string): string {
@@ -51,74 +45,64 @@ export interface CheckSupport {
 const CHECK_SUPPORT: Record<string, CheckSupport> = {
     code_require_features: {
         supports: [
-            "Control flow: conditional (if/else), early_return (return inside an if), nested_conditional (if inside an if), sequential_conditionals (two or more sibling ifs).",
-            "Loops: loop (for), nested_loop (loop inside a loop), sequential_loops (two or more sibling loops).",
-            "Functions: helper_function (separate helper called from the entry function), nested_helper (a helper calling another helper).",
-            "Lists: list_index (indexing), list_aggregate (sum, min, max, all, any), list_sort (sorted).",
-            "Expressions: arithmetic (a binary numeric operation).",
+            "Branches: if and else, an early return, and nested or consecutive ifs.",
+            "Loops: single, nested or consecutive.",
+            "Helper functions, including a helper that calls another.",
+            "Lists: indexing, sum, min, max, all, any and sorting.",
+            "Arithmetic.",
         ],
     },
     code_verify_template_structure: {
-        supports: [
-            "Placeholders, template rendering, and the structure of the answer expression.",
-        ],
+        supports: ["Placeholders, the rendered question and the answer expression."],
     },
     code_validate_answers_and_distractors: {
         supports: [
-            "The correct answer and every wrong choice are executed on a deterministic sample of inputs.",
-            "Answers must be correct and the wrong choices distinct.",
-        ],
-    },
-    math_verify_template_structure: {
-        supports: [
-            "Equation rendering, parameter substitution, and template structure.",
-        ],
-    },
-    math_validate_answers_and_distractors: {
-        supports: [
-            "Evaluation of the answer and every wrong choice.",
-            "Distinctness across sampled parameter combinations.",
+            "Runs the code on a fixed sample of inputs.",
+            "The answer must be right and every wrong choice different.",
         ],
     },
     math_verify_item_spec: {
         supports: [
-            "Exact integer and rational arithmetic, expressions, equations, and inequalities.",
-            "One-unknown solves and ordered-tuple linear systems.",
-            "Derivatives, antiderivatives, definite integrals, matrices, and determinants.",
+            "Supports exact arithmetic with whole numbers and fractions, expressions, equations and inequalities.",
+            "It also covers equations in one unknown, pairs of linear equations, derivatives, integrals, matrices and determinants.",
         ],
     },
     math_validate_options: {
         supports: [
-            "One to ten wrong choices, each graded by the deterministic engine.",
-            "Equivalent-option detection and wrong-answer verification.",
+            "The maths engine grades each wrong choice, for one to ten wrong choices.",
+            "Choices that are equal in value count as duplicates.",
         ],
     },
     math_verify_text_fidelity: {
         supports: [
-            "Symbolic templates are rendered and checked without a model call.",
-            "Prose templates add anchor checks and a blind parse-back reconstruction.",
+            "Questions written as plain maths are checked directly.",
+            "For worded questions, a second model reads the wording alone and must recover the same problem.",
         ],
     },
     math_verify_answer_form: {
         supports: [
-            "Required for factorising and expanding goals, where the form of the answer is part of what is asked.",
-            "Checks that the correct answer has the requested form, such as factorised or expanded, on every checked parameter combination.",
+            "Runs only for factorising and expanding questions, where the form is part of the answer.",
+            "It checks the form for every set of values tried.",
         ],
     },
     application_distractor_count: {
         supports: [
-            "Run by the application on every template.",
-            "Confirms the template offers at least the requested number of wrong choices. Fewer triggers a revision.",
+            "EdCraft runs this on every question.",
+            "If there are too few wrong choices, the model is asked to revise.",
         ],
     },
     assess_template_difficulty: {
         supports: [
-            "Shared by every domain and advisory only: a mismatch never blocks the template.",
-            "A judge model compares the template with the domain's difficulty rubric. The mathematics rubric is provisional and not yet calibrated.",
+            "A second model rates the difficulty against a written rubric.",
+            "A mismatch is shown for your judgement and never blocks approval.",
+            "The maths rubric is provisional.",
         ],
     },
     assess_template_relevance: {
-        supports: ["Compares the authored template with the original request."],
+        supports: [
+            "A second model compares the question with your request.",
+            "A mismatch is shown for your judgement and never blocks approval.",
+        ],
     },
 };
 

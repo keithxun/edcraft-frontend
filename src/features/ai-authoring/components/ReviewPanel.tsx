@@ -15,6 +15,7 @@ import type {
 } from "../types";
 import { ApprovalControls } from "./ApprovalControls";
 import { RequestSummary } from "./RequestSummary";
+import { RetryRequestLink } from "./RetryRequestLink";
 import { ChecksPanel, type ChecksAdvisory } from "./ChecksPanel";
 import { ReviewQuestionPreview } from "./ReviewQuestionPreview";
 import { TechnicalDetails } from "./TechnicalDetails";
@@ -75,7 +76,7 @@ function difficultyAdvisory(
         return {
             id: "difficulty",
             title: "Difficulty not checked",
-            description: "No estimate available.",
+            description: "No estimate is available.",
             passed: false,
             meter,
         };
@@ -116,8 +117,8 @@ function relevanceAdvisory(
     if (outcome?.relevant === true) {
         return {
             id: "relevance",
-            title: "Relevance looks good",
-            description: "Related to the request.",
+            title: "Matches the request",
+            description: "The question matches what you asked for.",
             passed: true,
             meter,
         };
@@ -125,8 +126,8 @@ function relevanceAdvisory(
     if (outcome?.relevant === false) {
         return {
             id: "relevance",
-            title: "Potential relevance mismatch",
-            description: "May not match the request.",
+            title: "May not match the request",
+            description: "Read the question against your request before approving.",
             passed: false,
             meter,
         };
@@ -134,7 +135,7 @@ function relevanceAdvisory(
     return {
         id: "relevance",
         title: "Relevance not checked",
-        description: "No judgement available.",
+        description: "No result is available.",
         passed: false,
         meter,
     };
@@ -207,6 +208,15 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
                                 )}
                             </CardContent>
                         </Card>
+
+                        {review.approval?.decision === "rejected" && (
+                            <RetryRequestLink
+                                request={review.request}
+                                title="Start a new question"
+                                description="Your request and settings will be filled in on the create page."
+                                actionLabel="Create a new question"
+                            />
+                        )}
 
                         {approved && (
                             <Button asChild className="w-full">
