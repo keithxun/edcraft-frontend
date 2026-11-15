@@ -15,24 +15,24 @@ import type { TextTemplateType } from './textTemplateType';
  * Complete schema for question template responses.
  */
 export interface QuestionTemplateResponse {
-  assessment_template_id: string | null;
-  code: string;
-  code_info?: CodeInfoOutput | null;
-  created_at: string;
-  description?: string | null;
-  entry_function: string;
-  entry_function_params?: EntryFunctionParams;
   id: string;
-  input_data_config?: QuestionTemplateResponseInputDataConfig;
-  linked_from_template_id: string | null;
-  num_distractors: number;
-  order: number | null;
-  output_type: string;
   owner_id: string;
-  question_template_bank_id: string | null;
-  question_text_template: string;
   question_type: string;
-  target_elements: TargetElementResponse[];
+  question_text_template: string;
   text_template_type: TextTemplateType;
+  description?: string | null;
+  code: string;
+  entry_function: string;
+  num_distractors: number;
+  output_type: string;
+  target_elements: TargetElementResponse[];
+  input_data_config?: QuestionTemplateResponseInputDataConfig;
+  code_info?: CodeInfoOutput | null;
+  entry_function_params?: EntryFunctionParams;
+  linked_from_template_id: string | null;
+  assessment_template_id: string | null;
+  question_template_bank_id: string | null;
+  order: number | null;
+  created_at: string;
   updated_at: string;
 }

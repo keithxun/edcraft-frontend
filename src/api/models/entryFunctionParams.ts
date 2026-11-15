@@ -10,7 +10,7 @@
  * Schema for entry function parameters.
  */
 export interface EntryFunctionParams {
+  parameters: string[];
   has_var_args?: boolean;
   has_var_kwargs?: boolean;
-  parameters: string[];
 }

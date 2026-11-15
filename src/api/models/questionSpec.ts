@@ -13,10 +13,10 @@ import type { TargetElement } from './targetElement';
  * Specification for the question to be generated.
  */
 export interface QuestionSpec {
+  /** Target elements in the execution to query */
+  target: TargetElement[];
   /** Type of output to generate (list, count, first, last) */
   output_type: QuestionSpecOutputType;
   /** Type of question to generate (mcq, mrq, short_answer) */
   question_type: QuestionSpecQuestionType;
-  /** Target elements in the execution to query */
-  target: TargetElement[];
 }

@@ -8,7 +8,7 @@
 import type { AuthoringProgressPhase } from './authoringProgressPhase';
 
 export interface AuthoringProgress {
+  phase: AuthoringProgressPhase;
   /** @minimum 0 */
   attempt: number;
-  phase: AuthoringProgressPhase;
 }

@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { ApiError } from "@/api/axiosInstance";
-import type { CodeTemplateCandidate } from "@/api/models";
 import { ReviewPanel } from "../components/ReviewPanel";
 import {
     decideAuthoringApproval,
@@ -14,6 +13,7 @@ import type {
     AuthoringApproval,
     AuthoringReview,
     CodeQuestionInstance,
+    CodeTemplateCandidate,
 } from "../types";
 import {
     approvedReview,

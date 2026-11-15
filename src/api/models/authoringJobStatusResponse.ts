@@ -16,12 +16,12 @@ import type { StoredReviewerApproval } from './storedReviewerApproval';
  * Owner-scoped authoring job state and safe public summary.
  */
 export interface AuthoringJobStatusResponse {
-  approval?: StoredReviewerApproval | null;
-  created_at: string;
-  error?: PublicAuthoringError | null;
   job_id: string;
-  last_generation?: GenerationMetadata | null;
+  state: AuthoringJobStatusResponseState;
   progress?: AuthoringProgress | null;
   result?: AuthoringSummary | null;
-  state: AuthoringJobStatusResponseState;
+  error?: PublicAuthoringError | null;
+  created_at: string;
+  approval?: StoredReviewerApproval | null;
+  last_generation?: GenerationMetadata | null;
 }

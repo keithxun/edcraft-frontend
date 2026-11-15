@@ -13,14 +13,14 @@ import type { ResourceVisibility } from './resourceVisibility';
  * Schema for question template bank with its question templates.
  */
 export interface QuestionTemplateBankWithTemplatesResponse {
-  created_at: string;
-  description: string | null;
-  folder_id: string;
   id: string;
-  my_role?: CollaboratorRole | null;
   owner_id: string;
-  question_templates?: QuestionTemplateResponse[];
+  folder_id: string;
   title: string;
-  updated_at: string;
+  description: string | null;
   visibility: ResourceVisibility;
+  created_at: string;
+  updated_at: string;
+  question_templates?: QuestionTemplateResponse[];
+  my_role?: CollaboratorRole | null;
 }

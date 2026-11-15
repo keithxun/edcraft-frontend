@@ -11,10 +11,10 @@ import type { StoredReviewerApprovalDecision } from './storedReviewerApprovalDec
  * Current human decision bound to one exact artifact digest.
  */
 export interface StoredReviewerApproval {
+  decision: StoredReviewerApprovalDecision;
   /** @pattern ^[0-9a-f]{64}$ */
   artifact_sha256: string;
-  decided_at: string;
-  decision: StoredReviewerApprovalDecision;
-  note?: string | null;
   reviewer: string;
+  note?: string | null;
+  decided_at: string;
 }

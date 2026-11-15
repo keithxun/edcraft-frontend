@@ -12,8 +12,6 @@ import type {
     AuthoringModelProfile as ApiAuthoringModelProfile,
     AuthoringReviewResponse,
     AuthoringSummary,
-    CodeQuestionInstance as ApiCodeQuestionInstance,
-    CodeTemplateCandidate,
     DifficultyOutcome,
     GenerateRequest,
     GeneratedQuestionsBatch,
@@ -37,6 +35,8 @@ export type AuthoringCapabilities = Omit<AuthoringCapabilitiesResponse, "enabled
     enabled_domains: string[];
 };
 export type AuthoringModelProfile = ApiAuthoringModelProfile;
+// The generated request makes domain optional; the authoring form always
+// supplies one, so keep it required for callers.
 export type CreateAuthoringJobRequest = Omit<SubmitAuthoringJobRequest, "domain"> & {
     domain: string;
 };
@@ -51,6 +51,77 @@ export type AuthoringJobSummary = ApiAuthoringJobSummary;
 export type ReviewAttempt = Omit<ApiReviewAttempt, "candidate"> & {
     candidate?: AuthoringTemplateCandidate | null;
 };
+
+/** What a code template's answer is measured against. */
+export type CodeTemplateCandidateAnswerTarget =
+    | "return_value"
+    | "loop_iterations"
+    | "loop_executions"
+    | "branch_executions"
+    | "function_calls";
+
+export type CodeTemplateCandidateDifficulty = "easy" | "medium" | "hard";
+
+/** A deterministic misconception applied to concrete parameter values. */
+export interface DistractorRecipe {
+    expression: string;
+    reason_template: string;
+}
+
+export type FiniteParameterKind = "integer" | "boolean" | "string" | "integer_list";
+
+/** A limited set of allowed values sampled during property-based checking. */
+export interface FiniteParameter {
+    kind: FiniteParameterKind;
+    name: string;
+    values: Array<number | boolean | string | number[]>;
+}
+
+/**
+ * The code-domain template contract. The backend now sends candidates as open
+ * objects, so the frontend owns this shape and the type guards narrow to it.
+ */
+export interface CodeTemplateCandidate {
+    answer_expression: string;
+    answer_target: CodeTemplateCandidateAnswerTarget;
+    code: string;
+    difficulty: CodeTemplateCandidateDifficulty;
+    distractors: DistractorRecipe[];
+    entry_function: string;
+    parameters: FiniteParameter[];
+    question_template: string;
+    question_type: "mcq";
+    template_id: string;
+    topic?: "arithmetic" | "conditionals" | "loops" | "functions" | "lists" | null;
+}
+
+export type CodeQuestionInstanceParameters = {
+    [key: string]: number | boolean | string | number[];
+};
+
+/** A deterministic question expanded from a validated code template. */
+export interface GeneratedQuestion {
+    answer_target?: CodeTemplateCandidateAnswerTarget;
+    code: string;
+    distractor_reasons?: string[];
+    distractors: unknown[];
+    entry_function: string;
+    inputs: Record<string, unknown>;
+    proposed_answer: unknown;
+    question: string;
+    question_type?: "mcq";
+}
+
+/** A reproducible code question expanded from a validated template. */
+export interface CodeQuestionInstance {
+    artifact_id?: string | null;
+    parameters: CodeQuestionInstanceParameters;
+    question: GeneratedQuestion;
+    requires_manual_review?: true;
+    seed: number;
+    template_id: string;
+}
+
 /** A code template or an opaque candidate from another domain. */
 export type AuthoringTemplateCandidate =
     | CodeTemplateCandidate
@@ -60,9 +131,7 @@ export type ReviewTemplate = Omit<ApiReviewTemplate, "candidate"> & {
     candidate: AuthoringTemplateCandidate;
 };
 export type ValidationLimits = ApiValidationLimits;
-export type AuthoringRequest = Omit<AuthoringReviewResponse["request"], "domain"> & {
-    domain: string;
-};
+export type AuthoringRequest = AuthoringReviewResponse["request"];
 export type AuthoringReview = Omit<
     AuthoringReviewResponse,
     "request" | "candidate" | "attempts" | "template"
@@ -72,7 +141,6 @@ export type AuthoringReview = Omit<
     attempts?: ReviewAttempt[];
     template?: ReviewTemplate | null;
 };
-export type CodeQuestionInstance = ApiCodeQuestionInstance;
 
 /**
  * A bounded linear-equation question from the mathematics domain. The backend

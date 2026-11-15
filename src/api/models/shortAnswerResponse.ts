@@ -11,16 +11,16 @@ import type { ShortAnswerData } from './shortAnswerData';
  * Response schema for short answer question.
  */
 export interface ShortAnswerResponse {
-  assessment_id?: string | null;
-  created_at: string;
   id: string;
-  linked_from_question_id?: string | null;
-  order?: number | null;
   owner_id: string;
+  template_id: string | null;
+  linked_from_question_id?: string | null;
+  assessment_id?: string | null;
   question_bank_id?: string | null;
+  order?: number | null;
   question_text: string;
+  created_at: string;
+  updated_at: string;
   question_type: 'short_answer';
   short_answer_data: ShortAnswerData;
-  template_id: string | null;
-  updated_at: string;
 }

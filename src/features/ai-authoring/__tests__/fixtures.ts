@@ -158,6 +158,7 @@ export const stubPreview: AuthoringPreview = {
 export const approvedReview: AuthoringReview = {
     job_id: "job-1",
     state: "completed",
+    domain: "code",
     artifact_id: "artifact-1",
     artifact_sha256: digest,
     library_revision: "db74f1700d78bd13b3f5f10e9d89bc2f85ad2591",
@@ -262,6 +263,7 @@ export const approvedReview: AuthoringReview = {
  */
 export const stubReview: AuthoringReview = {
     ...approvedReview,
+    domain: "stub",
     artifact_id: null,
     artifact_sha256: null,
     request: {
@@ -561,6 +563,7 @@ export const mathIrTemplateCandidate: IrMathTemplateCandidate = {
 
 export const mathIrReview: AuthoringReview = {
     ...approvedReview,
+    domain: "math",
     artifact_id: "artifact-math-ir",
     request: {
         ...approvedReview.request,
@@ -576,6 +579,7 @@ export const mathIrReview: AuthoringReview = {
 
 export const mathReview: AuthoringReview = {
     ...approvedReview,
+    domain: "math",
     artifact_id: "artifact-math",
     request: {
         ...approvedReview.request,

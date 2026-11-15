@@ -13,13 +13,13 @@ export interface GenerateRequest {
   /** @pattern ^[0-9a-f]{64}$ */
   artifact_sha256: string;
   /**
-   * @minimum 1
-   * @maximum 50
-   */
-  quantity: number;
-  /**
    * @minimum 0
    * @maximum 2147483647
    */
   seed: number;
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  quantity: number;
 }

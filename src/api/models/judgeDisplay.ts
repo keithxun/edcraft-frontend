@@ -17,12 +17,12 @@ export interface JudgeDisplay {
   label: string;
   /**
    * @minLength 1
-   * @maxLength 120
-   */
-  model: string;
-  /**
-   * @minLength 1
    * @maxLength 64
    */
   provider: string;
+  /**
+   * @minLength 1
+   * @maxLength 120
+   */
+  model: string;
 }

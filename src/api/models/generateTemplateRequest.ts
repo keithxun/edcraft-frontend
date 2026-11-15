@@ -18,10 +18,10 @@ export interface GenerateTemplateRequest {
   code: string;
   /** Specifications for code execution */
   execution_spec: ExecutionSpec;
-  /** Options for question generation */
-  generation_options: GenerationOptions;
   /** Specifications for the question to be generated */
   question_spec: QuestionSpec;
+  /** Options for question generation */
+  generation_options: GenerationOptions;
   /** Optional custom question text template.             If not provided, one will be auto-generated. */
   question_text_template?: string | null;
   /** Template type for rendering the question text */

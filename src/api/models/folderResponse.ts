@@ -10,11 +10,11 @@
  * Complete schema for folder responses.
  */
 export interface FolderResponse {
-  created_at: string;
-  description: string | null;
   id: string;
-  name: string;
   owner_id: string;
   parent_id: string | null;
+  name: string;
+  description: string | null;
+  created_at: string;
   updated_at: string;
 }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import type { CodeTemplateCandidate } from "@/api/models";
+import type { CodeTemplateCandidate } from "../types";
 import { TemplateQuestionPreview } from "../components/TemplateQuestionPreview";
 import {
     approvedReview,

@@ -10,7 +10,7 @@
  * Schema for creating a new folder.
  */
 export interface CreateFolderRequest {
-  description?: string | null;
-  name: string;
   parent_id: string;
+  name: string;
+  description?: string | null;
 }

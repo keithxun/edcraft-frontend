@@ -7,15 +7,21 @@
  */
 
 /**
- * Sampled-check budget recorded by the AI library.
+ * Check budget recorded by the AI library, whichever mode it used.
+
+Code templates record a sampled budget; math templates record a bounded
+parameter-domain sample budget. Fields for the other mode stay null so
+clients can keep reading one stable response shape.
  */
 export interface ValidationLimits {
-  checking_mode: string;
-  examples_checked: number;
-  execution_calls: number;
-  max_examples: number;
-  max_execution_calls: number;
-  seed: number;
-  timeout_seconds: number;
   validator_version: string;
+  checking_mode: string;
+  examples_checked?: number | null;
+  execution_calls?: number | null;
+  max_examples?: number | null;
+  max_execution_calls?: number | null;
+  timeout_seconds?: number | null;
+  combinations_checked?: number | null;
+  max_combinations?: number | null;
+  seed: number;
 }

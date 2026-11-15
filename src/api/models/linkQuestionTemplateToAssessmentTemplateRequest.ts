@@ -10,6 +10,6 @@
  * Schema for linking an existing question template to an assessment template.
  */
 export interface LinkQuestionTemplateToAssessmentTemplateRequest {
-  order?: number | null;
   question_template_id: string;
+  order?: number | null;
 }

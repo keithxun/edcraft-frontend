@@ -11,16 +11,16 @@ import type { MRQData } from './mRQData';
  * Response schema for MRQ question.
  */
 export interface MRQResponse {
-  assessment_id?: string | null;
-  created_at: string;
   id: string;
-  linked_from_question_id?: string | null;
-  mrq_data: MRQData;
-  order?: number | null;
   owner_id: string;
-  question_bank_id?: string | null;
-  question_text: string;
-  question_type: 'mrq';
   template_id: string | null;
+  linked_from_question_id?: string | null;
+  assessment_id?: string | null;
+  question_bank_id?: string | null;
+  order?: number | null;
+  question_text: string;
+  created_at: string;
   updated_at: string;
+  question_type: 'mrq';
+  mrq_data: MRQData;
 }

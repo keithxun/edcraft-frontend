@@ -24,6 +24,7 @@ function jobSummary(
 ): AuthoringJobSummary {
     return {
         job_id: "job-1",
+        domain: "code",
         state: "completed",
         created_at: "2026-11-03T00:00:00Z",
         prompt_preview: "Write a question about summing a list.",

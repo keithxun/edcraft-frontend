@@ -11,11 +11,11 @@ import type { ApprovalResponseDecision } from './approvalResponseDecision';
  * Persisted decision returned to the reviewer.
  */
 export interface ApprovalResponse {
+  decision: ApprovalResponseDecision;
   /** @pattern ^[0-9a-f]{64}$ */
   artifact_sha256: string;
-  decided_at: string;
-  decision: ApprovalResponseDecision;
-  job_id: string;
-  note?: string | null;
   reviewer: string;
+  note?: string | null;
+  decided_at: string;
+  job_id: string;
 }

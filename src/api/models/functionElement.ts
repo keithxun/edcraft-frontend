@@ -10,14 +10,14 @@
  * Model representing a function element in the code.
  */
 export interface FunctionElement {
-  /** Indicates if this is a function definition. */
-  is_definition: boolean;
-  /** Line number where the function is defined. */
-  line_number: number;
   /** Name of the function. */
   name: string;
-  /** List of parameters for the function. */
-  parameters: string[];
   /** Type of the code element. */
   type?: string;
+  /** Line number where the function is defined. */
+  line_number: number;
+  /** List of parameters for the function. */
+  parameters: string[];
+  /** Indicates if this is a function definition. */
+  is_definition: boolean;
 }

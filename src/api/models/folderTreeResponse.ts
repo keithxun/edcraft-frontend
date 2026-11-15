@@ -10,11 +10,11 @@
  * Schema for folder tree structure with nested children.
  */
 export interface FolderTreeResponse {
-  children?: FolderTreeResponse[];
-  created_at: string;
-  description: string | null;
   id: string;
-  name: string;
   owner_id: string;
   parent_id: string | null;
+  name: string;
+  description: string | null;
+  created_at: string;
+  children?: FolderTreeResponse[];
 }

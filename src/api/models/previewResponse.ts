@@ -5,20 +5,21 @@
  * API for EdCraft Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { CodeQuestionInstance } from './codeQuestionInstance';
+import type { PreviewResponseQuestion } from './previewResponseQuestion';
 
 /**
  * One deterministic question generated from the exact artifact.
  */
 export interface PreviewResponse {
+  job_id: string;
+  domain: string;
   artifact_id: string;
   /** @pattern ^[0-9a-f]{64}$ */
   artifact_sha256: string;
-  job_id: string;
-  question: CodeQuestionInstance;
   /**
    * @minimum 0
    * @maximum 2147483647
    */
   seed: number;
+  question: PreviewResponseQuestion;
 }

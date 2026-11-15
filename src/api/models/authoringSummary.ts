@@ -12,15 +12,15 @@ import type { PublicAuthoringError } from './publicAuthoringError';
 import type { RelevanceOutcome } from './relevanceOutcome';
 
 export interface AuthoringSummary {
-  approval?: 'unreviewed';
-  artifact_id: string | null;
-  checks?: CheckSummary[];
-  difficulty?: DifficultyOutcome | null;
-  domain: string;
-  error?: PublicAuthoringError | null;
-  model: string;
-  provider: string;
-  relevance?: RelevanceOutcome | null;
   status: AuthoringSummaryStatus;
+  domain: string;
+  provider: string;
+  model: string;
+  artifact_id: string | null;
+  approval?: 'unreviewed';
+  difficulty?: DifficultyOutcome | null;
+  relevance?: RelevanceOutcome | null;
+  checks?: CheckSummary[];
   warnings?: string[];
+  error?: PublicAuthoringError | null;
 }

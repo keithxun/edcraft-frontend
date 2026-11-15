@@ -14,7 +14,7 @@ import type { ShortAnswerData } from './shortAnswerData';
  * Schema for updating any question type.
  */
 export interface UpdateQuestionRequest {
-  data?: MCQData | MRQData | ShortAnswerData | null;
-  question_text?: string | null;
   question_type?: QuestionType | null;
+  question_text?: string | null;
+  data?: MCQData | MRQData | ShortAnswerData | null;
 }

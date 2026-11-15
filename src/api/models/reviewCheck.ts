@@ -12,9 +12,9 @@ import type { ReviewFinding } from './reviewFinding';
  * One technical or advisory check projected from the retained report.
  */
 export interface ReviewCheck {
-  advisory: boolean;
-  error?: string | null;
-  findings?: ReviewFinding[];
-  status: ReviewCheckStatus;
   tool: string;
+  status: ReviewCheckStatus;
+  advisory: boolean;
+  findings?: ReviewFinding[];
+  error?: string | null;
 }

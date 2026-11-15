@@ -10,11 +10,11 @@
  * Multiple Response Question data.
  */
 export interface MRQData {
-  /** @minItems 1 */
-  correct_indices: number[];
   /**
    * @minItems 2
    * @maxItems 10
    */
   options: string[];
+  /** @minItems 1 */
+  correct_indices: number[];
 }

@@ -11,16 +11,16 @@ import type { MCQData } from './mCQData';
  * Response schema for MCQ question.
  */
 export interface MCQResponse {
-  assessment_id?: string | null;
-  created_at: string;
   id: string;
-  linked_from_question_id?: string | null;
-  mcq_data: MCQData;
-  order?: number | null;
   owner_id: string;
-  question_bank_id?: string | null;
-  question_text: string;
-  question_type: 'mcq';
   template_id: string | null;
+  linked_from_question_id?: string | null;
+  assessment_id?: string | null;
+  question_bank_id?: string | null;
+  order?: number | null;
+  question_text: string;
+  created_at: string;
   updated_at: string;
+  question_type: 'mcq';
+  mcq_data: MCQData;
 }

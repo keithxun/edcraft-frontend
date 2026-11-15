@@ -8,8 +8,8 @@
 import type { CheckSummaryStatus } from './checkSummaryStatus';
 
 export interface CheckSummary {
+  tool: string;
+  status: CheckSummaryStatus;
   advisory?: boolean;
   findings?: string[];
-  status: CheckSummaryStatus;
-  tool: string;
 }

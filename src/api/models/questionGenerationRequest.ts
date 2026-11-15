@@ -15,10 +15,10 @@ import type { QuestionSpec } from './questionSpec';
 export interface QuestionGenerationRequest {
   /** Original algorithm source code */
   code: string;
+  /** Specifications for the question to be generated */
+  question_spec: QuestionSpec;
   /** Specifications for code execution */
   execution_spec: ExecutionSpec;
   /** Options for question generation */
   generation_options: GenerationOptions;
-  /** Specifications for the question to be generated */
-  question_spec: QuestionSpec;
 }

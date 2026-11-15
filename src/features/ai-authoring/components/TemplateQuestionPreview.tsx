@@ -1,7 +1,7 @@
-import type { CodeTemplateCandidate } from "@/api/models";
 import { QuestionContent } from "@/features/questions/components/QuestionContent";
 import type {
     AuthoringTemplateCandidate,
+    CodeTemplateCandidate,
     IrMathTemplateCandidate,
     LegacyMathTemplateCandidate,
     ReviewTemplate,

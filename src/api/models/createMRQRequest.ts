@@ -11,12 +11,12 @@ import type { MRQData } from './mRQData';
  * Schema for creating a new MRQ question.
  */
 export interface CreateMRQRequest {
-  data: MRQData;
+  template_id?: string | null;
   /**
    * @minLength 1
    * @maxLength 5000
    */
   question_text: string;
   question_type?: 'mrq';
-  template_id?: string | null;
+  data: MRQData;
 }

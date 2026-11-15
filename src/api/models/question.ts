@@ -11,14 +11,14 @@ import type { QuestionQuestionType } from './questionQuestionType';
  * Represents a generated question.
  */
 export interface Question {
-  /** The answer to the question */
-  answer: unknown;
-  /** List of indices of correct options for MCQ or MRQ types */
-  correct_indices?: number[] | null;
-  /** List of options for MCQ or MRQ types */
-  options?: unknown[] | null;
-  /** Type of the question (mcq, mrq, short_answer, etc.) */
-  question_type: QuestionQuestionType;
   /** The text of the question */
   text: string;
+  /** The answer to the question */
+  answer: unknown;
+  /** List of options for MCQ or MRQ types */
+  options?: unknown[] | null;
+  /** List of indices of correct options for MCQ or MRQ types */
+  correct_indices?: number[] | null;
+  /** Type of the question (mcq, mrq, short_answer, etc.) */
+  question_type: QuestionQuestionType;
 }

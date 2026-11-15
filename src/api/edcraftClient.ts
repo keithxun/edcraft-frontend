@@ -99,19 +99,115 @@ import type {
 import { axiosInstance } from './axiosInstance';
 export const getEdCraftBackendAPI = () => {
 /**
- * @summary Index
+ * Submit an input generation job. Poll GET /jobs/{job_id} for the result.
+ * @summary Generate Inputs
  */
-const indexGet = (
-    
+const generateInputsInputGeneratorGeneratePost = (
+    generateInputsRequest: GenerateInputsRequest,
  ) => {
-      return axiosInstance<IndexGet200>(
-      {url: `/`, method: 'GET'
+      return axiosInstance<JobSubmittedResponse>(
+      {url: `/input-generator/generate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: generateInputsRequest
     },
       );
     }
   
 /**
- * Return enabled domains and safe configured model display metadata.
+ * Submit a code analysis job. Poll GET /jobs/{job_id} for the result.
+ * @summary Analyse Code
+ */
+const analyseCodeQuestionGenerationAnalyseCodePost = (
+    codeAnalysisRequest: CodeAnalysisRequest,
+ ) => {
+      return axiosInstance<JobSubmittedResponse>(
+      {url: `/question-generation/analyse-code`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: codeAnalysisRequest
+    },
+      );
+    }
+  
+/**
+ * Submit a question generation job. Poll GET /jobs/{job_id} for the result.
+ * @summary Generate Question
+ */
+const generateQuestionQuestionGenerationGenerateQuestionPost = (
+    questionGenerationRequest: QuestionGenerationRequest,
+ ) => {
+      return axiosInstance<JobSubmittedResponse>(
+      {url: `/question-generation/generate-question`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: questionGenerationRequest
+    },
+      );
+    }
+  
+/**
+ * Submit a template preview generation job. Poll GET /jobs/{job_id} for the result.
+ * @summary Generate Template Preview
+ */
+const generateTemplatePreviewQuestionGenerationGenerateTemplatePost = (
+    generateTemplateRequest: GenerateTemplateRequest,
+ ) => {
+      return axiosInstance<JobSubmittedResponse>(
+      {url: `/question-generation/generate-template`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: generateTemplateRequest
+    },
+      );
+    }
+  
+/**
+ * Submit a question-from-template job. Poll GET /jobs/{job_id} for the result.
+ * @summary Generate Question From Template
+ */
+const generateQuestionFromTemplateQuestionGenerationFromTemplateTemplateIdPost = (
+    templateId: string,
+    generateQuestionFromTemplateRequest: GenerateQuestionFromTemplateRequest,
+ ) => {
+      return axiosInstance<JobSubmittedResponse>(
+      {url: `/question-generation/from-template/${templateId}`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: generateQuestionFromTemplateRequest
+    },
+      );
+    }
+  
+/**
+ * Submit an assessment-from-template job. Poll GET /jobs/{job_id} for the result.
+ * @summary Generate Assessment From Template
+ */
+const generateAssessmentFromTemplateQuestionGenerationAssessmentFromTemplateTemplateIdPost = (
+    templateId: string,
+    generateAssessmentFromTemplateRequest: GenerateAssessmentFromTemplateRequest,
+ ) => {
+      return axiosInstance<JobSubmittedResponse>(
+      {url: `/question-generation/assessment-from-template/${templateId}`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: generateAssessmentFromTemplateRequest
+    },
+      );
+    }
+  
+/**
+ * Poll the status and result of an async job.
+
+Anonymous jobs (submitted without authentication) can be polled by anyone
+who knows the job_id. Owned jobs are restricted to the owning user.
+ * @summary Get Job Status
+ */
+const getJobStatusJobsJobIdGet = (
+    jobId: string,
+ ) => {
+      return axiosInstance<JobStatusResponse>(
+      {url: `/jobs/${jobId}`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Return server profiles and the caller's own BYOK connections.
  * @summary Get Capabilities
  */
 const getCapabilitiesAiAuthoringCapabilitiesGet = (
@@ -119,19 +215,6 @@ const getCapabilitiesAiAuthoringCapabilitiesGet = (
  ) => {
       return axiosInstance<AuthoringCapabilitiesResponse>(
       {url: `/ai-authoring/capabilities`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Return recent jobs owned by the signed-in user.
- * @summary List Jobs
- */
-const listJobsAiAuthoringJobsGet = (
-    
- ) => {
-      return axiosInstance<AuthoringJobSummary[]>(
-      {url: `/ai-authoring/jobs`, method: 'GET'
     },
       );
     }
@@ -152,6 +235,19 @@ const submitJobAiAuthoringJobsPost = (
     }
   
 /**
+ * Return recent jobs owned by the signed-in user.
+ * @summary List Jobs
+ */
+const listJobsAiAuthoringJobsGet = (
+    
+ ) => {
+      return axiosInstance<AuthoringJobSummary[]>(
+      {url: `/ai-authoring/jobs`, method: 'GET'
+    },
+      );
+    }
+  
+/**
  * Poll one owned job without exposing the internal report.
  * @summary Get Job
  */
@@ -160,6 +256,35 @@ const getJobAiAuthoringJobsJobIdGet = (
  ) => {
       return axiosInstance<AuthoringJobStatusResponse>(
       {url: `/ai-authoring/jobs/${jobId}`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Return safe prompt, plan, attempts, findings and exact artifact identity.
+ * @summary Review Job
+ */
+const reviewJobAiAuthoringJobsJobIdReviewGet = (
+    jobId: string,
+ ) => {
+      return axiosInstance<AuthoringReviewResponse>(
+      {url: `/ai-authoring/jobs/${jobId}/review`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Generate one deterministic draft locally from a checked artifact.
+ * @summary Preview Job
+ */
+const previewJobAiAuthoringJobsJobIdPreviewPost = (
+    jobId: string,
+    previewRequest: PreviewRequest,
+ ) => {
+      return axiosInstance<PreviewResponse>(
+      {url: `/ai-authoring/jobs/${jobId}/preview`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: previewRequest
     },
       );
     }
@@ -197,222 +322,450 @@ const generateJobAiAuthoringJobsJobIdGeneratePost = (
     }
   
 /**
- * Generate one deterministic draft locally from a checked artifact.
- * @summary Preview Job
+ * List the caller's provider connections without exposing secrets.
+ * @summary List Connections
  */
-const previewJobAiAuthoringJobsJobIdPreviewPost = (
-    jobId: string,
-    previewRequest: PreviewRequest,
+const listConnectionsAiAuthoringConnectionsGet = (
+    
  ) => {
-      return axiosInstance<PreviewResponse>(
-      {url: `/ai-authoring/jobs/${jobId}/preview`, method: 'POST',
+      return axiosInstance<ProviderConnectionResponse[]>(
+      {url: `/ai-authoring/connections`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Store one encrypted provider connection for the caller.
+ * @summary Create Connection
+ */
+const createConnectionAiAuthoringConnectionsPost = (
+    providerConnectionCreate: ProviderConnectionCreate,
+ ) => {
+      return axiosInstance<ProviderConnectionResponse>(
+      {url: `/ai-authoring/connections`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: previewRequest
+      data: providerConnectionCreate
     },
       );
     }
   
 /**
- * Return safe prompt, plan, attempts, findings and exact artifact identity.
- * @summary Review Job
+ * Test credentials before saving them and list available models.
+ * @summary Probe Connection
  */
-const reviewJobAiAuthoringJobsJobIdReviewGet = (
-    jobId: string,
+const probeConnectionAiAuthoringConnectionsProbePost = (
+    providerProbeRequest: ProviderProbeRequest,
  ) => {
-      return axiosInstance<AuthoringReviewResponse>(
-      {url: `/ai-authoring/jobs/${jobId}/review`, method: 'GET'
+      return axiosInstance<ProviderModelList>(
+      {url: `/ai-authoring/connections/probe`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: providerProbeRequest
     },
       );
     }
   
 /**
- * List assessment templates the user has access to, optionally filtered by folder or role.
- * @summary List Assessment Templates
+ * Update metadata or rotate the key without returning it.
+ * @summary Update Connection
  */
-const listAssessmentTemplatesAssessmentTemplatesGet = (
-    params?: ListAssessmentTemplatesAssessmentTemplatesGetParams,
+const updateConnectionAiAuthoringConnectionsConnectionIdPatch = (
+    connectionId: string,
+    providerConnectionUpdate: ProviderConnectionUpdate,
  ) => {
-      return axiosInstance<AssessmentTemplateResponse[]>(
-      {url: `/assessment-templates`, method: 'GET',
+      return axiosInstance<ProviderConnectionResponse>(
+      {url: `/ai-authoring/connections/${connectionId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: providerConnectionUpdate
+    },
+      );
+    }
+  
+/**
+ * Forget a connection; existing jobs keep their non-secret snapshot.
+ * @summary Delete Connection
+ */
+const deleteConnectionAiAuthoringConnectionsConnectionIdDelete = (
+    connectionId: string,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/ai-authoring/connections/${connectionId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
+ * Re-test a stored connection and refresh its cached model list.
+ * @summary Test Connection
+ */
+const testConnectionAiAuthoringConnectionsConnectionIdTestPost = (
+    connectionId: string,
+ ) => {
+      return axiosInstance<ProviderModelList>(
+      {url: `/ai-authoring/connections/${connectionId}/test`, method: 'POST'
+    },
+      );
+    }
+  
+/**
+ * Get the current authenticated user.
+ * @summary Get User
+ */
+const getUserUsersMeGet = (
+    
+ ) => {
+      return axiosInstance<UserResponse>(
+      {url: `/users/me`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Update the current authenticated user.
+ * @summary Update User
+ */
+const updateUserUsersMePatch = (
+    updateUserRequest: UpdateUserRequest,
+ ) => {
+      return axiosInstance<UserResponse>(
+      {url: `/users/me`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateUserRequest
+    },
+      );
+    }
+  
+/**
+ * Soft delete the current authenticated user.
+ * @summary Soft Delete User
+ */
+const softDeleteUserUsersMeDelete = (
+    
+ ) => {
+      return axiosInstance<void>(
+      {url: `/users/me`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
+ * Get the root folder for the current authenticated user.
+ * @summary Get User Root Folder
+ */
+const getUserRootFolderUsersMeRootFolderGet = (
+    
+ ) => {
+      return axiosInstance<FolderResponse>(
+      {url: `/users/me/root-folder`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Sign up a new user account.
+ * @summary Signup
+ */
+const signupAuthSignupPost = (
+    signupRequest: SignupRequest,
+ ) => {
+      return axiosInstance<AuthUserResponse>(
+      {url: `/auth/signup`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: signupRequest
+    },
+      );
+    }
+  
+/**
+ * Login with email and password. Tokens are set as httpOnly cookies.
+ * @summary Login
+ */
+const loginAuthLoginPost = (
+    loginRequest: LoginRequest,
+ ) => {
+      return axiosInstance<TokenPairResponse>(
+      {url: `/auth/login`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: loginRequest
+    },
+      );
+    }
+  
+/**
+ * Rotate tokens using the refresh token cookie.
+ * @summary Refresh Token
+ */
+const refreshTokenAuthRefreshPost = (
+    
+ ) => {
+      return axiosInstance<TokenPairResponse>(
+      {url: `/auth/refresh`, method: 'POST'
+    },
+      );
+    }
+  
+/**
+ * Revoke refresh token and clear cookies.
+ * @summary Logout
+ */
+const logoutAuthLogoutPost = (
+    
+ ) => {
+      return axiosInstance<void>(
+      {url: `/auth/logout`, method: 'POST'
+    },
+      );
+    }
+  
+/**
+ * Return the authenticated user's profile.
+ * @summary Get Me
+ */
+const getMeAuthMeGet = (
+    
+ ) => {
+      return axiosInstance<AuthUserResponse>(
+      {url: `/auth/me`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Verify email address with token.
+ * @summary Verify Email
+ */
+const verifyEmailAuthVerifyEmailPost = (
+    verifyEmailRequest: VerifyEmailRequest,
+ ) => {
+      return axiosInstance<VerifyEmailResponse>(
+      {url: `/auth/verify-email`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: verifyEmailRequest
+    },
+      );
+    }
+  
+/**
+ * Resend verification email.
+ * @summary Resend Verification
+ */
+const resendVerificationAuthResendVerificationPost = (
+    resendVerificationRequest: ResendVerificationRequest,
+ ) => {
+      return axiosInstance<ResendVerificationResponse>(
+      {url: `/auth/resend-verification`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: resendVerificationRequest
+    },
+      );
+    }
+  
+/**
+ * Redirect to the OAuth provider's authorization page.
+ * @summary Oauth Authorize
+ */
+const oauthAuthorizeAuthOauthProviderAuthorizeGet = (
+    provider: string,
+    params?: OauthAuthorizeAuthOauthProviderAuthorizeGetParams,
+ ) => {
+      return axiosInstance<unknown>(
+      {url: `/auth/oauth/${provider}/authorize`, method: 'GET',
         params
     },
       );
     }
   
 /**
- * Create a new assessment template.
- * @summary Create Assessment Template
+ * Handle provider callback and issue tokens.
+ * @summary Oauth Callback
  */
-const createAssessmentTemplateAssessmentTemplatesPost = (
-    createAssessmentTemplateRequest: CreateAssessmentTemplateRequest,
+const oauthCallbackAuthOauthProviderCallbackGet = (
+    provider: string,
+    params?: OauthCallbackAuthOauthProviderCallbackGetParams,
  ) => {
-      return axiosInstance<AssessmentTemplateResponse>(
-      {url: `/assessment-templates`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createAssessmentTemplateRequest
-    },
-      );
-    }
-  
-/**
- * Soft delete an assessment template and clean up orphaned question templates.
- * @summary Soft Delete Assessment Template
- */
-const softDeleteAssessmentTemplateAssessmentTemplatesTemplateIdDelete = (
-    templateId: string,
- ) => {
-      return axiosInstance<void>(
-      {url: `/assessment-templates/${templateId}`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
- * Get assessment template with question templates in order.
-
-- Collaborators can access the template
-- Unauthenticated users can only access public templates
- * @summary Get Assessment Template
- */
-const getAssessmentTemplateAssessmentTemplatesTemplateIdGet = (
-    templateId: string,
- ) => {
-      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
-      {url: `/assessment-templates/${templateId}`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Update assessment template metadata.
- * @summary Update Assessment Template
- */
-const updateAssessmentTemplateAssessmentTemplatesTemplateIdPatch = (
-    templateId: string,
-    updateAssessmentTemplateRequest: UpdateAssessmentTemplateRequest,
- ) => {
-      return axiosInstance<AssessmentTemplateResponse>(
-      {url: `/assessment-templates/${templateId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: updateAssessmentTemplateRequest
-    },
-      );
-    }
-  
-/**
- * Add a question template to an assessment template.
-
-Question templates are ordered using 0-indexed consecutive integers (0, 1, 2, 3...).
-When adding a question template with a specified order, templates at or after that
-position are automatically shifted down. Omit order to append to the end.
-
-Valid order range: 0 to current question template count (inclusive).
- * @summary Insert Question Template To Assessment Template
- */
-const insertQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesPost = (
-    templateId: string,
-    insertQuestionTemplateIntoAssessmentTemplateRequest: InsertQuestionTemplateIntoAssessmentTemplateRequest,
- ) => {
-      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
-      {url: `/assessment-templates/${templateId}/question-templates`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: insertQuestionTemplateIntoAssessmentTemplateRequest
-    },
-      );
-    }
-  
-/**
- * Copy a question template into an assessment template.
-Links new question template to source question template.
-
-Question templates are ordered using 0-indexed consecutive integers (0, 1, 2, 3...).
-When linking a question template with a specified order, templates at or after that
-position are automatically shifted down. Omit order to append to the end.
-
-Valid order range: 0 to current question template count (inclusive).
- * @summary Link Question Template To Assessment Template
- */
-const linkQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesLinkPost = (
-    templateId: string,
-    linkQuestionTemplateToAssessmentTemplateRequest: LinkQuestionTemplateToAssessmentTemplateRequest,
- ) => {
-      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
-      {url: `/assessment-templates/${templateId}/question-templates/link`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: linkQuestionTemplateToAssessmentTemplateRequest
-    },
-      );
-    }
-  
-/**
- * Reorder question templates in an assessment template.
- * @summary Reorder Question Templates
- */
-const reorderQuestionTemplatesAssessmentTemplatesTemplateIdQuestionTemplatesReorderPatch = (
-    templateId: string,
-    reorderQuestionTemplatesInAssessmentTemplateRequest: ReorderQuestionTemplatesInAssessmentTemplateRequest,
- ) => {
-      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
-      {url: `/assessment-templates/${templateId}/question-templates/reorder`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: reorderQuestionTemplatesInAssessmentTemplateRequest
-    },
-      );
-    }
-  
-/**
- * Remove a question template from an assessment template and clean up if orphaned.
- * @summary Remove Question Template From Assessment Template
- */
-const removeQuestionTemplateFromAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdDelete = (
-    templateId: string,
-    questionTemplateId: string,
- ) => {
-      return axiosInstance<void>(
-      {url: `/assessment-templates/${templateId}/question-templates/${questionTemplateId}`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
- * Sync a linked question template's content from its source template.
-Overwrites the question template's content with the current content of its source.
- * @summary Sync Question Template In Assessment Template
- */
-const syncQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdSyncPost = (
-    templateId: string,
-    questionTemplateId: string,
- ) => {
-      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
-      {url: `/assessment-templates/${templateId}/question-templates/${questionTemplateId}/sync`, method: 'POST'
-    },
-      );
-    }
-  
-/**
- * Remove the source link from a question template copy (make it independent).
- * @summary Unlink Question Template In Assessment Template
- */
-const unlinkQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdUnlinkPost = (
-    templateId: string,
-    questionTemplateId: string,
- ) => {
-      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
-      {url: `/assessment-templates/${templateId}/question-templates/${questionTemplateId}/unlink`, method: 'POST'
-    },
-      );
-    }
-  
-/**
- * List assessments the user has access to, optionally filtered by folder or role.
- * @summary List Assessments
- */
-const listAssessmentsAssessmentsGet = (
-    params?: ListAssessmentsAssessmentsGetParams,
- ) => {
-      return axiosInstance<AssessmentResponse[]>(
-      {url: `/assessments`, method: 'GET',
+      return axiosInstance<unknown>(
+      {url: `/auth/oauth/${provider}/callback`, method: 'GET',
         params
+    },
+      );
+    }
+  
+/**
+ * Create a new folder.
+ * @summary Create Folder
+ */
+const createFolderFoldersPost = (
+    createFolderRequest: CreateFolderRequest,
+ ) => {
+      return axiosInstance<FolderResponse>(
+      {url: `/folders`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: createFolderRequest
+    },
+      );
+    }
+  
+/**
+ * List folders for a user, filtered by parent.
+ * @summary List Folders
+ */
+const listFoldersFoldersGet = (
+    params?: ListFoldersFoldersGetParams,
+ ) => {
+      return axiosInstance<FolderResponse[]>(
+      {url: `/folders`, method: 'GET',
+        params
+    },
+      );
+    }
+  
+/**
+ * Get a folder by ID.
+ * @summary Get Folder
+ */
+const getFolderFoldersFolderIdGet = (
+    folderId: string,
+ ) => {
+      return axiosInstance<FolderResponse>(
+      {url: `/folders/${folderId}`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Update folder (name, description).
+ * @summary Update Folder
+ */
+const updateFolderFoldersFolderIdPatch = (
+    folderId: string,
+    updateFolderRequest: UpdateFolderRequest,
+ ) => {
+      return axiosInstance<FolderResponse>(
+      {url: `/folders/${folderId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateFolderRequest
+    },
+      );
+    }
+  
+/**
+ * Soft delete folder (cascade to children) and clean up orphaned resources.
+ * @summary Soft Delete Folder
+ */
+const softDeleteFolderFoldersFolderIdDelete = (
+    folderId: string,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/folders/${folderId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
+ * Get folder with complete contents (assessments and templates).
+ * @summary Get Folder Contents
+ */
+const getFolderContentsFoldersFolderIdContentsGet = (
+    folderId: string,
+ ) => {
+      return axiosInstance<FolderWithContentsResponse>(
+      {url: `/folders/${folderId}/contents`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Get folder with full subtree (all descendants in nested structure).
+ * @summary Get Folder Tree
+ */
+const getFolderTreeFoldersFolderIdTreeGet = (
+    folderId: string,
+ ) => {
+      return axiosInstance<FolderTreeResponse>(
+      {url: `/folders/${folderId}/tree`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Get folder path from root to current folder.
+ * @summary Get Folder Path
+ */
+const getFolderPathFoldersFolderIdPathGet = (
+    folderId: string,
+ ) => {
+      return axiosInstance<FolderPathResponse>(
+      {url: `/folders/${folderId}/path`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Move folder to different parent.
+ * @summary Move Folder
+ */
+const moveFolderFoldersFolderIdMovePatch = (
+    folderId: string,
+    moveFolderRequest: MoveFolderRequest,
+ ) => {
+      return axiosInstance<FolderResponse>(
+      {url: `/folders/${folderId}/move`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: moveFolderRequest
+    },
+      );
+    }
+  
+/**
+ * List questions by owner.
+ * @summary List Questions
+ */
+const listQuestionsQuestionsGet = (
+    
+ ) => {
+      return axiosInstance<(MCQResponse | MRQResponse | ShortAnswerResponse)[]>(
+      {url: `/questions`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Get a question by ID.
+ * @summary Get Question
+ */
+const getQuestionQuestionsQuestionIdGet = (
+    questionId: string,
+ ) => {
+      return axiosInstance<MCQResponse | MRQResponse | ShortAnswerResponse>(
+      {url: `/questions/${questionId}`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * Update a question.
+ * @summary Update Question
+ */
+const updateQuestionQuestionsQuestionIdPatch = (
+    questionId: string,
+    updateQuestionRequest: UpdateQuestionRequest,
+ ) => {
+      return axiosInstance<MCQResponse | MRQResponse | ShortAnswerResponse>(
+      {url: `/questions/${questionId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateQuestionRequest
+    },
+      );
+    }
+  
+/**
+ * Soft delete a question.
+ * @summary Soft Delete Question
+ */
+const softDeleteQuestionQuestionsQuestionIdDelete = (
+    questionId: string,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/questions/${questionId}`, method: 'DELETE'
     },
       );
     }
@@ -433,14 +786,15 @@ const createAssessmentAssessmentsPost = (
     }
   
 /**
- * Soft delete an assessment. Owner only.
- * @summary Soft Delete Assessment
+ * List assessments the user has access to, optionally filtered by folder or role.
+ * @summary List Assessments
  */
-const softDeleteAssessmentAssessmentsAssessmentIdDelete = (
-    assessmentId: string,
+const listAssessmentsAssessmentsGet = (
+    params?: ListAssessmentsAssessmentsGetParams,
  ) => {
-      return axiosInstance<void>(
-      {url: `/assessments/${assessmentId}`, method: 'DELETE'
+      return axiosInstance<AssessmentResponse[]>(
+      {url: `/assessments`, method: 'GET',
+        params
     },
       );
     }
@@ -474,6 +828,19 @@ const updateAssessmentAssessmentsAssessmentIdPatch = (
       {url: `/assessments/${assessmentId}`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
       data: updateAssessmentRequest
+    },
+      );
+    }
+  
+/**
+ * Soft delete an assessment. Owner only.
+ * @summary Soft Delete Assessment
+ */
+const softDeleteAssessmentAssessmentsAssessmentIdDelete = (
+    assessmentId: string,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/assessments/${assessmentId}`, method: 'DELETE'
     },
       );
     }
@@ -524,36 +891,6 @@ const linkQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsLinkPost = (
     }
   
 /**
- * Reorder questions in an assessment. Requires edit permissions.
- * @summary Reorder Questions
- */
-const reorderQuestionsAssessmentsAssessmentIdQuestionsReorderPatch = (
-    assessmentId: string,
-    reorderQuestionsInAssessmentRequest: ReorderQuestionsInAssessmentRequest,
- ) => {
-      return axiosInstance<AssessmentWithQuestionsResponse>(
-      {url: `/assessments/${assessmentId}/questions/reorder`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: reorderQuestionsInAssessmentRequest
-    },
-      );
-    }
-  
-/**
- * Remove a question from an assessment. Requires edit permissions.
- * @summary Remove Question From Assessment
- */
-const removeQuestionFromAssessmentAssessmentsAssessmentIdQuestionsQuestionIdDelete = (
-    assessmentId: string,
-    questionId: string,
- ) => {
-      return axiosInstance<void>(
-      {url: `/assessments/${assessmentId}/questions/${questionId}`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
  * Sync a linked question's content from its source. Requires edit permissions.
 
 Overwrites the question's content with the current content of its source question.
@@ -586,314 +923,264 @@ const unlinkQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdUnlink
     }
   
 /**
- * Login with email and password. Tokens are set as httpOnly cookies.
- * @summary Login
+ * Remove a question from an assessment. Requires edit permissions.
+ * @summary Remove Question From Assessment
  */
-const loginAuthLoginPost = (
-    loginRequest: LoginRequest,
- ) => {
-      return axiosInstance<TokenPairResponse>(
-      {url: `/auth/login`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: loginRequest
-    },
-      );
-    }
-  
-/**
- * Revoke refresh token and clear cookies.
- * @summary Logout
- */
-const logoutAuthLogoutPost = (
-    
+const removeQuestionFromAssessmentAssessmentsAssessmentIdQuestionsQuestionIdDelete = (
+    assessmentId: string,
+    questionId: string,
  ) => {
       return axiosInstance<void>(
-      {url: `/auth/logout`, method: 'POST'
+      {url: `/assessments/${assessmentId}/questions/${questionId}`, method: 'DELETE'
     },
       );
     }
   
 /**
- * Return the authenticated user's profile.
- * @summary Get Me
+ * Reorder questions in an assessment. Requires edit permissions.
+ * @summary Reorder Questions
  */
-const getMeAuthMeGet = (
+const reorderQuestionsAssessmentsAssessmentIdQuestionsReorderPatch = (
+    assessmentId: string,
+    reorderQuestionsInAssessmentRequest: ReorderQuestionsInAssessmentRequest,
+ ) => {
+      return axiosInstance<AssessmentWithQuestionsResponse>(
+      {url: `/assessments/${assessmentId}/questions/reorder`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: reorderQuestionsInAssessmentRequest
+    },
+      );
+    }
+  
+/**
+ * List question templates by owner.
+ * @summary List Question Templates
+ */
+const listQuestionTemplatesQuestionTemplatesGet = (
     
  ) => {
-      return axiosInstance<AuthUserResponse>(
-      {url: `/auth/me`, method: 'GET'
+      return axiosInstance<QuestionTemplateSummaryResponse[]>(
+      {url: `/question-templates`, method: 'GET'
     },
       );
     }
   
 /**
- * Redirect to the OAuth provider's authorization page.
- * @summary Oauth Authorize
+ * Get a question template by ID.
+ * @summary Get Question Template
  */
-const oauthAuthorizeAuthOauthProviderAuthorizeGet = (
-    provider: string,
-    params?: OauthAuthorizeAuthOauthProviderAuthorizeGetParams,
+const getQuestionTemplateQuestionTemplatesTemplateIdGet = (
+    templateId: string,
  ) => {
-      return axiosInstance<unknown>(
-      {url: `/auth/oauth/${provider}/authorize`, method: 'GET',
-        params
+      return axiosInstance<QuestionTemplateResponse>(
+      {url: `/question-templates/${templateId}`, method: 'GET'
     },
       );
     }
   
 /**
- * Handle provider callback and issue tokens.
- * @summary Oauth Callback
+ * Update a question template.
+ * @summary Update Question Template
  */
-const oauthCallbackAuthOauthProviderCallbackGet = (
-    provider: string,
-    params?: OauthCallbackAuthOauthProviderCallbackGetParams,
+const updateQuestionTemplateQuestionTemplatesTemplateIdPatch = (
+    templateId: string,
+    updateQuestionTemplateRequest: UpdateQuestionTemplateRequest,
  ) => {
-      return axiosInstance<unknown>(
-      {url: `/auth/oauth/${provider}/callback`, method: 'GET',
-        params
-    },
-      );
-    }
-  
-/**
- * Rotate tokens using the refresh token cookie.
- * @summary Refresh Token
- */
-const refreshTokenAuthRefreshPost = (
-    
- ) => {
-      return axiosInstance<TokenPairResponse>(
-      {url: `/auth/refresh`, method: 'POST'
-    },
-      );
-    }
-  
-/**
- * Resend verification email.
- * @summary Resend Verification
- */
-const resendVerificationAuthResendVerificationPost = (
-    resendVerificationRequest: ResendVerificationRequest,
- ) => {
-      return axiosInstance<ResendVerificationResponse>(
-      {url: `/auth/resend-verification`, method: 'POST',
+      return axiosInstance<QuestionTemplateResponse>(
+      {url: `/question-templates/${templateId}`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
-      data: resendVerificationRequest
+      data: updateQuestionTemplateRequest
     },
       );
     }
   
 /**
- * Sign up a new user account.
- * @summary Signup
+ * Soft delete a question template.
+ * @summary Soft Delete Question Template
  */
-const signupAuthSignupPost = (
-    signupRequest: SignupRequest,
- ) => {
-      return axiosInstance<AuthUserResponse>(
-      {url: `/auth/signup`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: signupRequest
-    },
-      );
-    }
-  
-/**
- * Verify email address with token.
- * @summary Verify Email
- */
-const verifyEmailAuthVerifyEmailPost = (
-    verifyEmailRequest: VerifyEmailRequest,
- ) => {
-      return axiosInstance<VerifyEmailResponse>(
-      {url: `/auth/verify-email`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: verifyEmailRequest
-    },
-      );
-    }
-  
-/**
- * List folders for a user, filtered by parent.
- * @summary List Folders
- */
-const listFoldersFoldersGet = (
-    params?: ListFoldersFoldersGetParams,
- ) => {
-      return axiosInstance<FolderResponse[]>(
-      {url: `/folders`, method: 'GET',
-        params
-    },
-      );
-    }
-  
-/**
- * Create a new folder.
- * @summary Create Folder
- */
-const createFolderFoldersPost = (
-    createFolderRequest: CreateFolderRequest,
- ) => {
-      return axiosInstance<FolderResponse>(
-      {url: `/folders`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createFolderRequest
-    },
-      );
-    }
-  
-/**
- * Soft delete folder (cascade to children) and clean up orphaned resources.
- * @summary Soft Delete Folder
- */
-const softDeleteFolderFoldersFolderIdDelete = (
-    folderId: string,
+const softDeleteQuestionTemplateQuestionTemplatesTemplateIdDelete = (
+    templateId: string,
  ) => {
       return axiosInstance<void>(
-      {url: `/folders/${folderId}`, method: 'DELETE'
+      {url: `/question-templates/${templateId}`, method: 'DELETE'
     },
       );
     }
   
 /**
- * Get a folder by ID.
- * @summary Get Folder
+ * Create a new assessment template.
+ * @summary Create Assessment Template
  */
-const getFolderFoldersFolderIdGet = (
-    folderId: string,
+const createAssessmentTemplateAssessmentTemplatesPost = (
+    createAssessmentTemplateRequest: CreateAssessmentTemplateRequest,
  ) => {
-      return axiosInstance<FolderResponse>(
-      {url: `/folders/${folderId}`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Update folder (name, description).
- * @summary Update Folder
- */
-const updateFolderFoldersFolderIdPatch = (
-    folderId: string,
-    updateFolderRequest: UpdateFolderRequest,
- ) => {
-      return axiosInstance<FolderResponse>(
-      {url: `/folders/${folderId}`, method: 'PATCH',
+      return axiosInstance<AssessmentTemplateResponse>(
+      {url: `/assessment-templates`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: updateFolderRequest
+      data: createAssessmentTemplateRequest
     },
       );
     }
   
 /**
- * Get folder with complete contents (assessments and templates).
- * @summary Get Folder Contents
+ * List assessment templates the user has access to, optionally filtered by folder or role.
+ * @summary List Assessment Templates
  */
-const getFolderContentsFoldersFolderIdContentsGet = (
-    folderId: string,
+const listAssessmentTemplatesAssessmentTemplatesGet = (
+    params?: ListAssessmentTemplatesAssessmentTemplatesGetParams,
  ) => {
-      return axiosInstance<FolderWithContentsResponse>(
-      {url: `/folders/${folderId}/contents`, method: 'GET'
+      return axiosInstance<AssessmentTemplateResponse[]>(
+      {url: `/assessment-templates`, method: 'GET',
+        params
     },
       );
     }
   
 /**
- * Move folder to different parent.
- * @summary Move Folder
- */
-const moveFolderFoldersFolderIdMovePatch = (
-    folderId: string,
-    moveFolderRequest: MoveFolderRequest,
- ) => {
-      return axiosInstance<FolderResponse>(
-      {url: `/folders/${folderId}/move`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: moveFolderRequest
-    },
-      );
-    }
-  
-/**
- * Get folder path from root to current folder.
- * @summary Get Folder Path
- */
-const getFolderPathFoldersFolderIdPathGet = (
-    folderId: string,
- ) => {
-      return axiosInstance<FolderPathResponse>(
-      {url: `/folders/${folderId}/path`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Get folder with full subtree (all descendants in nested structure).
- * @summary Get Folder Tree
- */
-const getFolderTreeFoldersFolderIdTreeGet = (
-    folderId: string,
- ) => {
-      return axiosInstance<FolderTreeResponse>(
-      {url: `/folders/${folderId}/tree`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Health check endpoint.
- * @summary Health
- */
-const healthHealthGet = (
-    
- ) => {
-      return axiosInstance<HealthHealthGet200>(
-      {url: `/health`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Submit an input generation job. Poll GET /jobs/{job_id} for the result.
- * @summary Generate Inputs
- */
-const generateInputsInputGeneratorGeneratePost = (
-    generateInputsRequest: GenerateInputsRequest,
- ) => {
-      return axiosInstance<JobSubmittedResponse>(
-      {url: `/input-generator/generate`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: generateInputsRequest
-    },
-      );
-    }
-  
-/**
- * Poll the status and result of an async job.
+ * Get assessment template with question templates in order.
 
-Anonymous jobs (submitted without authentication) can be polled by anyone
-who knows the job_id. Owned jobs are restricted to the owning user.
- * @summary Get Job Status
+- Collaborators can access the template
+- Unauthenticated users can only access public templates
+ * @summary Get Assessment Template
  */
-const getJobStatusJobsJobIdGet = (
-    jobId: string,
+const getAssessmentTemplateAssessmentTemplatesTemplateIdGet = (
+    templateId: string,
  ) => {
-      return axiosInstance<JobStatusResponse>(
-      {url: `/jobs/${jobId}`, method: 'GET'
+      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
+      {url: `/assessment-templates/${templateId}`, method: 'GET'
     },
       );
     }
   
 /**
- * List question banks the user has access to, optionally filtered by folder or role.
- * @summary List Question Banks
+ * Update assessment template metadata.
+ * @summary Update Assessment Template
  */
-const listQuestionBanksQuestionBanksGet = (
-    params?: ListQuestionBanksQuestionBanksGetParams,
+const updateAssessmentTemplateAssessmentTemplatesTemplateIdPatch = (
+    templateId: string,
+    updateAssessmentTemplateRequest: UpdateAssessmentTemplateRequest,
  ) => {
-      return axiosInstance<QuestionBankResponse[]>(
-      {url: `/question-banks`, method: 'GET',
-        params
+      return axiosInstance<AssessmentTemplateResponse>(
+      {url: `/assessment-templates/${templateId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateAssessmentTemplateRequest
+    },
+      );
+    }
+  
+/**
+ * Soft delete an assessment template and clean up orphaned question templates.
+ * @summary Soft Delete Assessment Template
+ */
+const softDeleteAssessmentTemplateAssessmentTemplatesTemplateIdDelete = (
+    templateId: string,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/assessment-templates/${templateId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
+ * Add a question template to an assessment template.
+
+Question templates are ordered using 0-indexed consecutive integers (0, 1, 2, 3...).
+When adding a question template with a specified order, templates at or after that
+position are automatically shifted down. Omit order to append to the end.
+
+Valid order range: 0 to current question template count (inclusive).
+ * @summary Insert Question Template To Assessment Template
+ */
+const insertQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesPost = (
+    templateId: string,
+    insertQuestionTemplateIntoAssessmentTemplateRequest: InsertQuestionTemplateIntoAssessmentTemplateRequest,
+ ) => {
+      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
+      {url: `/assessment-templates/${templateId}/question-templates`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: insertQuestionTemplateIntoAssessmentTemplateRequest
+    },
+      );
+    }
+  
+/**
+ * Copy a question template into an assessment template.
+Links new question template to source question template.
+
+Question templates are ordered using 0-indexed consecutive integers (0, 1, 2, 3...).
+When linking a question template with a specified order, templates at or after that
+position are automatically shifted down. Omit order to append to the end.
+
+Valid order range: 0 to current question template count (inclusive).
+ * @summary Link Question Template To Assessment Template
+ */
+const linkQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesLinkPost = (
+    templateId: string,
+    linkQuestionTemplateToAssessmentTemplateRequest: LinkQuestionTemplateToAssessmentTemplateRequest,
+ ) => {
+      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
+      {url: `/assessment-templates/${templateId}/question-templates/link`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: linkQuestionTemplateToAssessmentTemplateRequest
+    },
+      );
+    }
+  
+/**
+ * Remove a question template from an assessment template and clean up if orphaned.
+ * @summary Remove Question Template From Assessment Template
+ */
+const removeQuestionTemplateFromAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdDelete = (
+    templateId: string,
+    questionTemplateId: string,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/assessment-templates/${templateId}/question-templates/${questionTemplateId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
+ * Reorder question templates in an assessment template.
+ * @summary Reorder Question Templates
+ */
+const reorderQuestionTemplatesAssessmentTemplatesTemplateIdQuestionTemplatesReorderPatch = (
+    templateId: string,
+    reorderQuestionTemplatesInAssessmentTemplateRequest: ReorderQuestionTemplatesInAssessmentTemplateRequest,
+ ) => {
+      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
+      {url: `/assessment-templates/${templateId}/question-templates/reorder`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: reorderQuestionTemplatesInAssessmentTemplateRequest
+    },
+      );
+    }
+  
+/**
+ * Sync a linked question template's content from its source template.
+Overwrites the question template's content with the current content of its source.
+ * @summary Sync Question Template In Assessment Template
+ */
+const syncQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdSyncPost = (
+    templateId: string,
+    questionTemplateId: string,
+ ) => {
+      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
+      {url: `/assessment-templates/${templateId}/question-templates/${questionTemplateId}/sync`, method: 'POST'
+    },
+      );
+    }
+  
+/**
+ * Remove the source link from a question template copy (make it independent).
+ * @summary Unlink Question Template In Assessment Template
+ */
+const unlinkQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdUnlinkPost = (
+    templateId: string,
+    questionTemplateId: string,
+ ) => {
+      return axiosInstance<AssessmentTemplateWithQuestionTemplatesResponse>(
+      {url: `/assessment-templates/${templateId}/question-templates/${questionTemplateId}/unlink`, method: 'POST'
     },
       );
     }
@@ -914,14 +1201,15 @@ const createQuestionBankQuestionBanksPost = (
     }
   
 /**
- * Soft delete a question bank and clean up orphaned questions.
- * @summary Soft Delete Question Bank
+ * List question banks the user has access to, optionally filtered by folder or role.
+ * @summary List Question Banks
  */
-const softDeleteQuestionBankQuestionBanksQuestionBankIdDelete = (
-    questionBankId: string,
+const listQuestionBanksQuestionBanksGet = (
+    params?: ListQuestionBanksQuestionBanksGetParams,
  ) => {
-      return axiosInstance<void>(
-      {url: `/question-banks/${questionBankId}`, method: 'DELETE'
+      return axiosInstance<QuestionBankResponse[]>(
+      {url: `/question-banks`, method: 'GET',
+        params
     },
       );
     }
@@ -954,6 +1242,19 @@ const updateQuestionBankQuestionBanksQuestionBankIdPatch = (
       {url: `/question-banks/${questionBankId}`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
       data: updateQuestionBankRequest
+    },
+      );
+    }
+  
+/**
+ * Soft delete a question bank and clean up orphaned questions.
+ * @summary Soft Delete Question Bank
+ */
+const softDeleteQuestionBankQuestionBanksQuestionBankIdDelete = (
+    questionBankId: string,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/question-banks/${questionBankId}`, method: 'DELETE'
     },
       );
     }
@@ -992,20 +1293,6 @@ const linkQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsLinkPost =
     }
   
 /**
- * Remove a question from a question bank and clean up if orphaned.
- * @summary Remove Question From Question Bank
- */
-const removeQuestionFromQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdDelete = (
-    questionBankId: string,
-    questionId: string,
- ) => {
-      return axiosInstance<void>(
-      {url: `/question-banks/${questionBankId}/questions/${questionId}`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
  * Sync a linked question's content from its source.
 
 Overwrites the question's content with the current content of its source question.
@@ -1038,92 +1325,15 @@ const unlinkQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionId
     }
   
 /**
- * Submit a code analysis job. Poll GET /jobs/{job_id} for the result.
- * @summary Analyse Code
+ * Remove a question from a question bank and clean up if orphaned.
+ * @summary Remove Question From Question Bank
  */
-const analyseCodeQuestionGenerationAnalyseCodePost = (
-    codeAnalysisRequest: CodeAnalysisRequest,
+const removeQuestionFromQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdDelete = (
+    questionBankId: string,
+    questionId: string,
  ) => {
-      return axiosInstance<JobSubmittedResponse>(
-      {url: `/question-generation/analyse-code`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: codeAnalysisRequest
-    },
-      );
-    }
-  
-/**
- * Submit an assessment-from-template job. Poll GET /jobs/{job_id} for the result.
- * @summary Generate Assessment From Template
- */
-const generateAssessmentFromTemplateQuestionGenerationAssessmentFromTemplateTemplateIdPost = (
-    templateId: string,
-    generateAssessmentFromTemplateRequest: GenerateAssessmentFromTemplateRequest,
- ) => {
-      return axiosInstance<JobSubmittedResponse>(
-      {url: `/question-generation/assessment-from-template/${templateId}`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: generateAssessmentFromTemplateRequest
-    },
-      );
-    }
-  
-/**
- * Submit a question-from-template job. Poll GET /jobs/{job_id} for the result.
- * @summary Generate Question From Template
- */
-const generateQuestionFromTemplateQuestionGenerationFromTemplateTemplateIdPost = (
-    templateId: string,
-    generateQuestionFromTemplateRequest: GenerateQuestionFromTemplateRequest,
- ) => {
-      return axiosInstance<JobSubmittedResponse>(
-      {url: `/question-generation/from-template/${templateId}`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: generateQuestionFromTemplateRequest
-    },
-      );
-    }
-  
-/**
- * Submit a question generation job. Poll GET /jobs/{job_id} for the result.
- * @summary Generate Question
- */
-const generateQuestionQuestionGenerationGenerateQuestionPost = (
-    questionGenerationRequest: QuestionGenerationRequest,
- ) => {
-      return axiosInstance<JobSubmittedResponse>(
-      {url: `/question-generation/generate-question`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: questionGenerationRequest
-    },
-      );
-    }
-  
-/**
- * Submit a template preview generation job. Poll GET /jobs/{job_id} for the result.
- * @summary Generate Template Preview
- */
-const generateTemplatePreviewQuestionGenerationGenerateTemplatePost = (
-    generateTemplateRequest: GenerateTemplateRequest,
- ) => {
-      return axiosInstance<JobSubmittedResponse>(
-      {url: `/question-generation/generate-template`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: generateTemplateRequest
-    },
-      );
-    }
-  
-/**
- * List qt banks the user has access to, optionally filtered by folder or role.
- * @summary List Question Template Banks
- */
-const listQuestionTemplateBanksQuestionTemplateBanksGet = (
-    params?: ListQuestionTemplateBanksQuestionTemplateBanksGetParams,
- ) => {
-      return axiosInstance<QuestionTemplateBankResponse[]>(
-      {url: `/question-template-banks`, method: 'GET',
-        params
+      return axiosInstance<void>(
+      {url: `/question-banks/${questionBankId}/questions/${questionId}`, method: 'DELETE'
     },
       );
     }
@@ -1144,14 +1354,15 @@ const createQuestionTemplateBankQuestionTemplateBanksPost = (
     }
   
 /**
- * Soft delete a question template bank and clean up orphaned templates.
- * @summary Soft Delete Question Template Bank
+ * List qt banks the user has access to, optionally filtered by folder or role.
+ * @summary List Question Template Banks
  */
-const softDeleteQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdDelete = (
-    questionTemplateBankId: string,
+const listQuestionTemplateBanksQuestionTemplateBanksGet = (
+    params?: ListQuestionTemplateBanksQuestionTemplateBanksGetParams,
  ) => {
-      return axiosInstance<void>(
-      {url: `/question-template-banks/${questionTemplateBankId}`, method: 'DELETE'
+      return axiosInstance<QuestionTemplateBankResponse[]>(
+      {url: `/question-template-banks`, method: 'GET',
+        params
     },
       );
     }
@@ -1184,6 +1395,19 @@ const updateQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdPatch
       {url: `/question-template-banks/${questionTemplateBankId}`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
       data: updateQuestionTemplateBankRequest
+    },
+      );
+    }
+  
+/**
+ * Soft delete a question template bank and clean up orphaned templates.
+ * @summary Soft Delete Question Template Bank
+ */
+const softDeleteQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdDelete = (
+    questionTemplateBankId: string,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/question-template-banks/${questionTemplateBankId}`, method: 'DELETE'
     },
       );
     }
@@ -1265,184 +1489,6 @@ const unlinkQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQue
     }
   
 /**
- * List question templates by owner.
- * @summary List Question Templates
- */
-const listQuestionTemplatesQuestionTemplatesGet = (
-    
- ) => {
-      return axiosInstance<QuestionTemplateSummaryResponse[]>(
-      {url: `/question-templates`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Soft delete a question template.
- * @summary Soft Delete Question Template
- */
-const softDeleteQuestionTemplateQuestionTemplatesTemplateIdDelete = (
-    templateId: string,
- ) => {
-      return axiosInstance<void>(
-      {url: `/question-templates/${templateId}`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
- * Get a question template by ID.
- * @summary Get Question Template
- */
-const getQuestionTemplateQuestionTemplatesTemplateIdGet = (
-    templateId: string,
- ) => {
-      return axiosInstance<QuestionTemplateResponse>(
-      {url: `/question-templates/${templateId}`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Update a question template.
- * @summary Update Question Template
- */
-const updateQuestionTemplateQuestionTemplatesTemplateIdPatch = (
-    templateId: string,
-    updateQuestionTemplateRequest: UpdateQuestionTemplateRequest,
- ) => {
-      return axiosInstance<QuestionTemplateResponse>(
-      {url: `/question-templates/${templateId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: updateQuestionTemplateRequest
-    },
-      );
-    }
-  
-/**
- * List questions by owner.
- * @summary List Questions
- */
-const listQuestionsQuestionsGet = (
-    
- ) => {
-      return axiosInstance<(MCQResponse | MRQResponse | ShortAnswerResponse)[]>(
-      {url: `/questions`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Soft delete a question.
- * @summary Soft Delete Question
- */
-const softDeleteQuestionQuestionsQuestionIdDelete = (
-    questionId: string,
- ) => {
-      return axiosInstance<void>(
-      {url: `/questions/${questionId}`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
- * Get a question by ID.
- * @summary Get Question
- */
-const getQuestionQuestionsQuestionIdGet = (
-    questionId: string,
- ) => {
-      return axiosInstance<MCQResponse | MRQResponse | ShortAnswerResponse>(
-      {url: `/questions/${questionId}`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Update a question.
- * @summary Update Question
- */
-const updateQuestionQuestionsQuestionIdPatch = (
-    questionId: string,
-    updateQuestionRequest: UpdateQuestionRequest,
- ) => {
-      return axiosInstance<MCQResponse | MRQResponse | ShortAnswerResponse>(
-      {url: `/questions/${questionId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: updateQuestionRequest
-    },
-      );
-    }
-  
-/**
- * Soft delete the current authenticated user.
- * @summary Soft Delete User
- */
-const softDeleteUserUsersMeDelete = (
-    
- ) => {
-      return axiosInstance<void>(
-      {url: `/users/me`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
- * Get the current authenticated user.
- * @summary Get User
- */
-const getUserUsersMeGet = (
-    
- ) => {
-      return axiosInstance<UserResponse>(
-      {url: `/users/me`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * Update the current authenticated user.
- * @summary Update User
- */
-const updateUserUsersMePatch = (
-    updateUserRequest: UpdateUserRequest,
- ) => {
-      return axiosInstance<UserResponse>(
-      {url: `/users/me`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: updateUserRequest
-    },
-      );
-    }
-  
-/**
- * Get the root folder for the current authenticated user.
- * @summary Get User Root Folder
- */
-const getUserRootFolderUsersMeRootFolderGet = (
-    
- ) => {
-      return axiosInstance<FolderResponse>(
-      {url: `/users/me/root-folder`, method: 'GET'
-    },
-      );
-    }
-  
-/**
- * List all collaborators for a resource. Requires editor or owner permissions.
- * @summary List Collaborators
- */
-const listCollaboratorsResourcePathResourceIdCollaboratorsGet = (
-    resourcePath: ResourcePath,
-    resourceId: string,
- ) => {
-      return axiosInstance<CollaboratorResponse[]>(
-      {url: `/${resourcePath}/${resourceId}/collaborators`, method: 'GET'
-    },
-      );
-    }
-  
-/**
  * Add a collaborator to a resource.
 Cannot assign owner role.
 Requires editor or owner permissions.
@@ -1462,17 +1508,15 @@ const addCollaboratorResourcePathResourceIdCollaboratorsPost = (
     }
   
 /**
- * Remove a collaborator from a resource.
-Requires editor or owner permissions. Cannot remove the owner.
- * @summary Remove Collaborator
+ * List all collaborators for a resource. Requires editor or owner permissions.
+ * @summary List Collaborators
  */
-const removeCollaboratorResourcePathResourceIdCollaboratorsCollaboratorIdDelete = (
+const listCollaboratorsResourcePathResourceIdCollaboratorsGet = (
     resourcePath: ResourcePath,
     resourceId: string,
-    collaboratorId: string,
  ) => {
-      return axiosInstance<void>(
-      {url: `/${resourcePath}/${resourceId}/collaborators/${collaboratorId}`, method: 'DELETE'
+      return axiosInstance<CollaboratorResponse[]>(
+      {url: `/${resourcePath}/${resourceId}/collaborators`, method: 'GET'
     },
       );
     }
@@ -1498,183 +1542,145 @@ const updateCollaboratorRoleResourcePathResourceIdCollaboratorsCollaboratorIdPat
     },
       );
     }
-
+  
 /**
- * List the caller's provider connections without exposing secrets.
- * @summary List Connections
+ * Remove a collaborator from a resource.
+Requires editor or owner permissions. Cannot remove the owner.
+ * @summary Remove Collaborator
  */
-const listConnectionsAiAuthoringConnectionsGet = (
-
- ) => {
-      return axiosInstance<ProviderConnectionResponse[]>(
-      {url: `/ai-authoring/connections`, method: 'GET'
-    },
-      );
-    }
-
-/**
- * Store one encrypted provider connection for the caller.
- * @summary Create Connection
- */
-const createConnectionAiAuthoringConnectionsPost = (
-    providerConnectionCreate: ProviderConnectionCreate,
- ) => {
-      return axiosInstance<ProviderConnectionResponse>(
-      {url: `/ai-authoring/connections`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: providerConnectionCreate
-    },
-      );
-    }
-
-/**
- * Test credentials before saving them and list available models.
- * @summary Probe Connection
- */
-const probeConnectionAiAuthoringConnectionsProbePost = (
-    providerProbeRequest: ProviderProbeRequest,
- ) => {
-      return axiosInstance<ProviderModelList>(
-      {url: `/ai-authoring/connections/probe`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: providerProbeRequest
-    },
-      );
-    }
-
-/**
- * Update metadata or rotate the key without returning it.
- * @summary Update Connection
- */
-const updateConnectionAiAuthoringConnectionsConnectionIdPatch = (
-    connectionId: string,
-    providerConnectionUpdate: ProviderConnectionUpdate,
- ) => {
-      return axiosInstance<ProviderConnectionResponse>(
-      {url: `/ai-authoring/connections/${connectionId}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: providerConnectionUpdate
-    },
-      );
-    }
-
-/**
- * Forget a connection; existing jobs keep their non-secret snapshot.
- * @summary Delete Connection
- */
-const deleteConnectionAiAuthoringConnectionsConnectionIdDelete = (
-    connectionId: string,
+const removeCollaboratorResourcePathResourceIdCollaboratorsCollaboratorIdDelete = (
+    resourcePath: ResourcePath,
+    resourceId: string,
+    collaboratorId: string,
  ) => {
       return axiosInstance<void>(
-      {url: `/ai-authoring/connections/${connectionId}`, method: 'DELETE'
+      {url: `/${resourcePath}/${resourceId}/collaborators/${collaboratorId}`, method: 'DELETE'
     },
       );
     }
-
+  
 /**
- * Re-test a stored connection and refresh its cached model list.
- * @summary Test Connection
+ * @summary Index
  */
-const testConnectionAiAuthoringConnectionsConnectionIdTestPost = (
-    connectionId: string,
+const indexGet = (
+    
  ) => {
-      return axiosInstance<ProviderModelList>(
-      {url: `/ai-authoring/connections/${connectionId}/test`, method: 'POST'
+      return axiosInstance<IndexGet200>(
+      {url: `/`, method: 'GET'
     },
       );
     }
-
-return {listConnectionsAiAuthoringConnectionsGet,createConnectionAiAuthoringConnectionsPost,probeConnectionAiAuthoringConnectionsProbePost,updateConnectionAiAuthoringConnectionsConnectionIdPatch,deleteConnectionAiAuthoringConnectionsConnectionIdDelete,testConnectionAiAuthoringConnectionsConnectionIdTestPost,indexGet,getCapabilitiesAiAuthoringCapabilitiesGet,listJobsAiAuthoringJobsGet,submitJobAiAuthoringJobsPost,getJobAiAuthoringJobsJobIdGet,decideJobAiAuthoringJobsJobIdApprovalPost,generateJobAiAuthoringJobsJobIdGeneratePost,previewJobAiAuthoringJobsJobIdPreviewPost,reviewJobAiAuthoringJobsJobIdReviewGet,listAssessmentTemplatesAssessmentTemplatesGet,createAssessmentTemplateAssessmentTemplatesPost,softDeleteAssessmentTemplateAssessmentTemplatesTemplateIdDelete,getAssessmentTemplateAssessmentTemplatesTemplateIdGet,updateAssessmentTemplateAssessmentTemplatesTemplateIdPatch,insertQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesPost,linkQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesLinkPost,reorderQuestionTemplatesAssessmentTemplatesTemplateIdQuestionTemplatesReorderPatch,removeQuestionTemplateFromAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdDelete,syncQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdSyncPost,unlinkQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdUnlinkPost,listAssessmentsAssessmentsGet,createAssessmentAssessmentsPost,softDeleteAssessmentAssessmentsAssessmentIdDelete,getAssessmentAssessmentsAssessmentIdGet,updateAssessmentAssessmentsAssessmentIdPatch,insertQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsPost,linkQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsLinkPost,reorderQuestionsAssessmentsAssessmentIdQuestionsReorderPatch,removeQuestionFromAssessmentAssessmentsAssessmentIdQuestionsQuestionIdDelete,syncQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdSyncPost,unlinkQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdUnlinkPost,loginAuthLoginPost,logoutAuthLogoutPost,getMeAuthMeGet,oauthAuthorizeAuthOauthProviderAuthorizeGet,oauthCallbackAuthOauthProviderCallbackGet,refreshTokenAuthRefreshPost,resendVerificationAuthResendVerificationPost,signupAuthSignupPost,verifyEmailAuthVerifyEmailPost,listFoldersFoldersGet,createFolderFoldersPost,softDeleteFolderFoldersFolderIdDelete,getFolderFoldersFolderIdGet,updateFolderFoldersFolderIdPatch,getFolderContentsFoldersFolderIdContentsGet,moveFolderFoldersFolderIdMovePatch,getFolderPathFoldersFolderIdPathGet,getFolderTreeFoldersFolderIdTreeGet,healthHealthGet,generateInputsInputGeneratorGeneratePost,getJobStatusJobsJobIdGet,listQuestionBanksQuestionBanksGet,createQuestionBankQuestionBanksPost,softDeleteQuestionBankQuestionBanksQuestionBankIdDelete,getQuestionBankQuestionBanksQuestionBankIdGet,updateQuestionBankQuestionBanksQuestionBankIdPatch,insertQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsPost,linkQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsLinkPost,removeQuestionFromQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdDelete,syncQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdSyncPost,unlinkQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdUnlinkPost,analyseCodeQuestionGenerationAnalyseCodePost,generateAssessmentFromTemplateQuestionGenerationAssessmentFromTemplateTemplateIdPost,generateQuestionFromTemplateQuestionGenerationFromTemplateTemplateIdPost,generateQuestionQuestionGenerationGenerateQuestionPost,generateTemplatePreviewQuestionGenerationGenerateTemplatePost,listQuestionTemplateBanksQuestionTemplateBanksGet,createQuestionTemplateBankQuestionTemplateBanksPost,softDeleteQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdDelete,getQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdGet,updateQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdPatch,insertQuestionTemplateIntoBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesPost,linkQuestionTemplateToBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesLinkPost,removeQuestionTemplateFromBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdDelete,syncQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdSyncPost,unlinkQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdUnlinkPost,listQuestionTemplatesQuestionTemplatesGet,softDeleteQuestionTemplateQuestionTemplatesTemplateIdDelete,getQuestionTemplateQuestionTemplatesTemplateIdGet,updateQuestionTemplateQuestionTemplatesTemplateIdPatch,listQuestionsQuestionsGet,softDeleteQuestionQuestionsQuestionIdDelete,getQuestionQuestionsQuestionIdGet,updateQuestionQuestionsQuestionIdPatch,softDeleteUserUsersMeDelete,getUserUsersMeGet,updateUserUsersMePatch,getUserRootFolderUsersMeRootFolderGet,listCollaboratorsResourcePathResourceIdCollaboratorsGet,addCollaboratorResourcePathResourceIdCollaboratorsPost,removeCollaboratorResourcePathResourceIdCollaboratorsCollaboratorIdDelete,updateCollaboratorRoleResourcePathResourceIdCollaboratorsCollaboratorIdPatch}};
-export type IndexGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['indexGet']>>>
-export type GetCapabilitiesAiAuthoringCapabilitiesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getCapabilitiesAiAuthoringCapabilitiesGet']>>>
-export type ListJobsAiAuthoringJobsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listJobsAiAuthoringJobsGet']>>>
-export type SubmitJobAiAuthoringJobsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['submitJobAiAuthoringJobsPost']>>>
-export type GetJobAiAuthoringJobsJobIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getJobAiAuthoringJobsJobIdGet']>>>
-export type DecideJobAiAuthoringJobsJobIdApprovalPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['decideJobAiAuthoringJobsJobIdApprovalPost']>>>
-export type GenerateJobAiAuthoringJobsJobIdGeneratePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateJobAiAuthoringJobsJobIdGeneratePost']>>>
-export type PreviewJobAiAuthoringJobsJobIdPreviewPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['previewJobAiAuthoringJobsJobIdPreviewPost']>>>
-export type ReviewJobAiAuthoringJobsJobIdReviewGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['reviewJobAiAuthoringJobsJobIdReviewGet']>>>
-export type ListAssessmentTemplatesAssessmentTemplatesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listAssessmentTemplatesAssessmentTemplatesGet']>>>
-export type CreateAssessmentTemplateAssessmentTemplatesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createAssessmentTemplateAssessmentTemplatesPost']>>>
-export type SoftDeleteAssessmentTemplateAssessmentTemplatesTemplateIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteAssessmentTemplateAssessmentTemplatesTemplateIdDelete']>>>
-export type GetAssessmentTemplateAssessmentTemplatesTemplateIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getAssessmentTemplateAssessmentTemplatesTemplateIdGet']>>>
-export type UpdateAssessmentTemplateAssessmentTemplatesTemplateIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateAssessmentTemplateAssessmentTemplatesTemplateIdPatch']>>>
-export type InsertQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['insertQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesPost']>>>
-export type LinkQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesLinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['linkQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesLinkPost']>>>
-export type ReorderQuestionTemplatesAssessmentTemplatesTemplateIdQuestionTemplatesReorderPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['reorderQuestionTemplatesAssessmentTemplatesTemplateIdQuestionTemplatesReorderPatch']>>>
-export type RemoveQuestionTemplateFromAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeQuestionTemplateFromAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdDelete']>>>
-export type SyncQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdSyncPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['syncQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdSyncPost']>>>
-export type UnlinkQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdUnlinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['unlinkQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdUnlinkPost']>>>
-export type ListAssessmentsAssessmentsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listAssessmentsAssessmentsGet']>>>
-export type CreateAssessmentAssessmentsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createAssessmentAssessmentsPost']>>>
-export type SoftDeleteAssessmentAssessmentsAssessmentIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteAssessmentAssessmentsAssessmentIdDelete']>>>
-export type GetAssessmentAssessmentsAssessmentIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getAssessmentAssessmentsAssessmentIdGet']>>>
-export type UpdateAssessmentAssessmentsAssessmentIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateAssessmentAssessmentsAssessmentIdPatch']>>>
-export type InsertQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['insertQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsPost']>>>
-export type LinkQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsLinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['linkQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsLinkPost']>>>
-export type ReorderQuestionsAssessmentsAssessmentIdQuestionsReorderPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['reorderQuestionsAssessmentsAssessmentIdQuestionsReorderPatch']>>>
-export type RemoveQuestionFromAssessmentAssessmentsAssessmentIdQuestionsQuestionIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeQuestionFromAssessmentAssessmentsAssessmentIdQuestionsQuestionIdDelete']>>>
-export type SyncQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdSyncPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['syncQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdSyncPost']>>>
-export type UnlinkQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdUnlinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['unlinkQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdUnlinkPost']>>>
-export type LoginAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['loginAuthLoginPost']>>>
-export type LogoutAuthLogoutPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['logoutAuthLogoutPost']>>>
-export type GetMeAuthMeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getMeAuthMeGet']>>>
-export type OauthAuthorizeAuthOauthProviderAuthorizeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['oauthAuthorizeAuthOauthProviderAuthorizeGet']>>>
-export type OauthCallbackAuthOauthProviderCallbackGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['oauthCallbackAuthOauthProviderCallbackGet']>>>
-export type RefreshTokenAuthRefreshPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['refreshTokenAuthRefreshPost']>>>
-export type ResendVerificationAuthResendVerificationPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['resendVerificationAuthResendVerificationPost']>>>
-export type SignupAuthSignupPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['signupAuthSignupPost']>>>
-export type VerifyEmailAuthVerifyEmailPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['verifyEmailAuthVerifyEmailPost']>>>
-export type ListFoldersFoldersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listFoldersFoldersGet']>>>
-export type CreateFolderFoldersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createFolderFoldersPost']>>>
-export type SoftDeleteFolderFoldersFolderIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteFolderFoldersFolderIdDelete']>>>
-export type GetFolderFoldersFolderIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getFolderFoldersFolderIdGet']>>>
-export type UpdateFolderFoldersFolderIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateFolderFoldersFolderIdPatch']>>>
-export type GetFolderContentsFoldersFolderIdContentsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getFolderContentsFoldersFolderIdContentsGet']>>>
-export type MoveFolderFoldersFolderIdMovePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['moveFolderFoldersFolderIdMovePatch']>>>
-export type GetFolderPathFoldersFolderIdPathGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getFolderPathFoldersFolderIdPathGet']>>>
-export type GetFolderTreeFoldersFolderIdTreeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getFolderTreeFoldersFolderIdTreeGet']>>>
-export type HealthHealthGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['healthHealthGet']>>>
+  
+/**
+ * Health check endpoint.
+ * @summary Health
+ */
+const healthHealthGet = (
+    
+ ) => {
+      return axiosInstance<HealthHealthGet200>(
+      {url: `/health`, method: 'GET'
+    },
+      );
+    }
+  
+return {generateInputsInputGeneratorGeneratePost,analyseCodeQuestionGenerationAnalyseCodePost,generateQuestionQuestionGenerationGenerateQuestionPost,generateTemplatePreviewQuestionGenerationGenerateTemplatePost,generateQuestionFromTemplateQuestionGenerationFromTemplateTemplateIdPost,generateAssessmentFromTemplateQuestionGenerationAssessmentFromTemplateTemplateIdPost,getJobStatusJobsJobIdGet,getCapabilitiesAiAuthoringCapabilitiesGet,submitJobAiAuthoringJobsPost,listJobsAiAuthoringJobsGet,getJobAiAuthoringJobsJobIdGet,reviewJobAiAuthoringJobsJobIdReviewGet,previewJobAiAuthoringJobsJobIdPreviewPost,decideJobAiAuthoringJobsJobIdApprovalPost,generateJobAiAuthoringJobsJobIdGeneratePost,listConnectionsAiAuthoringConnectionsGet,createConnectionAiAuthoringConnectionsPost,probeConnectionAiAuthoringConnectionsProbePost,updateConnectionAiAuthoringConnectionsConnectionIdPatch,deleteConnectionAiAuthoringConnectionsConnectionIdDelete,testConnectionAiAuthoringConnectionsConnectionIdTestPost,getUserUsersMeGet,updateUserUsersMePatch,softDeleteUserUsersMeDelete,getUserRootFolderUsersMeRootFolderGet,signupAuthSignupPost,loginAuthLoginPost,refreshTokenAuthRefreshPost,logoutAuthLogoutPost,getMeAuthMeGet,verifyEmailAuthVerifyEmailPost,resendVerificationAuthResendVerificationPost,oauthAuthorizeAuthOauthProviderAuthorizeGet,oauthCallbackAuthOauthProviderCallbackGet,createFolderFoldersPost,listFoldersFoldersGet,getFolderFoldersFolderIdGet,updateFolderFoldersFolderIdPatch,softDeleteFolderFoldersFolderIdDelete,getFolderContentsFoldersFolderIdContentsGet,getFolderTreeFoldersFolderIdTreeGet,getFolderPathFoldersFolderIdPathGet,moveFolderFoldersFolderIdMovePatch,listQuestionsQuestionsGet,getQuestionQuestionsQuestionIdGet,updateQuestionQuestionsQuestionIdPatch,softDeleteQuestionQuestionsQuestionIdDelete,createAssessmentAssessmentsPost,listAssessmentsAssessmentsGet,getAssessmentAssessmentsAssessmentIdGet,updateAssessmentAssessmentsAssessmentIdPatch,softDeleteAssessmentAssessmentsAssessmentIdDelete,insertQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsPost,linkQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsLinkPost,syncQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdSyncPost,unlinkQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdUnlinkPost,removeQuestionFromAssessmentAssessmentsAssessmentIdQuestionsQuestionIdDelete,reorderQuestionsAssessmentsAssessmentIdQuestionsReorderPatch,listQuestionTemplatesQuestionTemplatesGet,getQuestionTemplateQuestionTemplatesTemplateIdGet,updateQuestionTemplateQuestionTemplatesTemplateIdPatch,softDeleteQuestionTemplateQuestionTemplatesTemplateIdDelete,createAssessmentTemplateAssessmentTemplatesPost,listAssessmentTemplatesAssessmentTemplatesGet,getAssessmentTemplateAssessmentTemplatesTemplateIdGet,updateAssessmentTemplateAssessmentTemplatesTemplateIdPatch,softDeleteAssessmentTemplateAssessmentTemplatesTemplateIdDelete,insertQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesPost,linkQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesLinkPost,removeQuestionTemplateFromAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdDelete,reorderQuestionTemplatesAssessmentTemplatesTemplateIdQuestionTemplatesReorderPatch,syncQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdSyncPost,unlinkQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdUnlinkPost,createQuestionBankQuestionBanksPost,listQuestionBanksQuestionBanksGet,getQuestionBankQuestionBanksQuestionBankIdGet,updateQuestionBankQuestionBanksQuestionBankIdPatch,softDeleteQuestionBankQuestionBanksQuestionBankIdDelete,insertQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsPost,linkQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsLinkPost,syncQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdSyncPost,unlinkQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdUnlinkPost,removeQuestionFromQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdDelete,createQuestionTemplateBankQuestionTemplateBanksPost,listQuestionTemplateBanksQuestionTemplateBanksGet,getQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdGet,updateQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdPatch,softDeleteQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdDelete,insertQuestionTemplateIntoBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesPost,linkQuestionTemplateToBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesLinkPost,removeQuestionTemplateFromBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdDelete,syncQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdSyncPost,unlinkQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdUnlinkPost,addCollaboratorResourcePathResourceIdCollaboratorsPost,listCollaboratorsResourcePathResourceIdCollaboratorsGet,updateCollaboratorRoleResourcePathResourceIdCollaboratorsCollaboratorIdPatch,removeCollaboratorResourcePathResourceIdCollaboratorsCollaboratorIdDelete,indexGet,healthHealthGet}};
 export type GenerateInputsInputGeneratorGeneratePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateInputsInputGeneratorGeneratePost']>>>
-export type GetJobStatusJobsJobIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getJobStatusJobsJobIdGet']>>>
-export type ListQuestionBanksQuestionBanksGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listQuestionBanksQuestionBanksGet']>>>
-export type CreateQuestionBankQuestionBanksPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createQuestionBankQuestionBanksPost']>>>
-export type SoftDeleteQuestionBankQuestionBanksQuestionBankIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteQuestionBankQuestionBanksQuestionBankIdDelete']>>>
-export type GetQuestionBankQuestionBanksQuestionBankIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getQuestionBankQuestionBanksQuestionBankIdGet']>>>
-export type UpdateQuestionBankQuestionBanksQuestionBankIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateQuestionBankQuestionBanksQuestionBankIdPatch']>>>
-export type InsertQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['insertQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsPost']>>>
-export type LinkQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsLinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['linkQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsLinkPost']>>>
-export type RemoveQuestionFromQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeQuestionFromQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdDelete']>>>
-export type SyncQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdSyncPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['syncQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdSyncPost']>>>
-export type UnlinkQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdUnlinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['unlinkQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdUnlinkPost']>>>
 export type AnalyseCodeQuestionGenerationAnalyseCodePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['analyseCodeQuestionGenerationAnalyseCodePost']>>>
-export type GenerateAssessmentFromTemplateQuestionGenerationAssessmentFromTemplateTemplateIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateAssessmentFromTemplateQuestionGenerationAssessmentFromTemplateTemplateIdPost']>>>
-export type GenerateQuestionFromTemplateQuestionGenerationFromTemplateTemplateIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateQuestionFromTemplateQuestionGenerationFromTemplateTemplateIdPost']>>>
 export type GenerateQuestionQuestionGenerationGenerateQuestionPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateQuestionQuestionGenerationGenerateQuestionPost']>>>
 export type GenerateTemplatePreviewQuestionGenerationGenerateTemplatePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateTemplatePreviewQuestionGenerationGenerateTemplatePost']>>>
-export type ListQuestionTemplateBanksQuestionTemplateBanksGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listQuestionTemplateBanksQuestionTemplateBanksGet']>>>
+export type GenerateQuestionFromTemplateQuestionGenerationFromTemplateTemplateIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateQuestionFromTemplateQuestionGenerationFromTemplateTemplateIdPost']>>>
+export type GenerateAssessmentFromTemplateQuestionGenerationAssessmentFromTemplateTemplateIdPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateAssessmentFromTemplateQuestionGenerationAssessmentFromTemplateTemplateIdPost']>>>
+export type GetJobStatusJobsJobIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getJobStatusJobsJobIdGet']>>>
+export type GetCapabilitiesAiAuthoringCapabilitiesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getCapabilitiesAiAuthoringCapabilitiesGet']>>>
+export type SubmitJobAiAuthoringJobsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['submitJobAiAuthoringJobsPost']>>>
+export type ListJobsAiAuthoringJobsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listJobsAiAuthoringJobsGet']>>>
+export type GetJobAiAuthoringJobsJobIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getJobAiAuthoringJobsJobIdGet']>>>
+export type ReviewJobAiAuthoringJobsJobIdReviewGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['reviewJobAiAuthoringJobsJobIdReviewGet']>>>
+export type PreviewJobAiAuthoringJobsJobIdPreviewPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['previewJobAiAuthoringJobsJobIdPreviewPost']>>>
+export type DecideJobAiAuthoringJobsJobIdApprovalPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['decideJobAiAuthoringJobsJobIdApprovalPost']>>>
+export type GenerateJobAiAuthoringJobsJobIdGeneratePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['generateJobAiAuthoringJobsJobIdGeneratePost']>>>
+export type ListConnectionsAiAuthoringConnectionsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listConnectionsAiAuthoringConnectionsGet']>>>
+export type CreateConnectionAiAuthoringConnectionsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createConnectionAiAuthoringConnectionsPost']>>>
+export type ProbeConnectionAiAuthoringConnectionsProbePostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['probeConnectionAiAuthoringConnectionsProbePost']>>>
+export type UpdateConnectionAiAuthoringConnectionsConnectionIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateConnectionAiAuthoringConnectionsConnectionIdPatch']>>>
+export type DeleteConnectionAiAuthoringConnectionsConnectionIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['deleteConnectionAiAuthoringConnectionsConnectionIdDelete']>>>
+export type TestConnectionAiAuthoringConnectionsConnectionIdTestPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['testConnectionAiAuthoringConnectionsConnectionIdTestPost']>>>
+export type GetUserUsersMeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getUserUsersMeGet']>>>
+export type UpdateUserUsersMePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateUserUsersMePatch']>>>
+export type SoftDeleteUserUsersMeDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteUserUsersMeDelete']>>>
+export type GetUserRootFolderUsersMeRootFolderGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getUserRootFolderUsersMeRootFolderGet']>>>
+export type SignupAuthSignupPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['signupAuthSignupPost']>>>
+export type LoginAuthLoginPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['loginAuthLoginPost']>>>
+export type RefreshTokenAuthRefreshPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['refreshTokenAuthRefreshPost']>>>
+export type LogoutAuthLogoutPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['logoutAuthLogoutPost']>>>
+export type GetMeAuthMeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getMeAuthMeGet']>>>
+export type VerifyEmailAuthVerifyEmailPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['verifyEmailAuthVerifyEmailPost']>>>
+export type ResendVerificationAuthResendVerificationPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['resendVerificationAuthResendVerificationPost']>>>
+export type OauthAuthorizeAuthOauthProviderAuthorizeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['oauthAuthorizeAuthOauthProviderAuthorizeGet']>>>
+export type OauthCallbackAuthOauthProviderCallbackGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['oauthCallbackAuthOauthProviderCallbackGet']>>>
+export type CreateFolderFoldersPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createFolderFoldersPost']>>>
+export type ListFoldersFoldersGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listFoldersFoldersGet']>>>
+export type GetFolderFoldersFolderIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getFolderFoldersFolderIdGet']>>>
+export type UpdateFolderFoldersFolderIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateFolderFoldersFolderIdPatch']>>>
+export type SoftDeleteFolderFoldersFolderIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteFolderFoldersFolderIdDelete']>>>
+export type GetFolderContentsFoldersFolderIdContentsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getFolderContentsFoldersFolderIdContentsGet']>>>
+export type GetFolderTreeFoldersFolderIdTreeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getFolderTreeFoldersFolderIdTreeGet']>>>
+export type GetFolderPathFoldersFolderIdPathGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getFolderPathFoldersFolderIdPathGet']>>>
+export type MoveFolderFoldersFolderIdMovePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['moveFolderFoldersFolderIdMovePatch']>>>
+export type ListQuestionsQuestionsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listQuestionsQuestionsGet']>>>
+export type GetQuestionQuestionsQuestionIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getQuestionQuestionsQuestionIdGet']>>>
+export type UpdateQuestionQuestionsQuestionIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateQuestionQuestionsQuestionIdPatch']>>>
+export type SoftDeleteQuestionQuestionsQuestionIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteQuestionQuestionsQuestionIdDelete']>>>
+export type CreateAssessmentAssessmentsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createAssessmentAssessmentsPost']>>>
+export type ListAssessmentsAssessmentsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listAssessmentsAssessmentsGet']>>>
+export type GetAssessmentAssessmentsAssessmentIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getAssessmentAssessmentsAssessmentIdGet']>>>
+export type UpdateAssessmentAssessmentsAssessmentIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateAssessmentAssessmentsAssessmentIdPatch']>>>
+export type SoftDeleteAssessmentAssessmentsAssessmentIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteAssessmentAssessmentsAssessmentIdDelete']>>>
+export type InsertQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['insertQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsPost']>>>
+export type LinkQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsLinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['linkQuestionIntoAssessmentAssessmentsAssessmentIdQuestionsLinkPost']>>>
+export type SyncQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdSyncPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['syncQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdSyncPost']>>>
+export type UnlinkQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdUnlinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['unlinkQuestionInAssessmentAssessmentsAssessmentIdQuestionsQuestionIdUnlinkPost']>>>
+export type RemoveQuestionFromAssessmentAssessmentsAssessmentIdQuestionsQuestionIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeQuestionFromAssessmentAssessmentsAssessmentIdQuestionsQuestionIdDelete']>>>
+export type ReorderQuestionsAssessmentsAssessmentIdQuestionsReorderPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['reorderQuestionsAssessmentsAssessmentIdQuestionsReorderPatch']>>>
+export type ListQuestionTemplatesQuestionTemplatesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listQuestionTemplatesQuestionTemplatesGet']>>>
+export type GetQuestionTemplateQuestionTemplatesTemplateIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getQuestionTemplateQuestionTemplatesTemplateIdGet']>>>
+export type UpdateQuestionTemplateQuestionTemplatesTemplateIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateQuestionTemplateQuestionTemplatesTemplateIdPatch']>>>
+export type SoftDeleteQuestionTemplateQuestionTemplatesTemplateIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteQuestionTemplateQuestionTemplatesTemplateIdDelete']>>>
+export type CreateAssessmentTemplateAssessmentTemplatesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createAssessmentTemplateAssessmentTemplatesPost']>>>
+export type ListAssessmentTemplatesAssessmentTemplatesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listAssessmentTemplatesAssessmentTemplatesGet']>>>
+export type GetAssessmentTemplateAssessmentTemplatesTemplateIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getAssessmentTemplateAssessmentTemplatesTemplateIdGet']>>>
+export type UpdateAssessmentTemplateAssessmentTemplatesTemplateIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateAssessmentTemplateAssessmentTemplatesTemplateIdPatch']>>>
+export type SoftDeleteAssessmentTemplateAssessmentTemplatesTemplateIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteAssessmentTemplateAssessmentTemplatesTemplateIdDelete']>>>
+export type InsertQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['insertQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesPost']>>>
+export type LinkQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesLinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['linkQuestionTemplateToAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesLinkPost']>>>
+export type RemoveQuestionTemplateFromAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeQuestionTemplateFromAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdDelete']>>>
+export type ReorderQuestionTemplatesAssessmentTemplatesTemplateIdQuestionTemplatesReorderPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['reorderQuestionTemplatesAssessmentTemplatesTemplateIdQuestionTemplatesReorderPatch']>>>
+export type SyncQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdSyncPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['syncQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdSyncPost']>>>
+export type UnlinkQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdUnlinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['unlinkQuestionTemplateInAssessmentTemplateAssessmentTemplatesTemplateIdQuestionTemplatesQuestionTemplateIdUnlinkPost']>>>
+export type CreateQuestionBankQuestionBanksPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createQuestionBankQuestionBanksPost']>>>
+export type ListQuestionBanksQuestionBanksGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listQuestionBanksQuestionBanksGet']>>>
+export type GetQuestionBankQuestionBanksQuestionBankIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getQuestionBankQuestionBanksQuestionBankIdGet']>>>
+export type UpdateQuestionBankQuestionBanksQuestionBankIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateQuestionBankQuestionBanksQuestionBankIdPatch']>>>
+export type SoftDeleteQuestionBankQuestionBanksQuestionBankIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteQuestionBankQuestionBanksQuestionBankIdDelete']>>>
+export type InsertQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['insertQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsPost']>>>
+export type LinkQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsLinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['linkQuestionIntoQuestionBankQuestionBanksQuestionBankIdQuestionsLinkPost']>>>
+export type SyncQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdSyncPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['syncQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdSyncPost']>>>
+export type UnlinkQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdUnlinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['unlinkQuestionInQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdUnlinkPost']>>>
+export type RemoveQuestionFromQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeQuestionFromQuestionBankQuestionBanksQuestionBankIdQuestionsQuestionIdDelete']>>>
 export type CreateQuestionTemplateBankQuestionTemplateBanksPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['createQuestionTemplateBankQuestionTemplateBanksPost']>>>
-export type SoftDeleteQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdDelete']>>>
+export type ListQuestionTemplateBanksQuestionTemplateBanksGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listQuestionTemplateBanksQuestionTemplateBanksGet']>>>
 export type GetQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdGet']>>>
 export type UpdateQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdPatch']>>>
+export type SoftDeleteQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteQuestionTemplateBankQuestionTemplateBanksQuestionTemplateBankIdDelete']>>>
 export type InsertQuestionTemplateIntoBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['insertQuestionTemplateIntoBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesPost']>>>
 export type LinkQuestionTemplateToBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesLinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['linkQuestionTemplateToBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesLinkPost']>>>
 export type RemoveQuestionTemplateFromBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeQuestionTemplateFromBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdDelete']>>>
 export type SyncQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdSyncPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['syncQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdSyncPost']>>>
 export type UnlinkQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdUnlinkPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['unlinkQuestionTemplateInBankQuestionTemplateBanksQuestionTemplateBankIdQuestionTemplatesQuestionTemplateIdUnlinkPost']>>>
-export type ListQuestionTemplatesQuestionTemplatesGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listQuestionTemplatesQuestionTemplatesGet']>>>
-export type SoftDeleteQuestionTemplateQuestionTemplatesTemplateIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteQuestionTemplateQuestionTemplatesTemplateIdDelete']>>>
-export type GetQuestionTemplateQuestionTemplatesTemplateIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getQuestionTemplateQuestionTemplatesTemplateIdGet']>>>
-export type UpdateQuestionTemplateQuestionTemplatesTemplateIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateQuestionTemplateQuestionTemplatesTemplateIdPatch']>>>
-export type ListQuestionsQuestionsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listQuestionsQuestionsGet']>>>
-export type SoftDeleteQuestionQuestionsQuestionIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteQuestionQuestionsQuestionIdDelete']>>>
-export type GetQuestionQuestionsQuestionIdGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getQuestionQuestionsQuestionIdGet']>>>
-export type UpdateQuestionQuestionsQuestionIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateQuestionQuestionsQuestionIdPatch']>>>
-export type SoftDeleteUserUsersMeDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['softDeleteUserUsersMeDelete']>>>
-export type GetUserUsersMeGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getUserUsersMeGet']>>>
-export type UpdateUserUsersMePatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateUserUsersMePatch']>>>
-export type GetUserRootFolderUsersMeRootFolderGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['getUserRootFolderUsersMeRootFolderGet']>>>
-export type ListCollaboratorsResourcePathResourceIdCollaboratorsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listCollaboratorsResourcePathResourceIdCollaboratorsGet']>>>
 export type AddCollaboratorResourcePathResourceIdCollaboratorsPostResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['addCollaboratorResourcePathResourceIdCollaboratorsPost']>>>
-export type RemoveCollaboratorResourcePathResourceIdCollaboratorsCollaboratorIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeCollaboratorResourcePathResourceIdCollaboratorsCollaboratorIdDelete']>>>
+export type ListCollaboratorsResourcePathResourceIdCollaboratorsGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['listCollaboratorsResourcePathResourceIdCollaboratorsGet']>>>
 export type UpdateCollaboratorRoleResourcePathResourceIdCollaboratorsCollaboratorIdPatchResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['updateCollaboratorRoleResourcePathResourceIdCollaboratorsCollaboratorIdPatch']>>>
+export type RemoveCollaboratorResourcePathResourceIdCollaboratorsCollaboratorIdDeleteResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['removeCollaboratorResourcePathResourceIdCollaboratorsCollaboratorIdDelete']>>>
+export type IndexGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['indexGet']>>>
+export type HealthHealthGetResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getEdCraftBackendAPI>['healthHealthGet']>>>

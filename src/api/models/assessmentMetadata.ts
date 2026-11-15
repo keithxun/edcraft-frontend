@@ -10,12 +10,12 @@
  * Metadata for assessment creation from template.
  */
 export interface AssessmentMetadata {
-  /** Override assessment description (defaults to template description) */
-  description?: string | null;
-  /** Optional folder ID */
-  folder_id?: string | null;
   /** Owner ID for the assessment */
   owner_id: string;
+  /** Optional folder ID */
+  folder_id?: string | null;
   /** Override assessment title (defaults to template title) */
   title?: string | null;
+  /** Override assessment description (defaults to template description) */
+  description?: string | null;
 }
