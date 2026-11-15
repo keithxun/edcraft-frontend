@@ -13,8 +13,8 @@ import {
 
 interface PreviewQuestionProps {
     instance: AuthoringQuestionPayload;
-    /** Authoring domain from the preview or batch envelope. */
-    domain?: string;
+    /** Authoring domain from the request, preview or batch envelope. */
+    domain: string;
     headingLevel?: "h2" | "h3";
     /**
      * Review shows the student view and no answer revealed. Generated questions
@@ -39,11 +39,9 @@ export function PreviewQuestion({
     const fields = buildQuestionFields(instance);
     const codeInstance = isCodeQuestionPayload(instance) ? instance : null;
     const mathInstance = isMathQuestionPayload(instance) ? instance : null;
-    // No domain means a legacy code payload; only show the code view when the
-    // payload actually has the code envelope.
+    // A specialised view needs both its domain and its payload envelope; other
+    // domains take the generic fallback.
     const showCode = codeInstance !== null && showsDomainView(domain, "code");
-    // A math payload is recognised by its flat envelope even when the domain is
-    // absent; an explicit other domain keeps the generic fallback.
     const showMath = mathInstance !== null && showsDomainView(domain, "math");
 
     return (

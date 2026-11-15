@@ -38,7 +38,7 @@ export function domainLabel(domain: string | null | undefined): string {
     return domainInfo(domain).label;
 }
 
-/** A missing domain means a legacy payload, so every view is shown. */
-export function showsDomainView(domain: string | undefined, name: string): boolean {
-    return domain === undefined || domain === name;
+/** Whether the named domain view applies to this payload's domain. */
+export function showsDomainView(domain: string, name: string): boolean {
+    return domain === name;
 }

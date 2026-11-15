@@ -23,15 +23,12 @@ export function MathQuestionView({
     const Heading = headingLevel;
     const InputsHeading = inputsHeadingLevel;
     const inputs = { ...instance.parameters, seed: instance.seed };
-    // IR questions often restate the rendered equation in the prompt. Showing
-    // both would repeat the same text, so the prompt carries the visible
-    // heading and the equation stays available to assistive technology.
+    // IR prompts often restate the rendered equation. Showing both would
+    // repeat the same text, so the prompt carries the visible heading and the
+    // equation stays available to assistive technology.
     const normalizedQuestion = instance.question.replace(/\s+/g, " ").trim();
     const normalizedEquation = instance.equation.replace(/\s+/g, " ").trim();
-    // Only generic IR prompts restate the rendered equation; legacy linear
-    // questions keep their existing presentation.
-    const equationIsInQuestion =
-        Boolean(instance.topic) && normalizedQuestion.includes(normalizedEquation);
+    const equationIsInQuestion = normalizedQuestion.includes(normalizedEquation);
 
     return (
         <>

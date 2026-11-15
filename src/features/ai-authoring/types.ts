@@ -125,7 +125,7 @@ export interface CodeQuestionInstance {
 /** A code template or an opaque candidate from another domain. */
 export type AuthoringTemplateCandidate =
     | CodeTemplateCandidate
-    | MathTemplateCandidate
+    | IrMathTemplateCandidate
     | Record<string, unknown>;
 export type ReviewTemplate = Omit<ApiReviewTemplate, "candidate"> & {
     candidate: AuthoringTemplateCandidate;
@@ -143,8 +143,8 @@ export type AuthoringReview = Omit<
 };
 
 /**
- * A bounded linear-equation question from the mathematics domain. The backend
- * sends this as a flat object rather than the code question envelope.
+ * A flattened math question from the mathematics domain. The backend sends
+ * this as a flat object rather than the code question envelope.
  */
 export type MathQuestionInstance = {
     template_id: string;
@@ -158,16 +158,6 @@ export type MathQuestionInstance = {
     answer: string;
     topic?: string | null;
     requires_manual_review?: true;
-};
-
-export type MathParameter = {
-    name: string;
-    values: Array<number | string>;
-};
-
-export type MathDistractor = {
-    expression: string;
-    reason_template: string;
 };
 
 /** One node of the generic IR expression tree. */
@@ -246,30 +236,13 @@ export type MathIrTemplate = {
     };
 };
 
-/** A legacy linear-equation template candidate. */
-export type LegacyMathTemplateCandidate = {
-    template_id: string;
-    difficulty: string;
-    question_type: "mcq";
-    equation_template: string;
-    question_template: string;
-    parameters: MathParameter[];
-    answer_expression: string;
-    distractors: MathDistractor[];
-};
-
-/** A generic-IR template candidate. */
+/** A generic-IR math template candidate. */
 export type IrMathTemplateCandidate = {
     template_id: string;
     difficulty: string;
     question_type: "mcq";
     item: MathIrTemplate;
 };
-
-/** A mathematics template candidate in either authoring mode. */
-export type MathTemplateCandidate =
-    | LegacyMathTemplateCandidate
-    | IrMathTemplateCandidate;
 
 /** A deterministic question from any domain; code and math are two shapes. */
 export type AuthoringQuestionPayload =

@@ -43,10 +43,6 @@ describe("domainLabel", () => {
 });
 
 describe("showsDomainView", () => {
-    it("shows for a missing domain (legacy payload)", () => {
-        expect(showsDomainView(undefined, "code")).toBe(true);
-    });
-
     it("shows for a matching domain", () => {
         expect(showsDomainView("math", "math")).toBe(true);
     });

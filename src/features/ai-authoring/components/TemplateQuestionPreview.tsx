@@ -3,7 +3,6 @@ import type {
     AuthoringTemplateCandidate,
     CodeTemplateCandidate,
     IrMathTemplateCandidate,
-    LegacyMathTemplateCandidate,
     ReviewTemplate,
 } from "../types";
 import { showsDomainView } from "../domains";
@@ -14,19 +13,14 @@ import {
     renderIrDistractor,
     renderIrSample,
 } from "./mathIrRender";
-import {
-    isIrMathTemplateCandidate,
-    isLegacyMathTemplateCandidate,
-    isMathTemplateCandidate,
-    isRecord,
-} from "./questionPayload";
+import { isIrMathTemplateCandidate, isRecord } from "./questionPayload";
 import { QuestionInputs } from "./QuestionInputs";
 import { ReadOnlyCode } from "./ReadOnlyCode";
 
 interface TemplateQuestionPreviewProps {
     template: ReviewTemplate;
     /** Authoring domain from the review request. */
-    domain?: string;
+    domain: string;
 }
 
 function renderExpression(value: unknown) {
@@ -74,60 +68,6 @@ function CodeTemplateView({ candidate }: { candidate: CodeTemplateCandidate }) {
                 hideAnswerSummary
                 renderValue={renderExpression}
             />
-        </article>
-    );
-}
-
-/** Legacy linear template rendered without assuming a programming language. */
-function LegacyMathTemplateView({
-    candidate,
-}: {
-    candidate: LegacyMathTemplateCandidate;
-}) {
-    const parameters = Object.fromEntries(
-        candidate.parameters.map((parameter) => [parameter.name, parameter.values]),
-    );
-
-    return (
-        <article className="space-y-4">
-            <h3 className="min-w-0 text-base font-medium">
-                {candidate.question_template}
-            </h3>
-
-            <p className="break-words text-center text-xl font-medium">
-                {candidate.equation_template}
-            </p>
-
-            <section aria-label="Template parameters" className="space-y-1">
-                <h4 className="text-sm font-medium">Parameters</h4>
-                <QuestionInputs inputs={parameters} />
-            </section>
-
-            <section aria-label="Answer expression" className="space-y-1">
-                <h4 className="text-sm font-medium">Answer</h4>
-                <p className="break-words font-mono text-sm">
-                    {candidate.answer_expression}
-                </p>
-            </section>
-
-            <section aria-label="Distractors" className="space-y-2">
-                <h4 className="text-sm font-medium">Wrong choices</h4>
-                <ul className="space-y-2">
-                    {candidate.distractors.map((distractor, index) => (
-                        <li
-                            key={index}
-                            className="rounded border bg-background/60 p-2"
-                        >
-                            <p className="break-words font-mono text-sm">
-                                {distractor.expression}
-                            </p>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                {distractor.reason_template}
-                            </p>
-                        </li>
-                    ))}
-                </ul>
-            </section>
         </article>
     );
 }
@@ -254,20 +194,15 @@ export function TemplateQuestionPreview({
     domain,
 }: TemplateQuestionPreviewProps) {
     const { candidate } = template;
-    // Only the code view assumes the code candidate shape. Unknown domains
-    // always take the field-based fallback.
+    // Each specialised view assumes its candidate shape; other domains take
+    // the field-based fallback.
     const showMath =
-        showsDomainView(domain, "math") && isMathTemplateCandidate(candidate);
+        showsDomainView(domain, "math") && isIrMathTemplateCandidate(candidate);
     const showCode =
         showsDomainView(domain, "code") && isCodeCandidate(candidate);
 
     if (showMath) {
-        if (isIrMathTemplateCandidate(candidate)) {
-            return <IrMathTemplateView candidate={candidate} />;
-        }
-        if (isLegacyMathTemplateCandidate(candidate)) {
-            return <LegacyMathTemplateView candidate={candidate} />;
-        }
+        return <IrMathTemplateView candidate={candidate} />;
     }
     return showCode ? (
         <CodeTemplateView candidate={candidate} />

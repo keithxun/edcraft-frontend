@@ -50,7 +50,7 @@ describe("PreviewQuestion", () => {
     });
 
     it("shows readable choices, the correct answer and rationales instead of quoted JSON", () => {
-        const { container } = render(<PreviewQuestion instance={structuredInstance} />);
+        const { container } = render(<PreviewQuestion instance={structuredInstance} domain="code" />);
 
         expect(
             screen.getByRole("heading", { name: structuredInstance.question.question }),
@@ -78,7 +78,7 @@ describe("PreviewQuestion", () => {
     });
 
     it("preserves nested array boundaries in readable values", () => {
-        render(<PreviewQuestion instance={structuredInstance} />);
+        render(<PreviewQuestion instance={structuredInstance} domain="code" />);
 
         const inputs = screen.getByLabelText("Question inputs");
         const matrixRow = within(inputs).getByText("matrix").closest("tr");
@@ -92,7 +92,9 @@ describe("PreviewQuestion", () => {
     });
 
     it("nests the Inputs heading one level below the question heading", () => {
-        const { rerender } = render(<PreviewQuestion instance={structuredInstance} />);
+        const { rerender } = render(
+            <PreviewQuestion instance={structuredInstance} domain="code" />,
+        );
 
         expect(
             screen.getByRole("heading", {
@@ -102,7 +104,9 @@ describe("PreviewQuestion", () => {
         ).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Inputs", level: 3 })).toBeInTheDocument();
 
-        rerender(<PreviewQuestion instance={structuredInstance} headingLevel="h3" />);
+        rerender(
+            <PreviewQuestion instance={structuredInstance} domain="code" headingLevel="h3" />,
+        );
 
         expect(
             screen.getByRole("heading", {
@@ -122,7 +126,7 @@ describe("PreviewQuestion", () => {
             },
         };
 
-        render(<PreviewQuestion instance={flatInstance} />);
+        render(<PreviewQuestion instance={flatInstance} domain="code" />);
 
         const inputs = screen.getByLabelText("Question inputs");
         expect(within(inputs).getByRole("columnheader", { name: "Input" })).toBeInTheDocument();
@@ -134,7 +138,7 @@ describe("PreviewQuestion", () => {
     });
 
     it("shows one collapsed raw question data disclosure", () => {
-        render(<PreviewQuestion instance={structuredInstance} />);
+        render(<PreviewQuestion instance={structuredInstance} domain="code" />);
 
         const summaries = screen.getAllByText("Raw question data");
         expect(summaries).toHaveLength(1);
@@ -150,6 +154,7 @@ describe("PreviewQuestion", () => {
         render(
             <PreviewQuestion
                 instance={structuredInstance}
+                domain="code"
                 headingLevel="h3"
                 variant="review"
             />,
@@ -169,7 +174,9 @@ describe("PreviewQuestion", () => {
     });
 
     it("shows review code inline without inputs or raw data", () => {
-        render(<PreviewQuestion instance={structuredInstance} variant="review" />);
+        render(
+            <PreviewQuestion instance={structuredInstance} domain="code" variant="review" />,
+        );
 
         expect(screen.getByLabelText("Question code")).toBeInTheDocument();
         expect(screen.queryByText("View code")).not.toBeInTheDocument();

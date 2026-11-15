@@ -10,7 +10,6 @@ import type {
     CodeQuestionInstance,
     IrMathTemplateCandidate,
     MathQuestionInstance,
-    MathTemplateCandidate,
 } from "../types";
 
 const digest = "a".repeat(64);
@@ -459,30 +458,6 @@ export const mathPreview: AuthoringPreview = {
     question: mathQuestionInstance,
 };
 
-export const mathTemplateCandidate: MathTemplateCandidate = {
-    template_id: "linear-one-step",
-    difficulty: "easy",
-    question_type: "mcq",
-    equation_template: "{a}x + {b} = {c}",
-    question_template: "Solve for x.",
-    parameters: [
-        { name: "a", values: [2, 3] },
-        { name: "b", values: [1, 4] },
-        { name: "c", values: [5, 7] },
-    ],
-    answer_expression: "(c - b) / a",
-    distractors: [
-        {
-            expression: "c - b",
-            reason_template: "Forgets to divide by the coefficient of x.",
-        },
-        {
-            expression: "c + b",
-            reason_template: "Adds the constant instead of subtracting it.",
-        },
-    ],
-};
-
 export const mathIrTemplateCandidate: IrMathTemplateCandidate = {
     template_id: "ir-quadratic",
     difficulty: "easy",
@@ -573,22 +548,6 @@ export const mathIrReview: AuthoringReview = {
     template: {
         template_id: "ir-quadratic",
         candidate: mathIrTemplateCandidate,
-    },
-    candidate: null,
-};
-
-export const mathReview: AuthoringReview = {
-    ...approvedReview,
-    domain: "math",
-    artifact_id: "artifact-math",
-    request: {
-        ...approvedReview.request,
-        domain: "math",
-        prompt: "Write a one-step linear equation question.",
-    },
-    template: {
-        template_id: "linear-one-step",
-        candidate: mathTemplateCandidate,
     },
     candidate: null,
 };
