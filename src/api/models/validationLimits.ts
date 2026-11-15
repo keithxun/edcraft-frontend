@@ -7,11 +7,11 @@
  */
 
 /**
- * Check budget recorded by the AI library, whichever mode it used.
+ * Check coverage recorded by the AI library for a checked template.
 
-Code templates record a sampled budget; math templates record a bounded
-parameter-domain sample budget. Fields for the other mode stay null so
-clients can keep reading one stable response shape.
+Both domains share one property-check shape: the sampled execution budget
+plus whether the declared domain was enumerated completely. Only
+``declared_domain_size`` is meaningful for domains with a finite domain.
  */
 export interface ValidationLimits {
   validator_version: string;
@@ -21,7 +21,7 @@ export interface ValidationLimits {
   max_examples?: number | null;
   max_execution_calls?: number | null;
   timeout_seconds?: number | null;
-  combinations_checked?: number | null;
-  max_combinations?: number | null;
   seed: number;
+  whole_domain?: boolean | null;
+  declared_domain_size?: number | null;
 }
