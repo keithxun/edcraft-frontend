@@ -189,8 +189,10 @@ describe("PreviewQuestion", () => {
         render(<PreviewQuestion instance={mathQuestionInstance} domain="math" />);
 
         expect(
-            screen.getByRole("heading", { name: mathQuestionInstance.equation }),
+            screen.getByRole("heading", { name: mathQuestionInstance.question }),
         ).toBeInTheDocument();
+        // The generated view also lists the equation in its raw question data.
+        expect(screen.getAllByText(mathQuestionInstance.equation).length).toBeGreaterThan(0);
         expect(
             screen.getAllByText(mathQuestionInstance.question).length,
         ).toBeGreaterThan(0);
@@ -212,6 +214,20 @@ describe("PreviewQuestion", () => {
         expect(screen.queryByText(/\.py$/)).not.toBeInTheDocument();
     });
 
+    it("shows the math prompt once when it already contains the equation", () => {
+        const instance = {
+            ...mathQuestionInstance,
+            equation: "(x - 3)*(x + 4)",
+            question: "Expand the product (x - 3)*(x + 4).",
+        };
+        render(<PreviewQuestion instance={instance} domain="math" variant="review" />);
+
+        expect(
+            screen.getByRole("heading", { name: instance.question }),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(instance.equation)).not.toBeInTheDocument();
+    });
+
     it("keeps math review neutral until the answer is revealed", async () => {
         const user = userEvent.setup();
         render(
@@ -223,8 +239,9 @@ describe("PreviewQuestion", () => {
         );
 
         expect(
-            screen.getByRole("heading", { name: mathQuestionInstance.equation }),
+            screen.getByRole("heading", { name: mathQuestionInstance.question }),
         ).toBeInTheDocument();
+        expect(screen.getByText(mathQuestionInstance.equation)).toBeInTheDocument();
         expect(screen.queryByText("✓")).not.toBeInTheDocument();
         expect(screen.queryByText(/The correct choice is highlighted below/)).not.toBeInTheDocument();
         expect(screen.queryByLabelText("Question inputs")).not.toBeInTheDocument();

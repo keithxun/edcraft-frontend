@@ -99,6 +99,24 @@ const CHECK_SUPPORT: Record<string, CheckSupport> = {
             "Prose templates add anchor checks and a blind parse-back reconstruction.",
         ],
     },
+    math_verify_answer_form: {
+        supports: [
+            "Required for factorising and expanding goals, where the form of the answer is part of what is asked.",
+            "Checks that the correct answer has the requested form, such as factorised or expanded, on every checked parameter combination.",
+        ],
+    },
+    application_distractor_count: {
+        supports: [
+            "Run by the application on every template.",
+            "Confirms the template offers at least the requested number of wrong choices. Fewer triggers a revision.",
+        ],
+    },
+    assess_template_difficulty: {
+        supports: [
+            "Shared by every domain and advisory only: a mismatch never blocks the template.",
+            "A judge model compares the template with the domain's difficulty rubric. The mathematics rubric is provisional and not yet calibrated.",
+        ],
+    },
     assess_template_relevance: {
         supports: ["Compares the authored template with the original request."],
     },

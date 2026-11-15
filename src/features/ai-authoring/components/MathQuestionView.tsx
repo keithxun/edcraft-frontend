@@ -10,8 +10,8 @@ interface MathQuestionViewProps {
 }
 
 /**
- * Mathematics view: the equation leads, then the prompt and choices through the
- * shared question renderer. Review stays neutral until the reviewer reveals the
+ * Mathematics view: the prompt leads, then the equation when the prompt does not
+ * already show it, then the choices through the shared question renderer. Review stays neutral until the reviewer reveals the
  * answer; generated previews show the canonical correct choice.
  */
 export function MathQuestionView({
@@ -23,24 +23,21 @@ export function MathQuestionView({
     const Heading = headingLevel;
     const InputsHeading = inputsHeadingLevel;
     const inputs = { ...instance.parameters, seed: instance.seed };
-    // IR prompts often restate the rendered equation. Showing both would
-    // repeat the same text, so the prompt carries the visible heading and the
-    // equation stays available to assistive technology.
+    // The prompt is the question students read, so it always leads. IR prompts
+    // often restate the rendered equation, so the equation only appears on its
+    // own when the prompt does not already contain it.
     const normalizedQuestion = instance.question.replace(/\s+/g, " ").trim();
     const normalizedEquation = instance.equation.replace(/\s+/g, " ").trim();
     const equationIsInQuestion = normalizedQuestion.includes(normalizedEquation);
 
     return (
         <>
-            <Heading
-                className={
-                    equationIsInQuestion
-                        ? "sr-only"
-                        : "min-w-0 break-words text-lg font-semibold"
-                }
-            >
-                {instance.equation}
+            <Heading className="min-w-0 break-words text-lg font-semibold">
+                {instance.question}
             </Heading>
+            {!equationIsInQuestion && (
+                <p className="min-w-0 break-words font-mono text-base">{instance.equation}</p>
+            )}
 
             <GenericQuestionView payload={instance} review={review} />
 
