@@ -139,7 +139,7 @@ describe("readable technical sections", () => {
             screen.getByText("Examples checked: 60 of 60 combinations (every combination)"),
         ).toBeInTheDocument();
         expect(
-            screen.getByText("Limits: 100 combinations, 400 calls, 15 s"),
+            screen.getByText("Limits: 100 sampled combinations plus edge cases, 400 calls, 15 s"),
         ).toBeInTheDocument();
         expect(screen.queryByText(/mcp-math-template-v1/)).not.toBeInTheDocument();
         expect(screen.queryByText(/Property Based/)).not.toBeInTheDocument();

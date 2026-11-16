@@ -223,7 +223,7 @@ export function ValidationLimitsDetails({ limits }: { limits: ValidationLimits }
 
     const budget: string[] = [];
     if (limits.max_examples !== null && limits.max_examples !== undefined) {
-        budget.push(`${limits.max_examples} combinations`);
+        budget.push(`${limits.max_examples} sampled combinations plus edge cases`);
     }
     if (
         limits.max_execution_calls !== null &&
