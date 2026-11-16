@@ -384,7 +384,7 @@ describe("ReviewPanel", () => {
         expect(details).toHaveTextContent("Off topic.");
     });
 
-    it("labels the reasoning fallback as the reasoning judge", async () => {
+    it("labels the reasoning fallback as the reasoning assessment", async () => {
         renderPanel({
             ...approvedReview,
             difficulty: {
@@ -399,11 +399,11 @@ describe("ReviewPanel", () => {
         expect(advisory).not.toBeNull();
         expect(within(advisory as HTMLElement).getByText("72%")).toBeInTheDocument();
         expect(
-            within(advisory as HTMLElement).getByText("Source: Reasoning judge"),
+            within(advisory as HTMLElement).getByText("Source: reasoning assessment"),
         ).toBeInTheDocument();
     });
 
-    it("labels the forced-choice path as the decision screen", async () => {
+    it("labels the forced-choice path as the decision model", async () => {
         renderPanel({
             ...approvedReview,
             difficulty: {
@@ -417,7 +417,7 @@ describe("ReviewPanel", () => {
         const advisory = screen.getByText("Difficulty differs").closest("[data-advisory]");
         expect(advisory).not.toBeNull();
         expect(
-            within(advisory as HTMLElement).getByText("Source: Decision screen"),
+            within(advisory as HTMLElement).getByText("Source: decision model"),
         ).toBeInTheDocument();
     });
 

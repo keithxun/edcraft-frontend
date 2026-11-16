@@ -85,6 +85,52 @@ describe("AttemptsEvidence", () => {
         expect(candidate).not.toHaveAttribute("open");
     });
 
+    it("shows pending checks with their human labels", async () => {
+        const user = userEvent.setup();
+        render(
+            <AttemptsEvidence
+                attempts={[
+                    {
+                        ...attempt,
+                        complete: false,
+                        pending: ["assess_template_difficulty", "assess_template_relevance"],
+                    },
+                ]}
+            />,
+        );
+
+        const attemptDetails = screen.getByText(/Attempt 1 ·/).closest("details");
+        if (!attemptDetails) throw new Error("Attempt disclosure was not rendered.");
+        await user.click(screen.getByText(/Attempt 1 ·/));
+
+        expect(
+            screen.getByText("Incomplete · Pending: Difficulty, Relevance"),
+        ).toBeInTheDocument();
+    });
+
+    it("falls back to the humanised name for an unmapped pending check", async () => {
+        const user = userEvent.setup();
+        render(
+            <AttemptsEvidence
+                attempts={[
+                    {
+                        ...attempt,
+                        complete: false,
+                        pending: ["some_new_check"],
+                    },
+                ]}
+            />,
+        );
+
+        const attemptDetails = screen.getByText(/Attempt 1 ·/).closest("details");
+        if (!attemptDetails) throw new Error("Attempt disclosure was not rendered.");
+        await user.click(screen.getByText(/Attempt 1 ·/));
+
+        expect(
+            screen.getByText("Incomplete · Pending: Some New Check"),
+        ).toBeInTheDocument();
+    });
+
     it("renders candidate parameters and distractors as tables when expanded", async () => {
         const user = userEvent.setup();
         render(<AttemptsEvidence attempts={[attempt]} />);

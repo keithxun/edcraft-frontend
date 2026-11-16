@@ -2,6 +2,7 @@ import { EvidenceDetails } from "./EvidenceDetails";
 import { MathTemplateDetails } from "./MathTemplateDetails";
 import { isIrMathTemplateCandidate, sameCandidate } from "./questionPayload";
 import { ChecksDetails } from "./TechnicalDetailsSections";
+import { checkName } from "../checkMetadata";
 import type { ReviewAttempt } from "../types";
 
 interface AttemptsEvidenceProps {
@@ -54,7 +55,7 @@ export function AttemptsEvidence({ attempts, checkedCandidate = null }: Attempts
                                     <p className="text-xs text-muted-foreground">
                                         {attempt.complete ? "Complete" : "Incomplete"}
                                         {pending.length > 0
-                                            ? ` · Pending: ${pending.join(", ")}`
+                                            ? ` · Pending: ${pending.map(checkName).join(", ")}`
                                             : ""}
                                     </p>
                                     <EvidenceDetails

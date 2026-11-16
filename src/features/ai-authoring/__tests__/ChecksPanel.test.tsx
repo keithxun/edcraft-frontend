@@ -169,7 +169,7 @@ describe("ChecksPanel", () => {
             title: "Difficulty differs",
             description: "Estimated hard; requested easy.",
             passed: false,
-            meter: { label: "Confidence", display: "72%", percent: 72, caption: "Source: Reasoning judge" },
+            meter: { label: "Confidence", display: "72%", percent: 72, caption: "Source: decision model" },
         },
         {
             id: "relevance",
@@ -196,7 +196,7 @@ describe("ChecksPanel", () => {
         expect(screen.getByText("Estimated hard; requested easy.")).toBeInTheDocument();
         expect(screen.getByText("For your review:")).toHaveClass("sr-only");
         expect(screen.getByText("72%")).toBeInTheDocument();
-        expect(screen.getByText("Source: Reasoning judge")).toBeInTheDocument();
+        expect(screen.getByText("Source: decision model")).toBeInTheDocument();
         expect(screen.getByText("Relevance looks good")).toBeInTheDocument();
 
         // Advisories never gate approval, so a mismatch stays neutral rather

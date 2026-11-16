@@ -29,8 +29,8 @@ interface ReviewPanelProps {
 }
 
 const ASSESSMENT_PATH_LABELS: Record<string, string> = {
-    decision: "Decision screen",
-    reasoning: "Reasoning judge",
+    decision: "decision model",
+    reasoning: "reasoning assessment",
 };
 
 function assessmentPathLabel(path: string | null | undefined): string | null {
