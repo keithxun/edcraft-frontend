@@ -94,11 +94,19 @@ export function isIrMathTemplateCandidate(
 ): value is IrMathTemplateCandidate {
     if (!isRecord(value) || !isRecord(value.item)) return false;
     const item = value.item;
+    const body = item.body;
+    if (!isRecord(body) || !isRecord(body.text) || !isRecord(body.goal)) {
+        return false;
+    }
     return (
         typeof value.template_id === "string" &&
         typeof item.topic === "string" &&
         Array.isArray(item.parameters) &&
-        isRecord(item.body)
+        item.parameters.every(
+            (parameter) => isRecord(parameter) && Array.isArray(parameter.values),
+        ) &&
+        Array.isArray(body.distractors) &&
+        body.distractors.every((distractor) => isRecord(distractor))
     );
 }
 

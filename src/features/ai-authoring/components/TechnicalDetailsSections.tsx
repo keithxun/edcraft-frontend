@@ -15,21 +15,12 @@ import type {
     ValidationLimits,
 } from "../types";
 
+// Stock reasons from edcraft_validator application/template_difficulty.py and the relevance assessor.
 const STOCK_DIFFICULTY_REASONS = new Set([
     "forced decision from first-token label probabilities",
-    "forced decision from first token label probabilities",
-    "decision from first-token label probabilities",
-    "reasoned through the rubric before deciding",
-    "difficulty assessment completed",
-    "advisory difficulty assessment completed",
-    "the judge model picked a level directly (confidence from its answer probabilities)",
-    "the judge model reasoned through the rubric before deciding",
 ]);
 
-const STOCK_RELEVANCE_REASONS = new Set([
-    "advisory relevance assessment completed",
-    "relevance assessment completed",
-]);
+const STOCK_RELEVANCE_REASONS = new Set(["advisory relevance assessment completed"]);
 
 function isStockReason(reason: string, stock: Set<string>): boolean {
     return stock.has(reason.trim().toLowerCase().replace(/\.$/, ""));
@@ -214,11 +205,18 @@ export function RelevanceDetails({ outcome }: { outcome: AuthoringRelevanceOutco
 export function ValidationLimitsDetails({ limits }: { limits: ValidationLimits }) {
     const checked = limits.examples_checked;
     const declared = limits.declared_domain_size;
+    const everyCombination =
+        limits.whole_domain === true &&
+        checked !== null &&
+        checked !== undefined &&
+        declared !== null &&
+        declared !== undefined &&
+        checked >= declared;
     const coverage =
         checked !== null && checked !== undefined
             ? declared !== null && declared !== undefined
                 ? `Examples checked: ${checked} of ${declared} combinations${
-                      limits.whole_domain === true ? " (every combination)" : ""
+                      everyCombination ? " (every combination)" : ""
                   }`
                 : `Examples checked: ${checked}`
             : null;

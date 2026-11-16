@@ -158,6 +158,24 @@ describe("readable technical sections", () => {
         ).toBeInTheDocument();
     });
 
+    it("does not claim every combination when some were skipped", () => {
+        render(
+            <ValidationLimitsDetails
+                limits={{
+                    ...limits,
+                    whole_domain: true,
+                    examples_checked: 13,
+                    declared_domain_size: 26,
+                }}
+            />,
+        );
+
+        expect(
+            screen.getByText("Examples checked: 13 of 26 combinations"),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/every combination/)).not.toBeInTheDocument();
+    });
+
     it("summarises a sampled check without a declared size", () => {
         render(
             <ValidationLimitsDetails
@@ -250,5 +268,28 @@ describe("TechnicalDetails readable labels", () => {
         expect(screen.getAllByText("Correct answer").length).toBeGreaterThan(0);
         expect(screen.getByText("Template details")).toBeInTheDocument();
         expect(screen.getAllByLabelText("Goal")).toHaveLength(1);
+    });
+
+    it("falls back to the generic view for a partial maths payload", () => {
+        const review: AuthoringReview = {
+            ...approvedReview,
+            template: {
+                ...approvedReview.template!,
+                template_id: "partial",
+                candidate: {
+                    template_id: "partial",
+                    item: {
+                        topic: "school.quadratic",
+                        parameters: [{ name: "p" }],
+                        body: { topic: "school.quadratic" },
+                    },
+                },
+            },
+        };
+
+        expect(() => render(<TechnicalDetails review={review} result={null} />)).not.toThrow();
+
+        expect(screen.getByText("Template details")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Goal")).not.toBeInTheDocument();
     });
 });
