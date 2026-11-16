@@ -38,6 +38,18 @@ export function friendlyCheckLabel(tool: string): string {
     return FRIENDLY_CHECK_LABELS[tool] ?? tool.replaceAll("_", " ");
 }
 
+function humanizeCheckName(tool: string): string {
+    return tool
+        .replaceAll("_", " ")
+        .trim()
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+/** Friendly check name with a title-cased identifier as the fallback. */
+export function checkName(tool: string): string {
+    return FRIENDLY_CHECK_LABELS[tool] ?? humanizeCheckName(tool);
+}
+
 export interface CheckSupport {
     supports: string[];
 }
@@ -107,7 +119,7 @@ const CHECK_SUPPORT: Record<string, CheckSupport> = {
 };
 
 export function checkLabel(check: AuthoringCheck): string {
-    return friendlyCheckLabel(check.tool);
+    return checkName(check.tool);
 }
 
 export function checkDescription(check: AuthoringCheck): string | null {

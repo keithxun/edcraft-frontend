@@ -155,7 +155,7 @@ describe("ReviewPanel", () => {
         expect(
             screen.queryByText(/Approval is unavailable until the technical checks pass/i),
         ).not.toBeInTheDocument();
-        expect(screen.getByText("Answers and wrong choices")).toBeInTheDocument();
+        expect(screen.getAllByText("Answers and wrong choices").length).toBeGreaterThan(0);
     });
 
     it("shows the original request with its settings", () => {

@@ -29,6 +29,30 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Structural equality for the JSON-shaped candidate payloads. */
+export function sameCandidate(left: unknown, right: unknown): boolean {
+    if (left === right) return true;
+    if (Array.isArray(left) && Array.isArray(right)) {
+        return (
+            left.length === right.length &&
+            left.every((item, index) => sameCandidate(item, right[index]))
+        );
+    }
+    if (isRecord(left) && isRecord(right)) {
+        const leftKeys = Object.keys(left);
+        const rightKeys = Object.keys(right);
+        return (
+            leftKeys.length === rightKeys.length &&
+            leftKeys.every(
+                (key) =>
+                    Object.prototype.hasOwnProperty.call(right, key) &&
+                    sameCandidate(left[key], right[key]),
+            )
+        );
+    }
+    return false;
+}
+
 /** A payload is only treated as code when it has the code question envelope. */
 export function isCodeQuestionPayload(
     value: AuthoringQuestionPayload,

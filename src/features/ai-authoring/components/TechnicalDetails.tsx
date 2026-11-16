@@ -3,6 +3,17 @@ import type { AuthoringResult, AuthoringReview } from "../types";
 import { modelLabel } from "../format";
 import { AttemptsEvidence } from "./AttemptsEvidence";
 import { EvidenceDetails } from "./EvidenceDetails";
+import { MathTemplateDetails } from "./MathTemplateDetails";
+import { isIrMathTemplateCandidate } from "./questionPayload";
+import {
+    ChecksDetails,
+    DifficultyDetails,
+    FixedPlanDetails,
+    RelevanceDetails,
+    RequestDetails,
+    ValidationLimitsDetails,
+    WarningsDetails,
+} from "./TechnicalDetailsSections";
 
 interface TechnicalDetailsProps {
     review: AuthoringReview;
@@ -67,6 +78,17 @@ export function TechnicalDetails({ review, result }: TechnicalDetailsProps) {
 
     const checks = review.checks ?? [];
     const attempts = review.attempts ?? [];
+    const difficulty = review.difficulty ?? result?.difficulty ?? null;
+    const relevance = review.relevance ?? result?.relevance ?? null;
+    const warnings = review.warnings ?? [];
+    const fixedPlan = review.fixed_plan ?? [];
+    const template = review.template
+        ? {
+              ...review.template.candidate,
+              template_id: review.template.template_id,
+              language: review.template.language,
+          }
+        : null;
 
     return (
         <details
@@ -80,7 +102,16 @@ export function TechnicalDetails({ review, result }: TechnicalDetailsProps) {
                     {metadata.map(([label, value]) => (
                         <div key={label}>
                             <dt className="font-medium text-muted-foreground">{label}</dt>
-                            <dd className="break-all font-mono">{value}</dd>
+                            <dd
+                                className="break-all font-mono"
+                                title={
+                                    label === "Library revision" ? value : undefined
+                                }
+                            >
+                                {label === "Library revision"
+                                    ? value.slice(0, 7)
+                                    : value}
+                            </dd>
                         </div>
                     ))}
                 </dl>
@@ -97,37 +128,55 @@ export function TechnicalDetails({ review, result }: TechnicalDetailsProps) {
                     summary="Request"
                     value={review.request}
                     variant="structured"
+                    readable={<RequestDetails request={review.request} />}
                 />
                 <EvidenceDetails
                     summary={`Automated checks (${checks.length})`}
                     value={checks}
                     variant="structured"
+                    readable={<ChecksDetails checks={checks} />}
                 />
-                <AttemptsEvidence attempts={attempts} />
+                <AttemptsEvidence
+                    attempts={attempts}
+                    checkedCandidate={review.template?.candidate ?? null}
+                />
                 <EvidenceDetails
                     summary="Fixed plan"
-                    value={review.fixed_plan ?? []}
+                    value={fixedPlan}
                     variant="structured"
+                    readable={<FixedPlanDetails steps={fixedPlan} />}
                 />
                 <EvidenceDetails
                     summary="Difficulty advisory"
-                    value={review.difficulty ?? result?.difficulty}
+                    value={difficulty}
                     variant="structured"
+                    readable={
+                        difficulty ? <DifficultyDetails outcome={difficulty} /> : undefined
+                    }
                 />
                 <EvidenceDetails
                     summary="Relevance advisory"
-                    value={review.relevance ?? result?.relevance}
+                    value={relevance}
                     variant="structured"
+                    readable={
+                        relevance ? <RelevanceDetails outcome={relevance} /> : undefined
+                    }
                 />
                 <EvidenceDetails
                     summary="Sampled-check limits"
                     value={review.validation_limits ?? null}
                     variant="structured"
+                    readable={
+                        review.validation_limits ? (
+                            <ValidationLimitsDetails limits={review.validation_limits} />
+                        ) : undefined
+                    }
                 />
                 <EvidenceDetails
                     summary="Raw warnings"
-                    value={review.warnings ?? []}
+                    value={warnings}
                     variant="structured"
+                    readable={<WarningsDetails warnings={warnings} />}
                 />
                 <EvidenceDetails
                     summary="Approval record"
@@ -137,16 +186,13 @@ export function TechnicalDetails({ review, result }: TechnicalDetailsProps) {
                 <EvidenceDetails summary="Review error" value={review.error} variant="structured" />
                 <EvidenceDetails
                     summary="Template details"
-                    value={
-                        review.template
-                            ? {
-                                  ...review.template.candidate,
-                                  template_id: review.template.template_id,
-                                  language: review.template.language,
-                              }
-                            : null
-                    }
+                    value={template}
                     variant="structured"
+                    readable={
+                        isIrMathTemplateCandidate(template) ? (
+                            <MathTemplateDetails candidate={template} />
+                        ) : undefined
+                    }
                 />
             </div>
         </details>

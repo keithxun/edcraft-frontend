@@ -497,9 +497,10 @@ function renderNode(
     return precedence < parentPrecedence ? `(${text})` : text;
 }
 
-function renderRelation(
+/** Render one given relation in plain notation. */
+export function renderIrRelation(
     given: MathIrGiven,
-    values: ParameterValues,
+    values: ParameterValues = {},
 ): string | null {
     const relation = given.relation;
     if (!relation) return null;
@@ -516,7 +517,7 @@ export function renderIrRelations(
 ): string[] {
     return (body.givens ?? [])
         .filter((given) => given.kind !== "domain" && given.kind !== "dataset")
-        .map((given) => renderRelation(given, values))
+        .map((given) => renderIrRelation(given, values))
         .filter((relation): relation is string => relation !== null);
 }
 
@@ -611,9 +612,10 @@ export function renderIrSample(template: MathIrTemplate): MathIrSample {
     };
 }
 
-function renderTexRelation(
+/** Render one given relation as LaTeX. Returns `null` when any part is unsafe. */
+export function renderIrRelationTex(
     given: MathIrGiven,
-    values: ParameterValues,
+    values: ParameterValues = {},
 ): string | null {
     const relation = given.relation;
     if (!relation) return null;
@@ -633,7 +635,7 @@ function renderTexRelations(
         (given) => given.kind !== "domain" && given.kind !== "dataset",
     );
     for (const given of givens) {
-        const relation = renderTexRelation(given, values);
+        const relation = renderIrRelationTex(given, values);
         if (relation === null) return null;
         relations.push(relation);
     }

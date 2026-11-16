@@ -10,9 +10,14 @@ const WARNING_TEXT: Record<string, string> = {
     ADVISORY_ASSESSMENT_UNAVAILABLE:
         "An advisory assessment was unavailable, so that result is missing.",
     CHECK_TIMEOUT: "A check timed out before it could finish.",
+    DIFFICULTY_MISMATCH:
+        "The difficulty check found a different level from the one you asked for.",
+    DIFFICULTY_MISMATCH_LOW_CONFIDENCE:
+        "The difficulty check found a different level from the one you asked for, with low confidence.",
     DIFFICULTY_UNABLE_TO_ASSESS: "The difficulty check could not estimate a level.",
     JUDGE_TRANSPORT: "The advisory judge could not be reached, so that check did not run.",
     RELEVANCE_FAILED: "The relevance check could not complete.",
+    RELEVANCE_MISMATCH: "The relevance check flagged this question as possibly off topic.",
 };
 
 /** Review warnings arrive as codes; generation warnings are already prose. */

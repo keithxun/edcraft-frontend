@@ -14,6 +14,8 @@ interface EvidenceDetailsProps {
     value: unknown;
     /** "structured" reads the payload as labelled fields; "raw" shows JSON only. */
     variant?: "raw" | "structured";
+    /** A purpose-built readable view, shown above the raw JSON. */
+    readable?: ReactNode;
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
@@ -283,7 +285,23 @@ export function StructuredValue({
     return <ScalarValue fieldKey={fieldKey} value={value} />;
 }
 
-export function EvidenceDetails({ summary, value, variant = "raw" }: EvidenceDetailsProps) {
+function RawJson({ value }: { value: unknown }) {
+    return (
+        <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground">Raw JSON</summary>
+            <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-words">
+                {formatValue(value)}
+            </pre>
+        </details>
+    );
+}
+
+export function EvidenceDetails({
+    summary,
+    value,
+    variant = "raw",
+    readable,
+}: EvidenceDetailsProps) {
     if (!hasEvidence(value)) return null;
 
     const structured = variant === "structured" && (isRecord(value) || Array.isArray(value));
@@ -291,15 +309,15 @@ export function EvidenceDetails({ summary, value, variant = "raw" }: EvidenceDet
     return (
         <details className="rounded-md border bg-muted/30 p-3 text-sm">
             <summary className="cursor-pointer font-medium">{summary}</summary>
-            {structured ? (
+            {readable ? (
+                <div className="mt-3 space-y-3">
+                    {readable}
+                    <RawJson value={value} />
+                </div>
+            ) : structured ? (
                 <div className="mt-3 space-y-3">
                     <StructuredValue value={value} />
-                    <details className="text-xs">
-                        <summary className="cursor-pointer text-muted-foreground">Raw JSON</summary>
-                        <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-words">
-                            {formatValue(value)}
-                        </pre>
-                    </details>
+                    <RawJson value={value} />
                 </div>
             ) : (
                 <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs">
