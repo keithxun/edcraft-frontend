@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AuthoringRequestView } from './authoringRequestView';
+import type { AuthoringReviewResponseCandidate } from './authoringReviewResponseCandidate';
 import type { AuthoringReviewResponseState } from './authoringReviewResponseState';
-import type { CodeTemplateCandidate } from './codeTemplateCandidate';
 import type { DifficultyOutcome } from './difficultyOutcome';
 import type { PublicAuthoringError } from './publicAuthoringError';
 import type { RelevanceOutcome } from './relevanceOutcome';
@@ -21,22 +21,23 @@ import type { ValidationLimits } from './validationLimits';
  * Safe, complete-enough review envelope for one owned job.
  */
 export interface AuthoringReviewResponse {
-  approval?: StoredReviewerApproval | null;
+  job_id: string;
+  state: AuthoringReviewResponseState;
+  domain: string;
   artifact_id?: string | null;
   artifact_sha256?: string | null;
-  attempts?: ReviewAttempt[];
-  candidate?: CodeTemplateCandidate | null;
-  candidate_is_historical_attempt?: boolean;
-  checks?: ReviewCheck[];
-  difficulty?: DifficultyOutcome | null;
-  error?: PublicAuthoringError | null;
-  fixed_plan?: string[];
-  job_id: string;
   library_revision: string;
-  relevance?: RelevanceOutcome | null;
   request: AuthoringRequestView;
-  state: AuthoringReviewResponseState;
   template?: ReviewTemplate | null;
+  checks?: ReviewCheck[];
+  attempts?: ReviewAttempt[];
+  fixed_plan?: string[];
   validation_limits?: ValidationLimits | null;
+  candidate?: AuthoringReviewResponseCandidate;
+  candidate_is_historical_attempt?: boolean;
+  difficulty?: DifficultyOutcome | null;
+  relevance?: RelevanceOutcome | null;
   warnings?: string[];
+  approval?: StoredReviewerApproval | null;
+  error?: PublicAuthoringError | null;
 }

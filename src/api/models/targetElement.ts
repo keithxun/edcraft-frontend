@@ -11,16 +11,16 @@ import type { TargetElementTypeProperty } from './targetElementTypeProperty';
  * Represents a single element in the target path.
  */
 export interface TargetElement {
-  /** Specific argument keys to select (only valid when modifier='arguments'). Single key returns a scalar; multiple keys return a sub-dict. */
-  argument_keys?: string[] | null;
+  /** Type of the target element (function, loop, branch, variable) */
+  type: TargetElementTypeProperty;
   /** Indices of the element in the respective array (functions/loops/branches) */
   id: number[];
+  /** Name of the element (e.g., function name) */
+  name?: string | null;
   /** Line number where the element appears */
   line_number?: number | null;
   /** Modifier for target */
   modifier?: 'arguments' | 'return_value' | 'loop_iterations' | 'branch_true' | 'branch_false' | null;
-  /** Name of the element (e.g., function name) */
-  name?: string | null;
-  /** Type of the target element (function, loop, branch, variable) */
-  type: TargetElementTypeProperty;
+  /** Specific argument keys to select (only valid when modifier='arguments'). Single key returns a scalar; multiple keys return a sub-dict. */
+  argument_keys?: string[] | null;
 }

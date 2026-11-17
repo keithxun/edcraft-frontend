@@ -1,10 +1,22 @@
-import { AlertCircle, CheckCircle2, ChevronDown } from "lucide-react";
+import {
+    AlertCircle,
+    CheckCircle2,
+    ChevronDown,
+    HelpCircle,
+} from "lucide-react";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import type { AuthoringCheck } from "../types";
 import {
     checkDescription,
     checkLabel,
+    checkSupport,
     findingText,
     statusLabel,
+    type CheckSupport,
 } from "../checkMetadata";
 
 /** A difficulty or relevance result shown alongside the technical checks. */
@@ -57,7 +69,7 @@ function AdvisoryItem({ advisory }: { advisory: ChecksAdvisory }) {
                 <div className="min-w-0 space-y-1">
                     <p className="text-sm font-medium">
                         <span className="sr-only">
-                            {passed ? "Passed: " : "Needs attention: "}
+                            {passed ? "Passed: " : "For your review: "}
                         </span>
                         {advisory.title}
                     </p>
@@ -97,6 +109,46 @@ function subsectionHeading(label: string, note: string) {
     );
 }
 
+function CheckHelpButton({
+    label,
+    description,
+    support,
+}: {
+    label: string;
+    description: string | null;
+    support: CheckSupport;
+}) {
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <button
+                    type="button"
+                    aria-label={`What ${label} checks`}
+                    className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                    <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-96 max-w-[calc(100vw-2rem)]">
+                <p className="text-sm font-medium">{label}</p>
+                {description && (
+                    <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+                )}
+                <div className="mt-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Supported
+                    </p>
+                    <ul className="mt-1 list-disc space-y-1 pl-4 text-xs">
+                        {support.supports.map((item) => (
+                            <li key={item}>{item}</li>
+                        ))}
+                    </ul>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
 /**
  * Lists every check with a plain-language description of what it verifies.
  * Technical checks gate approval; difficulty and relevance only advise, so the
@@ -123,11 +175,11 @@ export function ChecksPanel({ checks, advisories = [], collapsible = false }: Ch
             ? null
             : advisories.length === 1
               ? advisoryFailures.length === 0
-                  ? "Advisory passed."
+                  ? "Advisory check passed."
                   : "Advisory needs attention."
               : advisoryFailures.length === 0
-                ? `All ${advisories.length} advisories passed.`
-                : `${advisoryFailures.length} of ${advisories.length} advisories need attention.`;
+                ? `All ${advisories.length} advisory checks passed.`
+                : `${advisoryFailures.length} of ${advisories.length} advisory checks are for your review. They do not block approval.`;
 
     const summary = [technicalSummary, advisorySummary].filter(Boolean).join(" ");
 
@@ -137,6 +189,7 @@ export function ChecksPanel({ checks, advisories = [], collapsible = false }: Ch
                 const passed = check.status === "passed";
                 const description = checkDescription(check);
                 const label = checkLabel(check);
+                const support = checkSupport(check);
                 const findings = check.findings ?? [];
 
                 return (
@@ -153,13 +206,21 @@ export function ChecksPanel({ checks, advisories = [], collapsible = false }: Ch
                             />
                         )}
                         <div className="min-w-0 space-y-1">
-                            <p className="text-sm font-medium">
-                                <span className="sr-only">{statusLabel(check.status)}: </span>
-                                {label}
-                            </p>
-                            {description && (
-                                <p className="text-xs text-muted-foreground">{description}</p>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-medium">
+                                    <span className="sr-only">
+                                        {statusLabel(check.status)}:{" "}
+                                    </span>
+                                    {label}
+                                </p>
+                                {support && (
+                                    <CheckHelpButton
+                                        label={label}
+                                        description={description}
+                                        support={support}
+                                    />
+                                )}
+                            </div>
                             {!passed && check.error && (
                                 <p className="text-xs text-destructive">{check.error}</p>
                             )}

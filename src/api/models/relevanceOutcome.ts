@@ -12,11 +12,11 @@ import type { RelevanceOutcomeStatus } from './relevanceOutcomeStatus';
  */
 export interface RelevanceOutcome {
   advisory?: true;
-  error_code?: string | null;
-  reason?: string;
-  relevant?: boolean | null;
-  score?: number | null;
   status?: RelevanceOutcomeStatus;
-  threshold?: number | null;
   unavailable?: boolean;
+  score?: number | null;
+  threshold?: number | null;
+  relevant?: boolean | null;
+  reason?: string;
+  error_code?: string | null;
 }

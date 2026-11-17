@@ -10,6 +10,6 @@
  * Schema for updating a folder.
  */
 export interface UpdateFolderRequest {
-  description?: string | null;
   name?: string | null;
+  description?: string | null;
 }

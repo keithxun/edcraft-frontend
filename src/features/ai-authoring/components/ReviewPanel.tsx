@@ -5,16 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ROUTES } from "@/router/paths";
 import { filterMismatchWarnings } from "../warnings";
+import { draftTemplateFor, getReviewDraft } from "../draft";
 import { getApprovalBlockers, isApproved } from "../getApprovalBlockers";
 import type {
     AuthoringDifficultyOutcome,
     AuthoringRelevanceOutcome,
     AuthoringResult,
     AuthoringReview,
-    ReviewTemplate,
 } from "../types";
 import { ApprovalControls } from "./ApprovalControls";
 import { RequestSummary } from "./RequestSummary";
+import { RetryRequestLink } from "./RetryRequestLink";
 import { ChecksPanel, type ChecksAdvisory } from "./ChecksPanel";
 import { ReviewQuestionPreview } from "./ReviewQuestionPreview";
 import { TechnicalDetails } from "./TechnicalDetails";
@@ -28,8 +29,8 @@ interface ReviewPanelProps {
 }
 
 const ASSESSMENT_PATH_LABELS: Record<string, string> = {
-    decision: "Decision screen",
-    reasoning: "Reasoning judge",
+    decision: "decision model",
+    reasoning: "reasoning assessment",
 };
 
 function assessmentPathLabel(path: string | null | undefined): string | null {
@@ -75,7 +76,7 @@ function difficultyAdvisory(
         return {
             id: "difficulty",
             title: "Difficulty not checked",
-            description: "No estimate available.",
+            description: "No estimate is available.",
             passed: false,
             meter,
         };
@@ -116,8 +117,8 @@ function relevanceAdvisory(
     if (outcome?.relevant === true) {
         return {
             id: "relevance",
-            title: "Relevance looks good",
-            description: "Related to the request.",
+            title: "Matches the request",
+            description: "The question matches what you asked for.",
             passed: true,
             meter,
         };
@@ -125,8 +126,8 @@ function relevanceAdvisory(
     if (outcome?.relevant === false) {
         return {
             id: "relevance",
-            title: "Potential relevance mismatch",
-            description: "May not match the request.",
+            title: "May not match the request",
+            description: "Read the question against your request before approving.",
             passed: false,
             meter,
         };
@@ -134,15 +135,10 @@ function relevanceAdvisory(
     return {
         id: "relevance",
         title: "Relevance not checked",
-        description: "No judgement available.",
+        description: "No result is available.",
         passed: false,
         meter,
     };
-}
-
-function candidateTemplateId(candidate: AuthoringReview["candidate"]): string {
-    const templateId = candidate?.template_id;
-    return typeof templateId === "string" ? templateId : "draft";
 }
 
 export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPanelProps) {
@@ -151,71 +147,73 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
     const relevance = review.relevance ?? result?.relevance;
     const difficultyFeedback = difficultyAdvisory(difficulty);
     const relevanceFeedback = relevanceAdvisory(relevance);
-    const draftTemplate: ReviewTemplate | null =
-        review.template ??
-        (review.candidate
-            ? {
-                  template_id: candidateTemplateId(review.candidate),
-                  candidate: review.candidate,
-              }
-            : null);
-    const showingDraft = !review.template && Boolean(review.candidate);
+    const draft = getReviewDraft(review);
+    const draftTemplate = review.template ?? (draft ? draftTemplateFor(draft.candidate) : null);
+    const showingDraft = !review.template && Boolean(draft);
+    const checks = review.template ? (review.checks ?? []) : (draft?.checks ?? review.checks ?? []);
     const advisories: ChecksAdvisory[] = [difficultyFeedback, relevanceFeedback];
     const approved = isApproved(review);
 
     return (
         <div className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-12">
-                <div className="space-y-4 xl:col-span-8">
+            <div className="grid gap-6 @3xl/review:grid-cols-12">
+                <div className="space-y-4 @3xl/review:col-span-8">
                     <RequestSummary request={review.request} />
                     <WarningsPanel warnings={filterMismatchWarnings(review.warnings)} />
                     <ReviewQuestionPreview
                         jobId={jobId}
                         domain={review.request.domain}
-                        artifactSha256={review.artifact_sha256}
+                        artifactSha256={showingDraft ? null : review.artifact_sha256}
                         draftTemplate={draftTemplate}
                         showingDraft={showingDraft}
                         onStaleArtifact={onStaleArtifact}
                     />
                 </div>
 
-                <aside className="space-y-4 xl:col-span-4">
-                    <ChecksPanel
-                        checks={review.checks ?? []}
-                        advisories={advisories}
-                        collapsible
-                    />
+                <aside className="space-y-4 @3xl/review:col-span-4">
+                    <ChecksPanel checks={checks} advisories={advisories} collapsible />
 
-                    <div className="space-y-4 xl:sticky xl:top-6">
-                        <Card>
-                            <CardContent>
-                                <ApprovalControls
-                                    jobId={jobId}
-                                    review={review}
-                                    canApprove={canApprove}
-                                    onStaleArtifact={onStaleArtifact}
+                    {review.state !== "failed" && (
+                        <div className="space-y-4 @3xl/review:sticky @3xl/review:top-6">
+                            <Card>
+                                <CardContent>
+                                    <ApprovalControls
+                                        jobId={jobId}
+                                        review={review}
+                                        canApprove={canApprove}
+                                        onStaleArtifact={onStaleArtifact}
+                                    />
+
+                                    {review.error && (
+                                        <Alert variant="destructive" className="mt-4">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <AlertTitle>Review problem</AlertTitle>
+                                            <AlertDescription>
+                                                Create a new question if this persists.
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {review.approval?.decision === "rejected" && (
+                                <RetryRequestLink
+                                    request={review.request}
+                                    title="Start a new question"
+                                    description="Your request and settings will be filled in on the create page."
+                                    actionLabel="Create a new question"
                                 />
+                            )}
 
-                                {review.error && (
-                                    <Alert variant="destructive" className="mt-4">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertTitle>Review problem</AlertTitle>
-                                        <AlertDescription>
-                                            Create a new question if this persists.
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {approved && (
-                            <Button asChild className="w-full">
-                                <Link to={ROUTES.AI_AUTHORING_GENERATE(jobId)}>
-                                    Create question set
-                                </Link>
-                            </Button>
-                        )}
-                    </div>
+                            {approved && (
+                                <Button asChild className="w-full">
+                                    <Link to={ROUTES.AI_AUTHORING_GENERATE(jobId)}>
+                                        Create question set
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </aside>
             </div>
 

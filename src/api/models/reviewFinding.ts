@@ -11,6 +11,6 @@
  */
 export interface ReviewFinding {
   code: string;
-  field?: string | null;
   message: string;
+  field?: string | null;
 }

@@ -10,7 +10,7 @@
  * User profile returned after registration or GET /auth/me.
  */
 export interface AuthUserResponse {
-  email: string;
   id: string;
+  email: string;
   name: string;
 }

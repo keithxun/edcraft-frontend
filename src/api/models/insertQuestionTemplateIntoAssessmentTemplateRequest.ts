@@ -11,6 +11,6 @@ import type { CreateQuestionTemplateRequest } from './createQuestionTemplateRequ
  * Schema for adding a question template to an assessment template.
  */
 export interface InsertQuestionTemplateIntoAssessmentTemplateRequest {
-  order?: number | null;
   question_template: CreateQuestionTemplateRequest;
+  order?: number | null;
 }

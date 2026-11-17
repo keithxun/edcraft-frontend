@@ -10,10 +10,10 @@
  * Model representing a branch element in the code.
  */
 export interface BranchElement {
-  /** Condition of the branch. */
-  condition: string;
-  /** Line number where the branch is located. */
-  line_number: number;
   /** Type of the code element. */
   type?: string;
+  /** Line number where the branch is located. */
+  line_number: number;
+  /** Condition of the branch. */
+  condition: string;
 }

@@ -13,14 +13,14 @@ import type { DifficultyOutcomeStatus } from './difficultyOutcomeStatus';
  * Stable policy result shared by both assessment paths and the UI boundary.
  */
 export interface DifficultyOutcome {
-  advisory?: true;
   assessment_path: DifficultyOutcomeAssessmentPath;
+  advisory?: true;
+  requested_difficulty?: 'easy' | 'medium' | 'hard' | null;
+  estimated_difficulty?: 'easy' | 'medium' | 'hard' | null;
   confidence?: number | null;
   confidence_source?: 'first_token_label_mass' | 'self_reported' | null;
   decision?: DifficultyOutcomeDecision;
-  error_code?: string | null;
-  estimated_difficulty?: 'easy' | 'medium' | 'hard' | null;
-  reason?: string;
-  requested_difficulty?: 'easy' | 'medium' | 'hard' | null;
   status?: DifficultyOutcomeStatus;
+  reason?: string;
+  error_code?: string | null;
 }

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { capitalize, domainLabel, modelLabel } from "../format";
+import { domainLabel } from "../domains";
+import { capitalize, modelLabel } from "../format";
 import type { AuthoringReview } from "../types";
 
 /** The prompt and settings the reviewer used, shown alongside the result. */
@@ -7,7 +8,7 @@ export function RequestSummary({ request }: { request: AuthoringReview["request"
     return (
         <Card>
             <CardHeader className="pb-3">
-                <CardTitle>Your request</CardTitle>
+                <CardTitle as="h2">Your request</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
                 <p className="whitespace-pre-wrap text-sm">{request.prompt}</p>

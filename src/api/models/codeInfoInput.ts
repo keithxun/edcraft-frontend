@@ -14,14 +14,14 @@ import type { LoopElement } from './loopElement';
  * Model representing code structure and code elements.
  */
 export interface CodeInfoInput {
-  /** List of available branches in the code. */
-  branches: BranchElement[];
   /** A hierarchical representation of the code structure. */
   code_tree: CodeTreeInput;
   /** List of available functions in the code. */
   functions: FunctionElement[];
   /** List of available loops in the code. */
   loops: LoopElement[];
+  /** List of available branches in the code. */
+  branches: BranchElement[];
   /** List of variable names used in the code. */
   variables: string[];
 }

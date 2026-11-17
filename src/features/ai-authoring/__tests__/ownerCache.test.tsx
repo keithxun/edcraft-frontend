@@ -33,6 +33,7 @@ function deferred<T>() {
 function jobSummary(jobId: string, prompt: string): AuthoringJobSummary {
     return {
         job_id: jobId,
+        domain: "code",
         state: "completed",
         created_at: "2026-11-03T00:00:00Z",
         prompt_preview: prompt,

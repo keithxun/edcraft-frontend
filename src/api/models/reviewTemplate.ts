@@ -5,13 +5,13 @@
  * API for EdCraft Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { CodeTemplateCandidate } from './codeTemplateCandidate';
+import type { ReviewTemplateCandidate } from './reviewTemplateCandidate';
 
 /**
  * Exact technically checked template an educator should review.
  */
 export interface ReviewTemplate {
-  candidate: CodeTemplateCandidate;
-  language?: 'python';
   template_id: string;
+  candidate: ReviewTemplateCandidate;
+  language?: string | null;
 }

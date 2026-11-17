@@ -10,18 +10,18 @@
  * Model representing a node in the code tree.
  */
 export interface CodeTreeInput {
-  /** List of indices of branches within this code element. */
-  branch_indices: number[];
-  /** List of child code elements. */
-  children: CodeTreeInput[];
-  /** List of indices of functions within this code element. */
-  function_indices: number[];
   /** Unique identifier for the code element. */
   id: number;
-  /** List of indices of loops within this code element. */
-  loop_indices: number[];
   /** Type of the code element (function, loop, branch). */
   type: string;
   /** List of variable names in the current code element. */
   variables: string[];
+  /** List of indices of functions within this code element. */
+  function_indices: number[];
+  /** List of indices of loops within this code element. */
+  loop_indices: number[];
+  /** List of indices of branches within this code element. */
+  branch_indices: number[];
+  /** List of child code elements. */
+  children: CodeTreeInput[];
 }

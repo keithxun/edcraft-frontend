@@ -8,7 +8,12 @@
 import type { AuthoringProgressPhase } from './authoringProgressPhase';
 
 export interface AuthoringProgress {
+  phase: AuthoringProgressPhase;
   /** @minimum 0 */
   attempt: number;
-  phase: AuthoringProgressPhase;
+  max_attempts?: number | null;
+  checks_total?: number | null;
+  checks_done?: number | null;
+  current_check?: string | null;
+  phase_started_at?: string | null;
 }

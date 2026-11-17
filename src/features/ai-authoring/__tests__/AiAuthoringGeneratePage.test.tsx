@@ -80,6 +80,23 @@ describe("AiAuthoringGeneratePage", () => {
         expect(getAuthoringReview).toHaveBeenCalledWith("job-1");
     });
 
+    it("shows the agreed review status in the header", async () => {
+        renderGeneratePage();
+
+        expect(await screen.findByText("Approved")).toBeInTheDocument();
+        expect(screen.queryByText("Approval needed")).not.toBeInTheDocument();
+    });
+
+    it("shows a rejected review as Rejected rather than approval needed", async () => {
+        vi.mocked(getAuthoringReview).mockResolvedValue({
+            ...approvedReview,
+            approval: { ...approvedReview.approval!, decision: "rejected" },
+        });
+        renderGeneratePage();
+
+        expect(await screen.findByText("Rejected")).toBeInTheDocument();
+    });
+
     it("shows approval guidance for an unapproved question", async () => {
         vi.mocked(getAuthoringReview).mockResolvedValue(unapprovedReview);
         renderGeneratePage();

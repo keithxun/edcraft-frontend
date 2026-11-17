@@ -20,6 +20,12 @@ interface QuestionContentProps {
      * answer shapes. Without it, values keep the original text/JSON display.
      */
     renderValue?: (value: unknown) => ReactNode;
+    /**
+     * Optional per-option renderer. The index lets callers pair an option with
+     * a parallel value, such as its LaTeX source, without changing the shared
+     * option layout. Falls back to `renderValue`.
+     */
+    renderOption?: (value: unknown, index: number) => ReactNode;
 }
 
 export function QuestionContent({
@@ -33,6 +39,7 @@ export function QuestionContent({
     showAnswerByDefault = false,
     hideAnswerSummary = false,
     renderValue,
+    renderOption,
 }: QuestionContentProps) {
     const [showAnswer, setShowAnswer] = useState(showAnswerByDefault);
 
@@ -93,7 +100,11 @@ export function QuestionContent({
                                             : "text-foreground"
                                     }
                                 >
-                                    {renderValue ? renderValue(option) : formatOption(option)}
+                                    {renderOption
+                                        ? renderOption(option, index)
+                                        : renderValue
+                                          ? renderValue(option)
+                                          : formatOption(option)}
                                 </div>
                                 {showAnswer && isCorrectOption(index) && (
                                     <span className="text-green-600 dark:text-green-400">✓</span>

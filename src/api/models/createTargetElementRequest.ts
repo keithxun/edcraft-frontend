@@ -12,10 +12,10 @@ import type { TargetModifier } from './targetModifier';
  * Schema for creating a target element associated with a question template.
  */
 export interface CreateTargetElementRequest {
-  argument_keys?: string[] | null;
   element_type: TargetElementType;
   id_list: number[];
+  name?: string | null;
   line_number?: number | null;
   modifier?: TargetModifier | null;
-  name?: string | null;
+  argument_keys?: string[] | null;
 }

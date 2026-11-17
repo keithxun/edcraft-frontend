@@ -13,6 +13,6 @@ import type { CreateShortAnswerRequest } from './createShortAnswerRequest';
  * Schema for adding a question to an assessment.
  */
 export interface InsertQuestionIntoAssessmentRequest {
-  order?: number | null;
   question: CreateMCQRequest | CreateMRQRequest | CreateShortAnswerRequest;
+  order?: number | null;
 }

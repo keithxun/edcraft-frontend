@@ -10,6 +10,6 @@
  * Schema for a single question template order item.
  */
 export interface QuestionTemplateOrder {
-  order: number;
   question_template_id: string;
+  order: number;
 }

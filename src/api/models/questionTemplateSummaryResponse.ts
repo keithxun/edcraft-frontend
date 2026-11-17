@@ -10,11 +10,11 @@
  * Lightweight schema for listing question templates.
  */
 export interface QuestionTemplateSummaryResponse {
-  created_at: string;
-  description?: string | null;
   id: string;
   owner_id: string;
-  question_text_template: string;
   question_type: string;
+  question_text_template: string;
+  description?: string | null;
+  created_at: string;
   updated_at: string;
 }

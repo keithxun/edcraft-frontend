@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { PreviewQuestion } from "../components/PreviewQuestion";
 import { ReadableValue } from "../components/ReadableValue";
 import type { CodeQuestionInstance } from "../types";
-import { previewInstance, stubQuestionInstance } from "./fixtures";
+import { mathQuestionInstance, previewInstance, stubQuestionInstance } from "./fixtures";
 
 vi.mock("../components/ReadOnlyCode", () => ({
     ReadOnlyCode: ({ code, label }: { code: string; label: string }) => (
@@ -50,7 +50,7 @@ describe("PreviewQuestion", () => {
     });
 
     it("shows readable choices, the correct answer and rationales instead of quoted JSON", () => {
-        const { container } = render(<PreviewQuestion instance={structuredInstance} />);
+        const { container } = render(<PreviewQuestion instance={structuredInstance} domain="code" />);
 
         expect(
             screen.getByRole("heading", { name: structuredInstance.question.question }),
@@ -78,7 +78,7 @@ describe("PreviewQuestion", () => {
     });
 
     it("preserves nested array boundaries in readable values", () => {
-        render(<PreviewQuestion instance={structuredInstance} />);
+        render(<PreviewQuestion instance={structuredInstance} domain="code" />);
 
         const inputs = screen.getByLabelText("Question inputs");
         const matrixRow = within(inputs).getByText("matrix").closest("tr");
@@ -92,7 +92,9 @@ describe("PreviewQuestion", () => {
     });
 
     it("nests the Inputs heading one level below the question heading", () => {
-        const { rerender } = render(<PreviewQuestion instance={structuredInstance} />);
+        const { rerender } = render(
+            <PreviewQuestion instance={structuredInstance} domain="code" />,
+        );
 
         expect(
             screen.getByRole("heading", {
@@ -102,7 +104,9 @@ describe("PreviewQuestion", () => {
         ).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Inputs", level: 3 })).toBeInTheDocument();
 
-        rerender(<PreviewQuestion instance={structuredInstance} headingLevel="h3" />);
+        rerender(
+            <PreviewQuestion instance={structuredInstance} domain="code" headingLevel="h3" />,
+        );
 
         expect(
             screen.getByRole("heading", {
@@ -122,7 +126,7 @@ describe("PreviewQuestion", () => {
             },
         };
 
-        render(<PreviewQuestion instance={flatInstance} />);
+        render(<PreviewQuestion instance={flatInstance} domain="code" />);
 
         const inputs = screen.getByLabelText("Question inputs");
         expect(within(inputs).getByRole("columnheader", { name: "Input" })).toBeInTheDocument();
@@ -134,7 +138,7 @@ describe("PreviewQuestion", () => {
     });
 
     it("shows one collapsed raw question data disclosure", () => {
-        render(<PreviewQuestion instance={structuredInstance} />);
+        render(<PreviewQuestion instance={structuredInstance} domain="code" />);
 
         const summaries = screen.getAllByText("Raw question data");
         expect(summaries).toHaveLength(1);
@@ -150,6 +154,7 @@ describe("PreviewQuestion", () => {
         render(
             <PreviewQuestion
                 instance={structuredInstance}
+                domain="code"
                 headingLevel="h3"
                 variant="review"
             />,
@@ -169,13 +174,100 @@ describe("PreviewQuestion", () => {
     });
 
     it("shows review code inline without inputs or raw data", () => {
-        render(<PreviewQuestion instance={structuredInstance} variant="review" />);
+        render(
+            <PreviewQuestion instance={structuredInstance} domain="code" variant="review" />,
+        );
 
         expect(screen.getByLabelText("Question code")).toBeInTheDocument();
         expect(screen.queryByText("View code")).not.toBeInTheDocument();
         expect(screen.queryByText("Inputs and raw data")).not.toBeInTheDocument();
         expect(screen.queryByLabelText("Question inputs")).not.toBeInTheDocument();
         expect(screen.queryByText("Raw question data")).not.toBeInTheDocument();
+    });
+
+    it("renders a math question with the equation, choices and bound inputs", () => {
+        render(<PreviewQuestion instance={mathQuestionInstance} domain="math" />);
+
+        expect(
+            screen.getByRole("heading", { name: mathQuestionInstance.question }),
+        ).toBeInTheDocument();
+        // The generated view also lists the equation in its raw question data.
+        expect(screen.getAllByText(mathQuestionInstance.equation).length).toBeGreaterThan(0);
+        expect(
+            screen.getAllByText(mathQuestionInstance.question).length,
+        ).toBeGreaterThan(0);
+        // Check the rendered option values, not the raw-data disclosure: flat
+        // choices are display strings and must not keep JSON quotes.
+        for (const [index, choice] of mathQuestionInstance.choices.entries()) {
+            const label = screen.getByText(`${String.fromCharCode(65 + index)}.`, {
+                exact: true,
+            });
+            const value = label.parentElement?.querySelector("div");
+            expect(value).not.toBeNull();
+            expect(value?.textContent).toBe(choice);
+        }
+        expect(screen.getByText("✓")).toBeInTheDocument();
+        const inputs = screen.getByLabelText("Question inputs");
+        expect(within(inputs).getByText("a")).toBeInTheDocument();
+        expect(within(inputs).getByText("seed")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Question code")).not.toBeInTheDocument();
+        expect(screen.queryByText(/\.py$/)).not.toBeInTheDocument();
+    });
+
+    it("does not use answer_latex for choices when choices_latex is missing", () => {
+        const instance = {
+            ...mathQuestionInstance,
+            answer_latex: "\\frac{1}{2}",
+        };
+        const { container } = render(
+            <PreviewQuestion instance={instance} domain="math" />,
+        );
+
+        for (const [index, choice] of instance.choices.entries()) {
+            const label = screen.getByText(`${String.fromCharCode(65 + index)}.`, {
+                exact: true,
+            });
+            const value = label.parentElement?.querySelector("div");
+            expect(value?.textContent).toBe(choice);
+        }
+        expect(container.querySelector(".katex")).toBeNull();
+    });
+
+    it("shows the math prompt once when it already contains the equation", () => {
+        const instance = {
+            ...mathQuestionInstance,
+            equation: "(x - 3)*(x + 4)",
+            question: "Expand the product (x - 3)*(x + 4).",
+        };
+        render(<PreviewQuestion instance={instance} domain="math" variant="review" />);
+
+        expect(
+            screen.getByRole("heading", { name: instance.question }),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(instance.equation)).not.toBeInTheDocument();
+    });
+
+    it("keeps math review neutral until the answer is revealed", async () => {
+        const user = userEvent.setup();
+        render(
+            <PreviewQuestion
+                instance={mathQuestionInstance}
+                domain="math"
+                variant="review"
+            />,
+        );
+
+        expect(
+            screen.getByRole("heading", { name: mathQuestionInstance.question }),
+        ).toBeInTheDocument();
+        expect(screen.getByText(mathQuestionInstance.equation)).toBeInTheDocument();
+        expect(screen.queryByText("✓")).not.toBeInTheDocument();
+        expect(screen.queryByText(/The correct choice is highlighted below/)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Question inputs")).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", { name: "Show Answer" }));
+
+        expect(screen.getByText("✓")).toBeInTheDocument();
     });
 
     it("renders a stub-domain payload through the generic fallback", () => {

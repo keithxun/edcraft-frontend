@@ -5,17 +5,17 @@
  * API for EdCraft Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { CodeTemplateCandidate } from './codeTemplateCandidate';
+import type { ReviewAttemptCandidate } from './reviewAttemptCandidate';
 import type { ReviewCheck } from './reviewCheck';
 
 /**
  * One historical candidate attempt with its check findings.
  */
 export interface ReviewAttempt {
-  candidate?: CodeTemplateCandidate | null;
-  checks?: ReviewCheck[];
-  complete: boolean;
   number: number;
-  passed: boolean;
+  candidate?: ReviewAttemptCandidate;
   pending?: string[];
+  complete: boolean;
+  passed: boolean;
+  checks?: ReviewCheck[];
 }

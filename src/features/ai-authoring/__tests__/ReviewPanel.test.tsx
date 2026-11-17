@@ -2,9 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { ApiError } from "@/api/axiosInstance";
-import type { CodeTemplateCandidate } from "@/api/models";
 import { ReviewPanel } from "../components/ReviewPanel";
 import {
     decideAuthoringApproval,
@@ -14,6 +13,7 @@ import type {
     AuthoringApproval,
     AuthoringReview,
     CodeQuestionInstance,
+    CodeTemplateCandidate,
 } from "../types";
 import {
     approvedReview,
@@ -55,13 +55,22 @@ const approval: AuthoringApproval = {
     decided_at: "2026-11-03T00:00:00Z",
 };
 
+function CreatePageProbe() {
+    const location = useLocation();
+    const prefill = (
+        location.state as { authoringPrefill?: { prompt?: string } } | null
+    )?.authoringPrefill;
+    return <div>Create page prefill: {prefill?.prompt ?? "none"}</div>;
+}
+
 function renderPanel(review: AuthoringReview, onStaleArtifact = vi.fn()) {
     const client = new QueryClient({
         defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
     render(
         <QueryClientProvider client={client}>
-            <MemoryRouter>
+            <MemoryRouter initialEntries={["/ai-authoring/job-1"]}>
+                <CreatePageProbe />
                 <ReviewPanel
                     jobId="job-1"
                     review={review}
@@ -132,14 +141,21 @@ describe("ReviewPanel", () => {
         expect(details).toHaveTextContent(approval.reviewer);
     });
 
-    it("blocks approval and points to the failing checks without repeating them", async () => {
+    it("shows the specific approval blocker and links it to the approve button", async () => {
         renderPanel(technicalFailureReview);
 
+        const blocker = await screen.findByText(
+            'The technical check "Answers and wrong choices" needs attention. Create a new question and try again.',
+        );
+        expect(blocker).toHaveAttribute("id", "approval-blocker");
+
+        const approve = screen.getByRole("button", { name: "Approve question" });
+        expect(approve).toBeDisabled();
+        expect(approve).toHaveAttribute("aria-describedby", blocker.id);
         expect(
-            await screen.findByText(/Approval is unavailable until the technical checks pass/i),
-        ).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Approve question" })).toBeDisabled();
-        expect(screen.getByText("Answers and wrong choices")).toBeInTheDocument();
+            screen.queryByText(/Approval is unavailable until the technical checks pass/i),
+        ).not.toBeInTheDocument();
+        expect(screen.getAllByText("Answers and wrong choices").length).toBeGreaterThan(0);
     });
 
     it("shows the original request with its settings", () => {
@@ -184,7 +200,8 @@ describe("ReviewPanel", () => {
         expect(screen.getByRole("button", { name: "Reject question" })).toBeInTheDocument();
     });
 
-    it("shows only the approve action when the version is already rejected", () => {
+    it("offers a prefilled new question after a rejection", async () => {
+        const user = userEvent.setup();
         renderPanel({
             ...approvedReview,
             approval: { ...approval, decision: "rejected" },
@@ -195,6 +212,16 @@ describe("ReviewPanel", () => {
             screen.queryByRole("button", { name: /Reject/i }),
         ).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Approve question" })).toBeInTheDocument();
+
+        await user.click(
+            screen.getByRole("link", { name: "Create a new question" }),
+        );
+
+        expect(
+            await screen.findByText(
+                "Create page prefill: Write a question about summing a list.",
+            ),
+        ).toBeInTheDocument();
     });
 
     it("sends the exact artifact digest without a review note", async () => {
@@ -343,9 +370,9 @@ describe("ReviewPanel", () => {
             },
         });
 
-        expect(await screen.findByText("Potential relevance mismatch")).toBeInTheDocument();
+        expect(await screen.findByText("May not match the request")).toBeInTheDocument();
         const advisory = screen
-            .getByText("Potential relevance mismatch")
+            .getByText("May not match the request")
             .closest("[data-advisory]");
         expect(advisory).not.toBeNull();
         expect(within(advisory as HTMLElement).getByText("0.42")).toBeInTheDocument();
@@ -357,7 +384,7 @@ describe("ReviewPanel", () => {
         expect(details).toHaveTextContent("Off topic.");
     });
 
-    it("labels the reasoning fallback as the reasoning judge", async () => {
+    it("labels the reasoning fallback as the reasoning assessment", async () => {
         renderPanel({
             ...approvedReview,
             difficulty: {
@@ -372,11 +399,11 @@ describe("ReviewPanel", () => {
         expect(advisory).not.toBeNull();
         expect(within(advisory as HTMLElement).getByText("72%")).toBeInTheDocument();
         expect(
-            within(advisory as HTMLElement).getByText("Source: Reasoning judge"),
+            within(advisory as HTMLElement).getByText("Source: reasoning assessment"),
         ).toBeInTheDocument();
     });
 
-    it("labels the forced-choice path as the decision screen", async () => {
+    it("labels the forced-choice path as the decision model", async () => {
         renderPanel({
             ...approvedReview,
             difficulty: {
@@ -390,7 +417,7 @@ describe("ReviewPanel", () => {
         const advisory = screen.getByText("Difficulty differs").closest("[data-advisory]");
         expect(advisory).not.toBeNull();
         expect(
-            within(advisory as HTMLElement).getByText("Source: Decision screen"),
+            within(advisory as HTMLElement).getByText("Source: decision model"),
         ).toBeInTheDocument();
     });
 
@@ -446,7 +473,21 @@ describe("ReviewPanel", () => {
 
         const details = await openTechnicalDetails();
         expect(
-            within(details).getByText(/Candidates in the authoring attempts are historical/),
+            within(details).getByText(/Earlier drafts are kept for reference/),
+        ).toBeInTheDocument();
+    });
+
+    it("renders the main column card titles as h2 headings", async () => {
+        renderPanel(approvedReview);
+
+        expect(
+            await screen.findByRole("heading", { level: 2, name: "Your request" }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole("heading", { level: 2, name: "Example question" }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole("heading", { level: 2, name: "Checks" }),
         ).toBeInTheDocument();
     });
 

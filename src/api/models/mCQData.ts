@@ -10,11 +10,11 @@
  * Multiple Choice Question data.
  */
 export interface MCQData {
-  /** @minimum 0 */
-  correct_index: number;
   /**
    * @minItems 2
    * @maxItems 10
    */
   options: string[];
+  /** @minimum 0 */
+  correct_index: number;
 }

@@ -10,7 +10,7 @@
  * Schema for creating a new assessment template.
  */
 export interface CreateAssessmentTemplateRequest {
-  description?: string | null;
   folder_id: string;
   title: string;
+  description?: string | null;
 }

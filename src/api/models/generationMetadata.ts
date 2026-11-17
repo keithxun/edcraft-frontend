@@ -10,8 +10,6 @@
  * Minimal server-persisted record of the latest deterministic batch.
  */
 export interface GenerationMetadata {
-  /** @minimum 0 */
-  actual_quantity: number;
   /** @pattern ^[0-9a-f]{64}$ */
   artifact_sha256: string;
   /**
@@ -19,15 +17,17 @@ export interface GenerationMetadata {
    * @maximum 2147483647
    */
   base_seed: number;
-  created_at: string;
-  /** @minimum 0 */
-  distinct_count: number;
-  /** @minimum 0 */
-  duplicates: number;
   /**
    * @minimum 1
    * @maximum 50
    */
   requested_quantity: number;
+  /** @minimum 0 */
+  actual_quantity: number;
+  /** @minimum 0 */
+  distinct_count: number;
+  /** @minimum 0 */
+  duplicates: number;
   warnings?: string[];
+  created_at: string;
 }

@@ -14,15 +14,15 @@ import type { UpdateQuestionTemplateRequestInputDataConfig } from './updateQuest
  * Schema for updating a question template.
  */
 export interface UpdateQuestionTemplateRequest {
-  code?: string | null;
-  code_info?: CodeInfoInput | null;
+  question_type?: string | null;
+  question_text_template?: string | null;
+  text_template_type?: TextTemplateType | null;
   description?: string | null;
+  code?: string | null;
   entry_function?: string | null;
-  input_data_config?: UpdateQuestionTemplateRequestInputDataConfig;
   num_distractors?: number | null;
   output_type?: string | null;
-  question_text_template?: string | null;
-  question_type?: string | null;
   target_elements?: CreateTargetElementRequest[] | null;
-  text_template_type?: TextTemplateType | null;
+  input_data_config?: UpdateQuestionTemplateRequestInputDataConfig;
+  code_info?: CodeInfoInput | null;
 }

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ChecksPanel } from "../components/ChecksPanel";
 import type { AuthoringCheck } from "../types";
 
@@ -49,7 +50,7 @@ const checks: AuthoringCheck[] = [
 describe("ChecksPanel", () => {
     afterEach(cleanup);
 
-    it("lists every technical check with labels, screen-reader statuses and descriptions", () => {
+    it("lists every technical check with labels and screen-reader statuses", () => {
         render(<ChecksPanel checks={checks} />);
 
         expect(
@@ -65,16 +66,37 @@ describe("ChecksPanel", () => {
         expect(screen.getByText(/Needs attention:/)).toHaveClass("sr-only");
 
         expect(
-            screen.getByText("The template is structurally valid and renders."),
-        ).toBeInTheDocument();
+            screen.queryByText("The template is structurally valid and renders."),
+        ).not.toBeInTheDocument();
         expect(
-            screen.getByText("The requested Python features are present."),
-        ).toBeInTheDocument();
+            screen.queryByText("The requested Python features are present."),
+        ).not.toBeInTheDocument();
         expect(
-            screen.getByText(
+            screen.queryByText(
                 "The answer and every wrong choice evaluate correctly and are distinct.",
             ),
+        ).not.toBeInTheDocument();
+    });
+
+    it("explains the supported features for a technical check", async () => {
+        render(<ChecksPanel checks={checks} />);
+
+        await userEvent
+            .setup()
+            .click(
+                screen.getByRole("button", {
+                    name: "What Required features checks",
+                }),
+            );
+
+        expect(await screen.findByText("Supported")).toBeInTheDocument();
+        expect(
+            screen.getByText(/Branches: if and else, an early return/),
         ).toBeInTheDocument();
+        expect(
+            screen.getByText(/Lists: indexing, sum, min, max, all, any and sorting/),
+        ).toBeInTheDocument();
+        expect(screen.queryByText("Limits")).not.toBeInTheDocument();
     });
 
     it("shows the error and findings under a failing technical check", () => {
@@ -147,7 +169,7 @@ describe("ChecksPanel", () => {
             title: "Difficulty differs",
             description: "Estimated hard; requested easy.",
             passed: false,
-            meter: { label: "Confidence", display: "72%", percent: 72, caption: "Source: Reasoning judge" },
+            meter: { label: "Confidence", display: "72%", percent: 72, caption: "Source: decision model" },
         },
         {
             id: "relevance",
@@ -163,7 +185,7 @@ describe("ChecksPanel", () => {
 
         expect(
             screen.getByText(
-                "1 of 3 technical checks need attention. 1 of 2 advisories need attention.",
+                "1 of 3 technical checks need attention. 1 of 2 advisory checks are for your review. They do not block approval.",
             ),
         ).toBeInTheDocument();
         expect(
@@ -172,8 +194,9 @@ describe("ChecksPanel", () => {
         expect(screen.getByRole("heading", { name: /Advisories/i })).toBeInTheDocument();
         expect(screen.getByText("Difficulty differs")).toBeInTheDocument();
         expect(screen.getByText("Estimated hard; requested easy.")).toBeInTheDocument();
+        expect(screen.getByText("For your review:")).toHaveClass("sr-only");
         expect(screen.getByText("72%")).toBeInTheDocument();
-        expect(screen.getByText("Source: Reasoning judge")).toBeInTheDocument();
+        expect(screen.getByText("Source: decision model")).toBeInTheDocument();
         expect(screen.getByText("Relevance looks good")).toBeInTheDocument();
 
         // Advisories never gate approval, so a mismatch stays neutral rather
@@ -199,7 +222,7 @@ describe("ChecksPanel", () => {
         );
 
         expect(
-            screen.getByText("All 2 technical checks passed. Advisory passed."),
+            screen.getByText("All 2 technical checks passed. Advisory check passed."),
         ).toBeInTheDocument();
         const details = screen.getByRole("heading", { name: "Checks" }).closest("details");
         expect(details).not.toHaveAttribute("open");

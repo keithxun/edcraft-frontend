@@ -10,12 +10,12 @@
  * Model representing a loop element in the code.
  */
 export interface LoopElement {
-  /** Condition of the loop. */
-  condition: string;
+  /** Type of the code element. */
+  type?: string;
   /** Line number where the loop is located. */
   line_number: number;
   /** Type of the loop (e.g., for, while). */
   loop_type: string;
-  /** Type of the code element. */
-  type?: string;
+  /** Condition of the loop. */
+  condition: string;
 }

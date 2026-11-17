@@ -1,4 +1,9 @@
-import type { AuthoringQuestionPayload, CodeQuestionInstance } from "../types";
+import type {
+    AuthoringQuestionPayload,
+    CodeQuestionInstance,
+    IrMathTemplateCandidate,
+    MathQuestionInstance,
+} from "../types";
 
 export interface PreviewChoice {
     value: unknown;
@@ -13,10 +18,39 @@ export interface PreviewQuestionFields {
     choices: PreviewChoice[];
     correctIndex: number;
     seed: number;
+    /**
+     * A flat envelope's choices are display strings, not Python values, so they
+     * render unquoted. Nested code payloads keep the type-distinguishing quotes.
+     */
+    flat: boolean;
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Structural equality for the JSON-shaped candidate payloads. */
+export function sameCandidate(left: unknown, right: unknown): boolean {
+    if (left === right) return true;
+    if (Array.isArray(left) && Array.isArray(right)) {
+        return (
+            left.length === right.length &&
+            left.every((item, index) => sameCandidate(item, right[index]))
+        );
+    }
+    if (isRecord(left) && isRecord(right)) {
+        const leftKeys = Object.keys(left);
+        const rightKeys = Object.keys(right);
+        return (
+            leftKeys.length === rightKeys.length &&
+            leftKeys.every(
+                (key) =>
+                    Object.prototype.hasOwnProperty.call(right, key) &&
+                    sameCandidate(left[key], right[key]),
+            )
+        );
+    }
+    return false;
 }
 
 /** A payload is only treated as code when it has the code question envelope. */
@@ -33,12 +67,89 @@ export function isCodeQuestionPayload(
 }
 
 /**
+ * A math question is a flat envelope: the equation and choices sit at the top
+ * level instead of inside a nested `question` object. Requiring every field
+ * keeps other flat domains from being mistaken for math.
+ */
+export function isMathQuestionPayload(
+    value: AuthoringQuestionPayload,
+): value is MathQuestionInstance {
+    if (!isRecord(value)) return false;
+    return (
+        typeof value.template_id === "string" &&
+        typeof value.seed === "number" &&
+        isRecord(value.parameters) &&
+        typeof value.equation === "string" &&
+        typeof value.question === "string" &&
+        Array.isArray(value.choices) &&
+        value.choices.every((choice) => typeof choice === "string") &&
+        typeof value.correct_index === "number" &&
+        typeof value.answer === "string"
+    );
+}
+
+/** A generic IR candidate carries one typed item family. */
+export function isIrMathTemplateCandidate(
+    value: unknown,
+): value is IrMathTemplateCandidate {
+    if (!isRecord(value) || !isRecord(value.item)) return false;
+    const item = value.item;
+    const body = item.body;
+    if (!isRecord(body) || !isRecord(body.text) || !isRecord(body.goal)) {
+        return false;
+    }
+    return (
+        typeof value.template_id === "string" &&
+        typeof item.topic === "string" &&
+        Array.isArray(item.parameters) &&
+        item.parameters.every(
+            (parameter) => isRecord(parameter) && Array.isArray(parameter.values),
+        ) &&
+        Array.isArray(body.distractors) &&
+        body.distractors.every((distractor) => isRecord(distractor))
+    );
+}
+
+/**
  * Normalizes the question text, choices and answer for the shared
  * QuestionContent renderer. Unknown domains only need this small envelope;
  * their domain-specific fields stay in the raw data disclosure.
  */
 export function buildQuestionFields(payload: AuthoringQuestionPayload): PreviewQuestionFields {
     const record = isRecord(payload) ? payload : {};
+    // Domain-neutral flat envelope: a question string, a choice list, and the
+    // canonical answer index. This keeps unknown domains readable without a
+    // new shared branch for every one of them.
+    const choiceValues = record.choices;
+    if (Array.isArray(choiceValues)) {
+        const flatChoices = choiceValues.filter((value) => typeof value === "string");
+        if (
+            flatChoices.length > 0 &&
+            flatChoices.length === choiceValues.length &&
+            typeof record.question === "string" &&
+            typeof record.answer === "string"
+        ) {
+            const correctIndex =
+                typeof record.correct_index === "number" &&
+                record.correct_index >= 0 &&
+                record.correct_index < flatChoices.length
+                    ? record.correct_index
+                    : flatChoices.indexOf(record.answer);
+            return {
+                text: record.question,
+                questionType: "mcq",
+                answer: record.answer,
+                choices: flatChoices.map((value, index) => ({
+                    value,
+                    correct: index === correctIndex,
+                })),
+                correctIndex,
+                seed: typeof record.seed === "number" ? record.seed : 0,
+                flat: true,
+            };
+        }
+    }
+
     const question = isRecord(record.question) ? record.question : {};
     const distractors = Array.isArray(question.distractors) ? question.distractors : [];
     const distractorReasons = Array.isArray(question.distractor_reasons)
@@ -69,5 +180,6 @@ export function buildQuestionFields(payload: AuthoringQuestionPayload): PreviewQ
         choices,
         correctIndex,
         seed,
+        flat: false,
     };
 }

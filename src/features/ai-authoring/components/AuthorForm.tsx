@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { AlertCircle, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -30,104 +29,24 @@ import {
 } from "@/components/ui/form";
 import { ROUTES } from "@/router/paths";
 import { getAuthoringErrorMessage } from "../errors";
-import { capitalize, domainLabel } from "../format";
+import { domainInfo, domainLabel } from "../domains";
+import { capitalize } from "../format";
 import { useCreateAuthoringJob } from "../hooks/useAiAuthoring";
 import {
     buildJudgeSelections,
     buildModelRequest,
-    isInheritSource,
-    parseModelSource,
     resolveStoredJudgeSelection,
     resolveStoredModelSelection,
 } from "../modelSelection";
+import { createAuthoringSchema, type AuthoringFormValues } from "../authorFormSchema";
 import type {
     AuthoringCapabilities,
     AuthoringDifficulty,
     AuthoringRetryPrefill,
 } from "../types";
-import { ModelPicker } from "./ModelPicker";
-
-function createAuthoringSchema(minChoices: number, maxChoices: number) {
-    return z
-        .object({
-            prompt: z
-                .string()
-                .trim()
-                .min(1, "Describe the question you want to create.")
-                .max(4000, "Keep the request to 4000 characters or fewer."),
-            domain: z.string().min(1, "Choose a question domain."),
-            difficulty: z.enum(["easy", "medium", "hard"]),
-            choices: z
-                .number()
-                .int("Enter a whole number of choices.")
-                .min(minChoices, `Enter at least ${minChoices} choices.`)
-                .max(maxChoices, `Enter at most ${maxChoices} choices.`),
-            model_source: z.string().min(1, "Choose a question-writing model."),
-            model: z.string(),
-            difficulty_source: z.string(),
-            difficulty_model: z.string(),
-            relevance_source: z.string(),
-            relevance_model: z.string(),
-        })
-        .superRefine((values, ctx) => {
-            const source = parseModelSource(values.model_source);
-            if (source?.kind === "connection" && !values.model.trim()) {
-                ctx.addIssue({
-                    code: "custom",
-                    path: ["model"],
-                    message: "Choose a model for this connection.",
-                });
-            }
-            for (const [sourceKey, modelKey] of [
-                ["difficulty_source", "difficulty_model"],
-                ["relevance_source", "relevance_model"],
-            ] as const) {
-                const selected = parseModelSource(values[sourceKey]);
-                if (selected?.kind === "connection" && !values[modelKey].trim()) {
-                    ctx.addIssue({
-                        code: "custom",
-                        path: [modelKey],
-                        message: "Choose a model for this connection.",
-                    });
-                }
-                if (!isInheritSource(values[sourceKey]) && !selected) {
-                    ctx.addIssue({
-                        code: "custom",
-                        path: [sourceKey],
-                        message: "Choose a check model or inherit the question model.",
-                    });
-                }
-            }
-        });
-}
-
-type AuthoringFormValues = z.infer<ReturnType<typeof createAuthoringSchema>>;
+import { ModelPickerField } from "./ModelPickerField";
 
 const DIFFICULTY_ORDER: AuthoringDifficulty[] = ["easy", "medium", "hard"];
-
-interface DomainCopy {
-    badge: string;
-    promptPlaceholder: string;
-}
-
-// Only the code domain has domain-specific wording today. Other domains use
-// the neutral copy below without adding branches in the form itself.
-const DOMAIN_COPY: Record<string, DomainCopy> = {
-    code: {
-        badge: "Python · multiple choice",
-        promptPlaceholder:
-            "Describe the programming concept and what students should reason about.",
-    },
-};
-
-const GENERIC_DOMAIN_COPY: DomainCopy = {
-    badge: "Multiple choice",
-    promptPlaceholder: "Describe the question and what students should reason about.",
-};
-
-function domainCopy(domain: string): DomainCopy {
-    return DOMAIN_COPY[domain] ?? GENERIC_DOMAIN_COPY;
-}
 
 interface AuthorFormProps {
     capabilities: AuthoringCapabilities;
@@ -148,12 +67,15 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     const defaultDifficulty = difficultyOptions[0] ?? "easy";
     const connections = capabilities.connections ?? [];
     const profiles = capabilities.model_profiles;
-    const minChoices = (capabilities.min_distractors ?? 1) + 1;
-    const maxChoices = (capabilities.max_distractors ?? 10) + 1;
-    const defaultChoices = (capabilities.default_distractors ?? 3) + 1;
+    const relevanceDefaultLabel = capabilities.judge
+        ? `Server default (${capabilities.judge.label})`
+        : "Same as question model";
+    const minDistractors = capabilities.min_distractors ?? 1;
+    const maxDistractors = capabilities.max_distractors ?? 10;
+    const defaultDistractors = capabilities.default_distractors ?? 3;
     const authoringSchema = useMemo(
-        () => createAuthoringSchema(minChoices, maxChoices),
-        [minChoices, maxChoices],
+        () => createAuthoringSchema(minDistractors, maxDistractors),
+        [minDistractors, maxDistractors],
     );
 
     const state = location.state as { authoringPrefill?: Partial<AuthoringRetryPrefill> } | null;
@@ -164,13 +86,13 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         prefill?.difficulty && difficultyOptions.includes(prefill.difficulty)
             ? prefill.difficulty
             : defaultDifficulty;
-    const prefilledChoices =
+    const prefilledDistractors =
         typeof prefill?.num_distractors === "number"
             ? Math.min(
-                  maxChoices,
-                  Math.max(minChoices, prefill.num_distractors + 1),
+                  maxDistractors,
+                  Math.max(minDistractors, prefill.num_distractors),
               )
-            : defaultChoices;
+            : defaultDistractors;
     const initialSelection = resolveStoredModelSelection({
         connections,
         profiles,
@@ -207,7 +129,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
             prompt: prefilledPrompt,
             domain: defaultDomain,
             difficulty: prefilledDifficulty,
-            choices: prefilledChoices,
+            distractors: prefilledDistractors,
             model_source: initialSelection.source,
             model: initialSelection.model,
             difficulty_source: initialDifficultySelection.source,
@@ -216,14 +138,8 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
             relevance_model: initialRelevanceSelection.model,
         },
     });
-    const modelSource = form.watch("model_source");
-    const model = form.watch("model");
     const selectedDomain = form.watch("domain");
-    const copy = domainCopy(selectedDomain || defaultDomain);
-    const difficultySource = form.watch("difficulty_source");
-    const difficultyModel = form.watch("difficulty_model");
-    const relevanceSource = form.watch("relevance_source");
-    const relevanceModel = form.watch("relevance_model");
+    const domain = selectedDomain || defaultDomain;
 
     useEffect(() => {
         if (submitError) summaryRef.current?.focus();
@@ -232,7 +148,6 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     const onInvalid = (errors: FieldErrors<AuthoringFormValues>) => {
         setSubmitError("Check the highlighted fields and try again.");
         const advancedFields: Array<keyof AuthoringFormValues> = [
-            "choices",
             "model_source",
             "model",
             "difficulty_source",
@@ -252,7 +167,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                 domain: values.domain,
                 prompt: values.prompt,
                 difficulty: values.difficulty,
-                num_distractors: values.choices - 1,
+                num_distractors: values.distractors,
                 ...buildModelRequest(values.model_source, values.model),
                 judges: buildJudgeSelections(
                     {
@@ -282,7 +197,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         return (
             <Card>
                 <CardHeader className="pb-3">
-                    <CardTitle>Question creation is unavailable</CardTitle>
+                    <CardTitle as="h2">Question creation is unavailable</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">
@@ -297,7 +212,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         return (
             <Card>
                 <CardHeader className="pb-3">
-                    <CardTitle>No question-writing model configured</CardTitle>
+                    <CardTitle as="h2">No question-writing model configured</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">
@@ -313,11 +228,11 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     }
 
     return (
-        <Card>
+        <Card className="@container/form">
             <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle>New question</CardTitle>
-                    <Badge variant="outline">{copy.badge}</Badge>
+                    <CardTitle as="h2">New question</CardTitle>
+                    <Badge variant="outline">{domainInfo(domain).badge}</Badge>
                 </div>
             </CardHeader>
             <CardContent>
@@ -359,39 +274,73 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} noValidate>
                         <div className="space-y-5">
-                            {domains.length > 1 && (
+                            <div className="grid items-start gap-4 @3xl/form:grid-cols-2">
+                                {domains.length > 1 && (
+                                    <FormField
+                                        control={form.control}
+                                        name="domain"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Domain</FormLabel>
+                                                <Select
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                    disabled={createJob.isPending}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue placeholder="Choose a domain" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {domains.map((domain) => (
+                                                            <SelectItem
+                                                                key={domain}
+                                                                value={domain}
+                                                            >
+                                                                {domainLabel(domain)}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                                 <FormField
                                     control={form.control}
-                                    name="domain"
+                                    name="distractors"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Domain</FormLabel>
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={field.onChange}
-                                                disabled={createJob.isPending}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger className="w-full sm:w-64">
-                                                        <SelectValue placeholder="Choose a domain" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {domains.map((domain) => (
-                                                        <SelectItem
-                                                            key={domain}
-                                                            value={domain}
-                                                        >
-                                                            {domainLabel(domain)}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <FormLabel htmlFor="distractors">
+                                                Wrong choices (distractors)
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    id="distractors"
+                                                    type="number"
+                                                    min={minDistractors}
+                                                    max={maxDistractors}
+                                                    step={1}
+                                                    {...field}
+                                                    onChange={(event) =>
+                                                        field.onChange(
+                                                            Number(event.target.value),
+                                                        )
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                {minDistractors}–{maxDistractors} wrong
+                                                choices. The correct answer is added
+                                                automatically.
+                                            </FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
-                            )}
+                            </div>
 
                             <FormField
                                 control={form.control}
@@ -405,7 +354,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                                 rows={6}
                                                 maxLength={4000}
                                                 className="min-h-40 resize-y"
-                                                placeholder={copy.promptPlaceholder}
+                                                placeholder={domainInfo(domain).promptPlaceholder}
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -480,58 +429,13 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                 id="advanced-settings"
                                 className="mt-4 space-y-5 rounded-lg border bg-muted/20 p-4"
                             >
-                                <FormField
-                                    control={form.control}
-                                    name="choices"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel htmlFor="choices">Choices</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    id="choices"
-                                                    type="number"
-                                                    min={minChoices}
-                                                    max={maxChoices}
-                                                    step={1}
-                                                    {...field}
-                                                    onChange={(event) =>
-                                                        field.onChange(
-                                                            Number(event.target.value),
-                                                        )
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormDescription>
-                                                {minChoices}–{maxChoices} options, including the
-                                                correct answer.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <ModelPicker
+                                <ModelPickerField
+                                    form={form}
                                     connections={connections}
                                     profiles={profiles}
-                                    source={modelSource}
-                                    model={model}
-                                    onSourceChange={(source, nextModel) => {
-                                        form.setValue("model_source", source, {
-                                            shouldValidate: true,
-                                        });
-                                        form.setValue("model", nextModel, {
-                                            shouldValidate: true,
-                                        });
-                                        setAuthorMissing(false);
-                                    }}
-                                    onModelChange={(nextModel) => {
-                                        form.setValue("model", nextModel, {
-                                            shouldValidate: true,
-                                        });
-                                        setAuthorMissing(false);
-                                    }}
-                                    sourceError={form.formState.errors.model_source?.message}
-                                    modelError={form.formState.errors.model?.message}
+                                    sourceField="model_source"
+                                    modelField="model"
+                                    onMissingCleared={() => setAuthorMissing(false)}
                                     disabled={createJob.isPending}
                                 />
 
@@ -544,67 +448,30 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                             never block a technically checked artifact.
                                         </p>
                                     </div>
-                                    <ModelPicker
+                                    <ModelPickerField
+                                        form={form}
                                         connections={connections}
                                         profiles={profiles}
-                                        source={difficultySource}
-                                        model={difficultyModel}
-                                        onSourceChange={(source, nextModel) => {
-                                            form.setValue("difficulty_source", source, {
-                                                shouldValidate: true,
-                                            });
-                                            form.setValue("difficulty_model", nextModel, {
-                                                shouldValidate: true,
-                                            });
-                                            setDifficultyMissing(false);
-                                        }}
-                                        onModelChange={(nextModel) => {
-                                            form.setValue("difficulty_model", nextModel, {
-                                                shouldValidate: true,
-                                            });
-                                            setDifficultyMissing(false);
-                                        }}
-                                        sourceError={
-                                            form.formState.errors.difficulty_source?.message
-                                        }
-                                        modelError={
-                                            form.formState.errors.difficulty_model?.message
-                                        }
+                                        sourceField="difficulty_source"
+                                        modelField="difficulty_model"
+                                        onMissingCleared={() => setDifficultyMissing(false)}
                                         disabled={createJob.isPending}
                                         idPrefix="difficulty-check"
                                         label="Difficulty check"
                                         allowInherit
                                     />
-                                    <ModelPicker
+                                    <ModelPickerField
+                                        form={form}
                                         connections={connections}
                                         profiles={profiles}
-                                        source={relevanceSource}
-                                        model={relevanceModel}
-                                        onSourceChange={(source, nextModel) => {
-                                            form.setValue("relevance_source", source, {
-                                                shouldValidate: true,
-                                            });
-                                            form.setValue("relevance_model", nextModel, {
-                                                shouldValidate: true,
-                                            });
-                                            setRelevanceMissing(false);
-                                        }}
-                                        onModelChange={(nextModel) => {
-                                            form.setValue("relevance_model", nextModel, {
-                                                shouldValidate: true,
-                                            });
-                                            setRelevanceMissing(false);
-                                        }}
-                                        sourceError={
-                                            form.formState.errors.relevance_source?.message
-                                        }
-                                        modelError={
-                                            form.formState.errors.relevance_model?.message
-                                        }
+                                        sourceField="relevance_source"
+                                        modelField="relevance_model"
+                                        onMissingCleared={() => setRelevanceMissing(false)}
                                         disabled={createJob.isPending}
                                         idPrefix="relevance-check"
                                         label="Relevance check"
                                         allowInherit
+                                        inheritLabel={relevanceDefaultLabel}
                                     />
                                 </div>
 

@@ -10,7 +10,7 @@
  * Schema for creating a new question template bank.
  */
 export interface CreateQuestionTemplateBankRequest {
-  description?: string | null;
   folder_id: string;
   title: string;
+  description?: string | null;
 }

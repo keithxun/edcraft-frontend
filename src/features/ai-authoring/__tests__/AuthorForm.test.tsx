@@ -80,10 +80,10 @@ describe("AuthorForm", () => {
             "Write a question about nested loops.",
         );
         expect(screen.getByRole("radio", { name: "Hard" })).toBeChecked();
+        expect(screen.getByLabelText("Wrong choices (distractors)")).toHaveValue(2);
         expect(screen.queryByText("Prefilled")).not.toBeInTheDocument();
 
         await openAdvanced();
-        expect(screen.getByLabelText("Choices")).toHaveValue(3);
         expect(screen.getByRole("combobox", { name: "Question model" })).toHaveTextContent(
             "Default authoring model",
         );
@@ -94,10 +94,8 @@ describe("AuthorForm", () => {
 
         expect(screen.getByLabelText("Prompt")).toHaveValue("");
         expect(screen.getByRole("radio", { name: "Easy" })).toBeChecked();
+        expect(screen.getByLabelText("Wrong choices (distractors)")).toHaveValue(3);
         expect(screen.queryByText("Prefilled")).not.toBeInTheDocument();
-
-        await openAdvanced();
-        expect(screen.getByLabelText("Choices")).toHaveValue(4);
     });
 
     it("submits with the selected connection and default model", async () => {
@@ -151,6 +149,29 @@ describe("AuthorForm", () => {
         });
     });
 
+    it("submits the mathematics domain when selected", async () => {
+        const user = userEvent.setup();
+        renderForm(undefined, {
+            ...connectionCapabilities,
+            enabled_domains: ["code", "math"],
+        });
+
+        await user.click(screen.getByRole("combobox", { name: "Domain" }));
+        await user.click(screen.getByRole("option", { name: "Mathematics" }));
+
+        await user.type(screen.getByLabelText("Prompt"), "Create a linear equation question.");
+        await user.click(screen.getByRole("button", { name: "Create question" }));
+
+        await waitFor(() => {
+            expect(createAuthoringJob).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    domain: "math",
+                    prompt: "Create a linear equation question.",
+                }),
+            );
+        });
+    });
+
     it("hides the domain selector when only one domain is enabled", () => {
         renderForm();
 
@@ -159,14 +180,13 @@ describe("AuthorForm", () => {
         ).not.toBeInTheDocument();
     });
 
-    it("submits a user-entered choice count", async () => {
+    it("submits a user-entered distractor count", async () => {
         const user = userEvent.setup();
         renderForm(undefined, connectionCapabilities);
 
-        await openAdvanced();
-        const choices = screen.getByLabelText("Choices");
-        await user.clear(choices);
-        await user.type(choices, "7");
+        const distractors = screen.getByLabelText("Wrong choices (distractors)");
+        await user.clear(distractors);
+        await user.type(distractors, "6");
         await user.type(screen.getByLabelText("Prompt"), "Create a loop question.");
         await user.click(screen.getByRole("button", { name: "Create question" }));
 
@@ -177,19 +197,18 @@ describe("AuthorForm", () => {
         });
     });
 
-    it("rejects a choice count outside the supported range", async () => {
+    it("rejects a distractor count outside the supported range", async () => {
         const user = userEvent.setup();
         renderForm(undefined, connectionCapabilities);
 
-        await openAdvanced();
-        const choices = screen.getByLabelText("Choices");
-        await user.clear(choices);
-        await user.type(choices, "12");
+        const distractors = screen.getByLabelText("Wrong choices (distractors)");
+        await user.clear(distractors);
+        await user.type(distractors, "11");
         await user.type(screen.getByLabelText("Prompt"), "Create a loop question.");
         await user.click(screen.getByRole("button", { name: "Create question" }));
 
         expect(
-            await screen.findByText("Enter at most 11 choices."),
+            await screen.findByText("Enter at most 10 wrong choices."),
         ).toBeInTheDocument();
         expect(createAuthoringJob).not.toHaveBeenCalled();
     });
@@ -214,7 +233,7 @@ describe("AuthorForm", () => {
         });
     });
 
-    it("defaults both advisory checks to the question model", async () => {
+    it("defaults difficulty to the question model and relevance to the server judge", async () => {
         renderForm(undefined, connectionCapabilities);
         await openAdvanced();
 
@@ -222,7 +241,7 @@ describe("AuthorForm", () => {
             "Same as question model",
         );
         expect(screen.getByRole("combobox", { name: "Relevance check" })).toHaveTextContent(
-            "Same as question model",
+            "Server default (Default judge)",
         );
     });
 

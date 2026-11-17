@@ -7,15 +7,21 @@
  */
 
 /**
- * Sampled-check budget recorded by the AI library.
+ * Check coverage recorded by the AI library for a checked template.
+
+Both domains share one property-check shape: the sampled execution budget
+plus whether the declared domain was enumerated completely. Only
+``declared_domain_size`` is meaningful for domains with a finite domain.
  */
 export interface ValidationLimits {
-  checking_mode: string;
-  examples_checked: number;
-  execution_calls: number;
-  max_examples: number;
-  max_execution_calls: number;
-  seed: number;
-  timeout_seconds: number;
   validator_version: string;
+  checking_mode: string;
+  examples_checked?: number | null;
+  execution_calls?: number | null;
+  max_examples?: number | null;
+  max_execution_calls?: number | null;
+  timeout_seconds?: number | null;
+  seed: number;
+  whole_domain?: boolean | null;
+  declared_domain_size?: number | null;
 }

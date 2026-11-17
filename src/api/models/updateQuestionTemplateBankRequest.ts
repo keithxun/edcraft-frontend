@@ -11,8 +11,8 @@ import type { ResourceVisibility } from './resourceVisibility';
  * Schema for updating a question template bank.
  */
 export interface UpdateQuestionTemplateBankRequest {
+  title?: string | null;
   description?: string | null;
   folder_id?: string | null;
-  title?: string | null;
   visibility?: ResourceVisibility | null;
 }

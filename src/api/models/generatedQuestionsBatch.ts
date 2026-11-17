@@ -5,13 +5,15 @@
  * API for EdCraft Backend
  * OpenAPI spec version: 0.1.0
  */
-import type { CodeQuestionInstance } from './codeQuestionInstance';
+import type { GeneratedQuestionsBatchQuestionsItem } from './generatedQuestionsBatchQuestionsItem';
 
 /**
  * Downloadable JSON batch with canonical question instances.
  */
 export interface GeneratedQuestionsBatch {
-  actual_quantity: number;
+  format_version?: '1';
+  job_id: string;
+  domain: string;
   artifact_id: string;
   /** @pattern ^[0-9a-f]{64}$ */
   artifact_sha256: string;
@@ -20,15 +22,14 @@ export interface GeneratedQuestionsBatch {
    * @maximum 2147483647
    */
   base_seed: number;
-  distinct_count: number;
-  duplicates: number;
-  format_version?: '1';
-  job_id: string;
-  questions: CodeQuestionInstance[];
   /**
    * @minimum 1
    * @maximum 50
    */
   requested_quantity: number;
+  actual_quantity: number;
+  distinct_count: number;
+  duplicates: number;
+  questions: GeneratedQuestionsBatchQuestionsItem[];
   warnings?: string[];
 }

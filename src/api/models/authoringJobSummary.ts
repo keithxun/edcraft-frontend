@@ -13,11 +13,13 @@ import type { StoredReviewerApproval } from './storedReviewerApproval';
  * Small owned-job item used to reopen saved work.
  */
 export interface AuthoringJobSummary {
-  approval?: StoredReviewerApproval | null;
-  created_at: string;
-  difficulty: AuthoringJobSummaryDifficulty;
   job_id: string;
-  prompt_preview: string;
-  result_status?: 'checked' | 'needs_review' | 'error' | null;
+  domain: string;
   state: AuthoringJobSummaryState;
+  result_status?: 'checked' | 'needs_review' | 'error' | null;
+  created_at: string;
+  started_at?: string | null;
+  prompt_preview: string;
+  difficulty: AuthoringJobSummaryDifficulty;
+  approval?: StoredReviewerApproval | null;
 }

@@ -15,16 +15,16 @@ import type { QuestionTemplateBankResponse } from './questionTemplateBankRespons
  * Schema for folder with its contents (assessments, templates, and child folders).
  */
 export interface FolderWithContentsResponse {
-  assessment_templates?: AssessmentTemplateResponse[];
-  assessments?: AssessmentResponse[];
-  created_at: string;
-  description: string | null;
-  folders?: FolderResponse[];
   id: string;
-  name: string;
   owner_id: string;
   parent_id: string | null;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  assessments?: AssessmentResponse[];
+  assessment_templates?: AssessmentTemplateResponse[];
   question_banks?: QuestionBankResponse[];
   question_template_banks?: QuestionTemplateBankResponse[];
-  updated_at: string;
+  folders?: FolderResponse[];
 }

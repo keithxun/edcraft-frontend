@@ -14,7 +14,7 @@ import { TemplateQuestionPreview } from "./TemplateQuestionPreview";
 interface ReviewQuestionPreviewProps {
     jobId: string;
     /** Authoring domain from the review request; preview and template use it. */
-    domain?: string;
+    domain: string;
     artifactSha256: string | null | undefined;
     draftTemplate?: ReviewTemplate | null;
     showingDraft?: boolean;
@@ -44,7 +44,7 @@ export function ReviewQuestionPreview({
         <Card>
             <CardHeader className="pb-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <CardTitle>Example question</CardTitle>
+                    <CardTitle as="h2">Example question</CardTitle>
                     <div className="flex flex-wrap items-center gap-2">
                         {showingDraft && draftTemplate && (
                             <Badge variant="destructive">Draft · checks failed</Badge>
@@ -136,7 +136,7 @@ export function ReviewQuestionPreview({
                 {artifactSha256 && previewQuery.data && !previewQuery.isError && (
                     <PreviewQuestion
                         instance={previewQuery.data.question}
-                        domain={domain ?? previewQuery.data.domain}
+                        domain={domain}
                         headingLevel="h3"
                         variant="review"
                     />

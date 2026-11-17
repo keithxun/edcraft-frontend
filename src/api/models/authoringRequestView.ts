@@ -12,16 +12,16 @@ import type { AuthoringRequestViewDifficulty } from './authoringRequestViewDiffi
  * Original author request returned during review.
  */
 export interface AuthoringRequestView {
+  prompt: string;
   difficulty: AuthoringRequestViewDifficulty;
-  domain: 'code';
-  model_profile?: string | null;
-  connection_id?: string | null;
-  model?: string | null;
   /**
    * @minimum 1
    * @maximum 10
    */
   num_distractors: number;
-  prompt: string;
+  domain: string;
+  model_profile?: string | null;
+  connection_id?: string | null;
+  model?: string | null;
   judges?: AuthoringJudgeSelections | null;
 }

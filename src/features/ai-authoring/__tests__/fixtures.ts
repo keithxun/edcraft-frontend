@@ -8,6 +8,9 @@ import type {
     AuthoringQuestionPayload,
     AuthoringReview,
     CodeQuestionInstance,
+    CodeTemplateCandidate,
+    IrMathTemplateCandidate,
+    MathQuestionInstance,
 } from "../types";
 
 const digest = "a".repeat(64);
@@ -155,6 +158,7 @@ export const stubPreview: AuthoringPreview = {
 export const approvedReview: AuthoringReview = {
     job_id: "job-1",
     state: "completed",
+    domain: "code",
     artifact_id: "artifact-1",
     artifact_sha256: digest,
     library_revision: "db74f1700d78bd13b3f5f10e9d89bc2f85ad2591",
@@ -259,6 +263,7 @@ export const approvedReview: AuthoringReview = {
  */
 export const stubReview: AuthoringReview = {
     ...approvedReview,
+    domain: "stub",
     artifact_id: null,
     artifact_sha256: null,
     request: {
@@ -405,6 +410,63 @@ export const needsReviewReview: AuthoringReview = {
     },
 };
 
+/**
+ * A failed job whose latest attempt kept a draft. The review carries no
+ * candidate at the top level, so the page has to read the attempts.
+ */
+export const failedWithDraftReview: AuthoringReview = {
+    ...failedReview,
+    state: "failed",
+    attempts: [
+        {
+            number: 1,
+            candidate: {
+                ...(needsReviewReview.candidate as CodeTemplateCandidate),
+                code: "def older_draft(values):\n    return len(values)",
+                question_template: "What does older_draft({values}) return?",
+            },
+            pending: [],
+            complete: true,
+            passed: false,
+            checks: [failedTechnicalCheck, failedAdvisoryCheck],
+        },
+        {
+            number: 2,
+            candidate: {
+                ...(needsReviewReview.candidate as CodeTemplateCandidate),
+                code: "def latest_draft(values):\n    return max(values)",
+                question_template: "What does latest_draft({values}) return?",
+            },
+            pending: [],
+            complete: true,
+            passed: false,
+            checks: [
+                failedTechnicalCheck,
+                {
+                    tool: "code_verify_template_structure",
+                    status: "failed",
+                    advisory: false,
+                    findings: [
+                        {
+                            code: "PLACEHOLDER_MISSING",
+                            message: "The question template has no placeholder.",
+                            field: "question_template",
+                        },
+                    ],
+                    error: null,
+                },
+                failedAdvisoryCheck,
+            ],
+        },
+    ],
+    checks: [],
+    candidate: null,
+    error: {
+        code: "GENERATION_ERROR",
+        message: "The model could not produce a valid response. Try again or select another model.",
+    },
+};
+
 export const batch: AuthoringBatch = {
     format_version: "1",
     job_id: "job-1",
@@ -431,4 +493,126 @@ export const stubBatch: AuthoringBatch = {
         stubQuestionInstance,
         { ...stubQuestionInstance, seed: 3 } as AuthoringQuestionPayload,
     ],
+};
+
+/** A math question uses a flat envelope instead of the code question object. */
+export const mathQuestionInstance: MathQuestionInstance = {
+    template_id: "linear-one-step",
+    artifact_id: "artifact-math",
+    seed: 4,
+    parameters: { a: 2, b: 1, c: 5 },
+    equation: "2x + 1 = 5",
+    question: "Solve for x.",
+    choices: ["2", "3", "-2"],
+    correct_index: 0,
+    answer: "2",
+    requires_manual_review: true,
+};
+
+export const mathPreview: AuthoringPreview = {
+    ...preview,
+    domain: "math",
+    artifact_id: "artifact-math",
+    question: mathQuestionInstance,
+};
+
+export const mathIrTemplateCandidate: IrMathTemplateCandidate = {
+    template_id: "ir-quadratic",
+    difficulty: "easy",
+    question_type: "mcq",
+    item: {
+        schema_version: "math-ir/0.1",
+        topic: "school.quadratic",
+        parameters: [
+            { name: "p", values: ["2", "3"] },
+            { name: "q", values: ["-7", "-5"] },
+        ],
+        body: {
+            topic: "school.quadratic",
+            symbols: [{ name: "x", domain: "real" }],
+            givens: [
+                {
+                    id: "equation",
+                    kind: "relation",
+                    relation: {
+                        kind: "eq",
+                        lhs: {
+                            op: "add",
+                            args: [
+                                {
+                                    op: "pow",
+                                    args: [{ sym: "x" }, { num: "2" }],
+                                },
+                                {
+                                    op: "mul",
+                                    args: [
+                                        {
+                                            op: "sub",
+                                            args: [
+                                                { num: "0" },
+                                                {
+                                                    op: "add",
+                                                    args: [
+                                                        { param: "p" },
+                                                        { param: "q" },
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                        { sym: "x" },
+                                    ],
+                                },
+                                { op: "mul", args: [{ param: "p" }, { param: "q" }] },
+                            ],
+                        },
+                        rhs: { num: "0" },
+                    },
+                },
+            ],
+            text: { mode: "symbolic", template: "Solve {equation}." },
+            goal: { kind: "solve", symbol: "x" },
+            answer_recipe: {
+                kind: "set",
+                items: [{ param: "p" }, { param: "q" }],
+            },
+            distractors: [
+                {
+                    value: {
+                        op: "sub",
+                        args: [{ num: "0" }, { param: "p" }],
+                    },
+                    misconception: "SIGN_ERROR",
+                    reason: "Flips the sign of one root",
+                },
+                {
+                    value: { op: "add", args: [{ param: "p" }, { param: "q" }] },
+                    misconception: "SUM_AS_ROOT",
+                    reason: "Reports the sum of the roots as a root",
+                },
+            ],
+        },
+    },
+};
+
+export const mathIrReview: AuthoringReview = {
+    ...approvedReview,
+    domain: "math",
+    artifact_id: "artifact-math-ir",
+    request: {
+        ...approvedReview.request,
+        domain: "math",
+        prompt: "Write a quadratic equation question.",
+    },
+    template: {
+        template_id: "ir-quadratic",
+        candidate: mathIrTemplateCandidate,
+    },
+    candidate: null,
+};
+
+export const mathBatch: AuthoringBatch = {
+    ...batch,
+    domain: "math",
+    artifact_id: "artifact-math",
+    questions: [mathQuestionInstance, { ...mathQuestionInstance, seed: 5 }],
 };

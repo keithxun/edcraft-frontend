@@ -12,11 +12,11 @@ import type { TargetModifier } from './targetModifier';
  * Schema for target element responses.
  */
 export interface TargetElementResponse {
-  argument_keys?: string[] | null;
+  order: number;
   element_type: TargetElementType;
   id_list: number[];
+  name?: string | null;
   line_number?: number | null;
   modifier?: TargetModifier | null;
-  name?: string | null;
-  order: number;
+  argument_keys?: string[] | null;
 }

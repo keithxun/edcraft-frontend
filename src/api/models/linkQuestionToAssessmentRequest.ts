@@ -10,6 +10,6 @@
  * Schema for linking an existing question to an assessment.
  */
 export interface LinkQuestionToAssessmentRequest {
-  order?: number | null;
   question_id: string;
+  order?: number | null;
 }

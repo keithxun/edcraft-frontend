@@ -1,8 +1,14 @@
 import { EvidenceDetails } from "./EvidenceDetails";
+import { MathTemplateDetails } from "./MathTemplateDetails";
+import { isIrMathTemplateCandidate, sameCandidate } from "./questionPayload";
+import { ChecksDetails } from "./TechnicalDetailsSections";
+import { checkName } from "../checkMetadata";
 import type { ReviewAttempt } from "../types";
 
 interface AttemptsEvidenceProps {
     attempts: ReviewAttempt[];
+    /** The checked template, when there is one, used to avoid repeating it. */
+    checkedCandidate?: unknown;
 }
 
 function checkSummary(attempt: ReviewAttempt): string {
@@ -17,8 +23,12 @@ function checkSummary(attempt: ReviewAttempt): string {
  * time. Within an attempt, the candidate keeps its own disclosure so large code
  * templates, parameter tables and distractor tables stay scannable.
  */
-export function AttemptsEvidence({ attempts }: AttemptsEvidenceProps) {
+export function AttemptsEvidence({ attempts, checkedCandidate = null }: AttemptsEvidenceProps) {
     if (attempts.length === 0) return null;
+    const latestNumber = attempts.reduce(
+        (latest, attempt) => Math.max(latest, attempt.number),
+        Number.NEGATIVE_INFINITY,
+    );
 
     return (
         <details className="rounded-md border bg-muted/30 p-3 text-sm">
@@ -29,6 +39,10 @@ export function AttemptsEvidence({ attempts }: AttemptsEvidenceProps) {
                 {attempts.map((attempt) => {
                     const checks = attempt.checks ?? [];
                     const pending = attempt.pending ?? [];
+                    const sameAsChecked =
+                        attempt.number === latestNumber &&
+                        checkedCandidate !== null &&
+                        sameCandidate(attempt.candidate, checkedCandidate);
                     return (
                         <li key={attempt.number}>
                             <details className="rounded border bg-background/60 p-2">
@@ -41,19 +55,33 @@ export function AttemptsEvidence({ attempts }: AttemptsEvidenceProps) {
                                     <p className="text-xs text-muted-foreground">
                                         {attempt.complete ? "Complete" : "Incomplete"}
                                         {pending.length > 0
-                                            ? ` · Pending: ${pending.join(", ")}`
+                                            ? ` · Pending: ${pending.map(checkName).join(", ")}`
                                             : ""}
                                     </p>
                                     <EvidenceDetails
                                         summary={`Checks (${checks.length})`}
                                         value={checks}
                                         variant="structured"
+                                        readable={<ChecksDetails checks={checks} />}
                                     />
-                                    <EvidenceDetails
-                                        summary="Candidate"
-                                        value={attempt.candidate}
-                                        variant="structured"
-                                    />
+                                    {sameAsChecked ? (
+                                        <p className="text-xs text-muted-foreground">
+                                            Same as the checked template below
+                                        </p>
+                                    ) : (
+                                        <EvidenceDetails
+                                            summary="Candidate"
+                                            value={attempt.candidate}
+                                            variant="structured"
+                                            readable={
+                                                isIrMathTemplateCandidate(attempt.candidate) ? (
+                                                    <MathTemplateDetails
+                                                        candidate={attempt.candidate}
+                                                    />
+                                                ) : undefined
+                                            }
+                                        />
+                                    )}
                                 </div>
                             </details>
                         </li>

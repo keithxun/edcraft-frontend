@@ -16,35 +16,13 @@ import { ROUTES } from "@/router/paths";
 import { getAuthoringErrorMessage } from "../errors";
 import { capitalize, formatDate } from "../format";
 import { useAuthoringJobs } from "../hooks/useAiAuthoring";
-import type { StatusVariant } from "../status";
+import { getSummaryStatus, statusView } from "../status";
 import type { AuthoringJobSummary } from "../types";
-
-function summaryStatus(job: AuthoringJobSummary): { label: string; variant: StatusVariant } {
-    if (job.result_status === "needs_review") {
-        return { label: "Needs review", variant: "default" };
-    }
-    if (job.result_status === "error") {
-        return { label: "Failed", variant: "destructive" };
-    }
-    switch (job.state) {
-        case "completed":
-            return { label: "Completed", variant: "success" };
-        case "failed":
-            return { label: "Failed", variant: "destructive" };
-        case "running":
-            return { label: "Creating", variant: "default" };
-        case "queued":
-            return { label: "Waiting", variant: "default" };
-    }
-}
 
 function decisionBadge(job: AuthoringJobSummary) {
     if (!job.approval) return <span className="text-muted-foreground">—</span>;
-    return (
-        <Badge variant={job.approval.decision === "approved" ? "success" : "destructive"}>
-            {job.approval.decision === "approved" ? "Approved" : "Rejected"}
-        </Badge>
-    );
+    const status = statusView(job.approval.decision);
+    return <Badge variant={status.variant}>{status.label}</Badge>;
 }
 
 export function RecentJobs() {
@@ -53,7 +31,7 @@ export function RecentJobs() {
     return (
         <Card>
             <CardHeader className="pb-3">
-                <CardTitle>Recent questions</CardTitle>
+                <CardTitle as="h2">Recent questions</CardTitle>
             </CardHeader>
             <CardContent>
                 {jobsQuery.isPending && (
@@ -104,7 +82,7 @@ export function RecentJobs() {
                         </TableHeader>
                         <TableBody>
                             {jobsQuery.data.map((job) => {
-                                const status = summaryStatus(job);
+                                const status = getSummaryStatus(job);
                                 return (
                                     <TableRow key={job.job_id}>
                                         <TableCell className="max-w-96 whitespace-normal">

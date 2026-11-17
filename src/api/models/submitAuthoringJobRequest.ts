@@ -9,31 +9,23 @@ import type { AuthoringJudgeSelections } from './authoringJudgeSelections';
 import type { SubmitAuthoringJobRequestDifficulty } from './submitAuthoringJobRequestDifficulty';
 
 /**
- * One request to author a reusable code-question template.
+ * One request to author a reusable question template.
  */
 export interface SubmitAuthoringJobRequest {
-  difficulty: SubmitAuthoringJobRequestDifficulty;
-  domain?: 'code';
-  /**
-   * @minLength 1
-   * @maxLength 64
-   */
   model_profile?: string | null;
   connection_id?: string | null;
-  /**
-   * @minLength 1
-   * @maxLength 120
-   */
   model?: string | null;
-  /**
-   * @minimum 1
-   * @maximum 10
-   */
-  num_distractors?: number;
+  domain?: string;
   /**
    * @minLength 1
    * @maxLength 4000
    */
   prompt: string;
+  difficulty: SubmitAuthoringJobRequestDifficulty;
+  /**
+   * @minimum 1
+   * @maximum 10
+   */
+  num_distractors?: number;
   judges?: AuthoringJudgeSelections | null;
 }

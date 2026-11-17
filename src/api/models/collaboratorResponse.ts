@@ -12,11 +12,11 @@ import type { ResourceType } from './resourceType';
  * Response schema for a collaborator entry.
  */
 export interface CollaboratorResponse {
-  added_at: string;
   id: string;
-  resource_id: string;
   resource_type: ResourceType;
-  role: CollaboratorRole;
-  user_email: string;
+  resource_id: string;
   user_name: string;
+  user_email: string;
+  role: CollaboratorRole;
+  added_at: string;
 }

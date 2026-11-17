@@ -13,22 +13,22 @@ import type { TextTemplateType } from './textTemplateType';
  * Response for template preview.
  */
 export interface TemplatePreviewResponse {
+  /** Generated template question text */
+  question_text_template: string;
+  /** Template type */
+  text_template_type: TextTemplateType;
+  /** Type of question */
+  question_type: string;
   /** Code for the question template */
   code: string;
   /** Entry function name */
   entry_function: string;
-  /** Number of distractors for the question */
-  num_distractors: number;
   /** Output type for the question */
   output_type: string;
-  /** Preview with placeholders */
-  preview_question: Question;
-  /** Generated template question text */
-  question_text_template: string;
-  /** Type of question */
-  question_type: string;
+  /** Number of distractors for the question */
+  num_distractors: number;
   /** Target elements for the question */
   target_elements: CreateTargetElementRequest[];
-  /** Template type */
-  text_template_type: TextTemplateType;
+  /** Preview with placeholders */
+  preview_question: Question;
 }

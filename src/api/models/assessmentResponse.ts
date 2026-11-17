@@ -12,13 +12,13 @@ import type { ResourceVisibility } from './resourceVisibility';
  * Complete schema for assessment responses.
  */
 export interface AssessmentResponse {
-  created_at: string;
-  description: string;
-  folder_id: string;
   id: string;
-  my_role?: CollaboratorRole | null;
   owner_id: string;
+  folder_id: string;
   title: string;
-  updated_at: string;
+  description: string;
   visibility: ResourceVisibility;
+  created_at: string;
+  updated_at: string;
+  my_role?: CollaboratorRole | null;
 }

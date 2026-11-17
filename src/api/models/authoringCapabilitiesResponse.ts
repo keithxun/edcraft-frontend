@@ -14,13 +14,13 @@ import type { ProviderConnectionResponse } from './providerConnectionResponse';
  * Enabled domains and server-configured model choices.
  */
 export interface AuthoringCapabilitiesResponse {
+  enabled_domains: string[];
   difficulty_labels: AuthoringCapabilitiesResponseDifficultyLabelsItem[];
-  enabled_domains: 'code'[];
+  model_profiles: AuthoringModelProfile[];
+  connections?: ProviderConnectionResponse[];
   judge?: JudgeDisplay | null;
   max_quantity: number;
   min_distractors: number;
   max_distractors: number;
   default_distractors: number;
-  model_profiles: AuthoringModelProfile[];
-  connections?: ProviderConnectionResponse[];
 }
