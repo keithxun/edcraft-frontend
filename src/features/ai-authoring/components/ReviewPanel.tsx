@@ -160,6 +160,19 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
                 <div className="space-y-4 @3xl/review:col-span-8">
                     <RequestSummary request={review.request} />
                     <WarningsPanel warnings={filterMismatchWarnings(review.warnings)} />
+                    {review.template?.case_previews?.length ? (
+                        <section aria-label="Questions eligible for approval" className="space-y-3 rounded-lg border p-4">
+                            <h3 className="font-medium">Questions eligible for approval</h3>
+                            <ol className="list-decimal space-y-3 pl-5">
+                                {review.template.case_previews.map((item) => (
+                                    <li key={item.case_id}>
+                                        <p className="whitespace-pre-wrap">{item.question}</p>
+                                        <p className="mt-1 text-sm"><strong>Correct answer</strong> {item.answer}</p>
+                                    </li>
+                                ))}
+                            </ol>
+                        </section>
+                    ) : null}
                     <ReviewQuestionPreview
                         jobId={jobId}
                         domain={review.request.domain}
