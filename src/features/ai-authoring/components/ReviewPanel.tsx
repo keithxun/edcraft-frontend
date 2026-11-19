@@ -153,6 +153,9 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
     const checks = review.template ? (review.checks ?? []) : (draft?.checks ?? review.checks ?? []);
     const advisories: ChecksAdvisory[] = [difficultyFeedback, relevanceFeedback];
     const approved = isApproved(review);
+    const previewTitle = review.template?.case_previews?.some((item) => item.seed != null)
+        ? "Sampled question variants"
+        : "Questions eligible for approval";
 
     return (
         <div className="space-y-6">
@@ -161,13 +164,23 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
                     <RequestSummary request={review.request} />
                     <WarningsPanel warnings={filterMismatchWarnings(review.warnings)} />
                     {review.template?.case_previews?.length ? (
-                        <section aria-label="Questions eligible for approval" className="space-y-3 rounded-lg border p-4">
-                            <h3 className="font-medium">Questions eligible for approval</h3>
+                        <section aria-label={previewTitle} className="space-y-3 rounded-lg border p-4">
+                            <h3 className="font-medium">{previewTitle}</h3>
                             <ol className="list-decimal space-y-3 pl-5">
                                 {review.template.case_previews.map((item) => (
                                     <li key={item.case_id}>
                                         <p className="whitespace-pre-wrap">{item.question}</p>
-                                        <p className="mt-1 text-sm"><strong>Correct answer</strong> {item.answer}</p>
+                                        {item.choices?.length ? (
+                                            <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+                                                {item.choices.map((choice) => (
+                                                    <li key={choice} className="whitespace-pre-wrap">
+                                                        {choice}{choice === item.answer && <strong> (correct answer)</strong>}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="mt-1 text-sm"><strong>Correct answer</strong> {item.answer}</p>
+                                        )}
                                     </li>
                                 ))}
                             </ol>

@@ -108,12 +108,13 @@ describe("ReviewPanel", () => {
                 ...unapprovedReview.template!,
                 case_previews: [
                     {case_id: "a", question: "Find the first area.", answer: "12"},
-                    {case_id: "b", question: "Find the second area.", answer: "18"},
+                    {case_id: "b", question: "Find the second area.", answer: "18", choices: ["9", "18", "36"]},
                 ],
             },
         });
         const cases = within(screen.getByRole("region", {name: "Questions eligible for approval"}));
-        expect(cases.getAllByRole("listitem")).toHaveLength(2);
+        expect(cases.getAllByRole("listitem")).toHaveLength(5);
+        expect(cases.getByText("36")).toBeVisible();
         expect(cases.getByText("Find the second area.")).toBeVisible();
         expect(cases.getByText("18")).toBeVisible();
     });

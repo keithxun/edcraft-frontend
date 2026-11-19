@@ -149,7 +149,14 @@ export type AuthoringTemplateCandidate =
     | Record<string, unknown>;
 export type ReviewTemplate = Omit<ApiReviewTemplate, "candidate"> & {
     candidate: AuthoringTemplateCandidate;
-    case_previews?: { case_id: string; outcome?: string | null; question: string; answer: string }[] | null;
+    case_previews?: {
+        case_id: string;
+        outcome?: string | null;
+        question: string;
+        answer: string;
+        choices?: string[] | null;
+        seed?: number | null;
+    }[] | null;
 };
 export type ValidationLimits = ApiValidationLimits;
 export type AuthoringRequest = AuthoringReviewResponse["request"];
