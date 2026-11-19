@@ -109,7 +109,118 @@ describe("AiAuthoringJobPage", () => {
         expect(getAuthoringJob).toHaveBeenCalledWith("job-1");
         expect(getAuthoringReview).toHaveBeenCalledWith("job-1");
         expect(createAuthoringJob).not.toHaveBeenCalled();
+        expect(screen.queryByRole("list", { name: "Request clauses" })).not.toBeInTheDocument();
         expect(screen.queryByText("/ai-authoring/job-1")).not.toBeInTheDocument();
+    });
+
+    it("shows every H2 request clause with citations and inspection guidance", async () => {
+        vi.mocked(getAuthoringReview).mockResolvedValue({
+            ...unapprovedReview,
+            request: {
+                ...unapprovedReview.request,
+                prompt: "Ask for the complete merged sequence from two concrete runs;\nHide record identities until the final step.",
+            },
+            template: {
+                template_id: "h2-merge-output",
+                candidate: {
+                    subject: "code",
+                    family: "1.2.merge-output",
+                    authoring_mode: "Parameterised H2 family",
+                    family_capabilities: ["concrete_runs", "complete_merged_run"],
+                    quoted_requirements: [
+                        {
+                            value: "complete_merged_run",
+                            wording: "Ask for the complete merged sequence from two concrete runs;",
+                        },
+                    ],
+                },
+            },
+            relevance: {
+                ...unapprovedReview.relevance!,
+                unavailable: false,
+                status: "assessed",
+                relevant: true,
+            },
+        });
+        renderJobPage();
+
+        const clauses = await screen.findByRole("list", { name: "Request clauses" });
+        const [first, second] = within(clauses).getAllByRole("listitem");
+        expect(first).toHaveTextContent("Ask for the complete merged sequence from two concrete runs;");
+        expect(first).toHaveTextContent("Cited capabilities · complete merged run");
+        expect(second).toHaveTextContent("Hide record identities until the final step.");
+        expect(second).toHaveTextContent("Needs teacher inspection");
+        expect(screen.getByText("Parameterised H2 family", { selector: "dd" })).toBeVisible();
+        expect(screen.getByText("Verified family capabilities")).toBeVisible();
+        expect(screen.getByText("concrete runs, complete merged run")).toBeVisible();
+        expect(screen.getByText("Compare each clause with the question and choices, including clauses with citations.")).toBeVisible();
+        expect(screen.getByText("Automated relevance check passed")).toBeInTheDocument();
+        expect(screen.queryByText("Matches the request")).not.toBeInTheDocument();
+    });
+
+    it("keeps uncited H2 clauses available to inspect in a saved review without capability metadata", async () => {
+        vi.mocked(getAuthoringReview).mockResolvedValue({
+            ...approvedReview,
+            request: {
+                ...approvedReview.request,
+                prompt: "Use merge sort. Ask for the next pair of heads.",
+            },
+            template: {
+                template_id: "h2-archived-merge",
+                candidate: {
+                    subject: "code",
+                    family: "1.2.merge-sort",
+                },
+                case_previews: [
+                    { case_id: "1.2.merge-sort/0", question: "Which heads are compared next?", answer: "4 and 5" },
+                ],
+            },
+            candidate: {
+                subject: "code",
+                family: "1.2.merge-sort",
+                quoted_requirements: [{ value: "next_heads", wording: "Ask for the next pair of heads." }],
+            },
+            candidate_is_historical_attempt: true,
+        });
+        renderJobPage();
+
+        const clauses = await screen.findByRole("list", { name: "Request clauses" });
+        const [first, second] = within(clauses).getAllByRole("listitem");
+        expect(within(first).getByText("Use merge sort.")).toBeVisible();
+        expect(within(first).getByText("Needs teacher inspection")).toBeVisible();
+        expect(within(second).getByText("Ask for the next pair of heads.")).toBeVisible();
+        expect(within(second).getByText("Needs teacher inspection")).toBeVisible();
+        expect(screen.getByText("Capability details are unavailable for this family.")).toBeVisible();
+        expect(screen.getByText("Which heads are compared next?")).toBeVisible();
+        expect(screen.getByRole("link", { name: "Create question set" })).toBeVisible();
+    });
+
+    it("shows the verified H2 family’s routine-versus-hard guidance before approval", async () => {
+        const scopeNote = "This selection preserves the requested routine operation. Review the displayed choices before using it as a hard question.";
+        vi.mocked(getAuthoringReview).mockResolvedValue({
+            ...unapprovedReview,
+            domain: "math",
+            request: {
+                ...unapprovedReview.request,
+                domain: "math",
+                difficulty: "hard",
+                prompt: "Ask students to find an unbiased estimate of variance from summary totals.",
+            },
+            template: {
+                template_id: "h2-variance-totals",
+                candidate: {
+                    subject: "math",
+                    family: "6.4.variance-totals",
+                    authoring_mode: "Parameterised H2 family",
+                    family_capabilities: ["summary_totals", "unbiased_variance"],
+                    difficulty_scope_note: scopeNote,
+                },
+            },
+        });
+        renderJobPage();
+
+        expect(await screen.findByText(scopeNote, { selector: "p" })).toBeVisible();
+        expect(screen.getByRole("button", { name: "Approve question" })).toBeEnabled();
     });
 
     it("shows the agreed review status in the header", async () => {

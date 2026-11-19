@@ -20,6 +20,7 @@ import { ChecksPanel, type ChecksAdvisory } from "./ChecksPanel";
 import { ReviewQuestionPreview } from "./ReviewQuestionPreview";
 import { TechnicalDetails } from "./TechnicalDetails";
 import { WarningsPanel } from "./WarningsPanel";
+import { isRecord } from "./questionPayload";
 
 interface ReviewPanelProps {
     jobId: string;
@@ -111,14 +112,17 @@ function difficultyAdvisory(
 
 function relevanceAdvisory(
     outcome: AuthoringRelevanceOutcome | null | undefined,
+    checkedH2: boolean,
 ): ChecksAdvisory {
     const meter = scoreMeter(outcome);
 
     if (outcome?.relevant === true) {
         return {
             id: "relevance",
-            title: "Matches the request",
-            description: "The question matches what you asked for.",
+            title: checkedH2 ? "Automated relevance check passed" : "Matches the request",
+            description: checkedH2
+                ? "The question was judged relevant overall."
+                : "The question matches what you asked for.",
             passed: true,
             meter,
         };
@@ -145,8 +149,17 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
     const canApprove = getApprovalBlockers(review).length === 0;
     const difficulty = review.difficulty ?? result?.difficulty;
     const relevance = review.relevance ?? result?.relevance;
+    const { domain } = review.request;
+    const candidate: unknown = review.template?.candidate;
+    const checkedH2Candidate =
+        (domain === "math" || domain === "code") &&
+        isRecord(candidate) &&
+        candidate.subject === domain &&
+        typeof candidate.family === "string"
+            ? candidate
+            : null;
     const difficultyFeedback = difficultyAdvisory(difficulty);
-    const relevanceFeedback = relevanceAdvisory(relevance);
+    const relevanceFeedback = relevanceAdvisory(relevance, Boolean(checkedH2Candidate));
     const draft = getReviewDraft(review);
     const draftTemplate = review.template ?? (draft ? draftTemplateFor(draft.candidate) : null);
     const showingDraft = !review.template && Boolean(draft);
@@ -161,7 +174,7 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
         <div className="space-y-6">
             <div className="grid gap-6 @3xl/review:grid-cols-12">
                 <div className="space-y-4 @3xl/review:col-span-8">
-                    <RequestSummary request={review.request} />
+                    <RequestSummary request={review.request} checkedH2Candidate={checkedH2Candidate} />
                     <WarningsPanel warnings={filterMismatchWarnings(review.warnings)} />
                     {review.template?.case_previews?.length ? (
                         <section aria-label={previewTitle} className="space-y-3 rounded-lg border p-4">
