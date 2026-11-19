@@ -49,6 +49,18 @@ async function openAdvanced() {
 }
 
 describe("AuthorForm", () => {
+    it("adds the verified family scope while preserving the educator's prompt", async () => {
+        const example = "H2 topic 1.2. Binary search.";
+        renderForm(undefined, {
+            ...capabilities,
+            syllabus_prompts: {code: {"1.2 · Fundamental algorithms": example}},
+        });
+        const user = userEvent.setup();
+        await user.type(screen.getByLabelText("Prompt"), "Include a sorted array.");
+        await user.selectOptions(screen.getByLabelText("Add a checked H2 family to the prompt"), example);
+        expect(screen.getByLabelText("Prompt")).toHaveValue(example + "\nInclude a sorted array.");
+    });
+
     beforeAll(() => {
         Object.defineProperty(Element.prototype, "hasPointerCapture", {
             configurable: true,

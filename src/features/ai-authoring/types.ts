@@ -31,6 +31,7 @@ export type ApprovalDecision = StoredReviewerApproval["decision"];
 
 export type AuthoringCapabilities = Omit<AuthoringCapabilitiesResponse, "enabled_domains"> & {
     enabled_domains: string[];
+    syllabus_prompts?: Record<string, Record<string, string>>;
 };
 export type AuthoringModelProfile = ApiAuthoringModelProfile;
 // The generated request makes domain optional, but the authoring form always

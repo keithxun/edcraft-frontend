@@ -140,6 +140,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     });
     const selectedDomain = form.watch("domain");
     const domain = selectedDomain || defaultDomain;
+    const syllabusPrompts = capabilities.syllabus_prompts?.[domain];
 
     useEffect(() => {
         if (submitError) summaryRef.current?.focus();
@@ -361,6 +362,35 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                     </FormItem>
                                 )}
                             />
+
+                            {syllabusPrompts && (
+                                <label className="flex flex-col gap-2 text-sm">
+                                    Add a checked H2 family to the prompt
+                                    <select
+                                        value=""
+                                        className="rounded-md border bg-background p-2"
+                                        onChange={(event) => {
+                                            const example = event.target.value;
+                                            if (!example) return;
+                                            const current = form.getValues("prompt").trim();
+                                            const previous = Object.values(syllabusPrompts).find(
+                                                (sample) => current === sample || current.startsWith(sample + "\n"),
+                                            );
+                                            const extra = previous
+                                                ? current.slice(previous.length).trim()
+                                                : current;
+                                            form.setValue("prompt", [example, extra].filter(Boolean).join("\n"), {
+                                                shouldDirty: true, shouldValidate: true,
+                                            });
+                                        }}
+                                    >
+                                        <option value="">Choose a syllabus section</option>
+                                        {Object.entries(syllabusPrompts).map(([label, example]) => (
+                                            <option key={label} value={example}>{label}</option>
+                                        ))}
+                                    </select>
+                                </label>
+                            )}
 
                             <FormField
                                 control={form.control}

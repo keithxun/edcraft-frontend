@@ -54,7 +54,7 @@ export function PreviewQuestion({
                 )
             ) : (
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                    <Heading className="min-w-0 text-base font-medium">
+                    <Heading className="min-w-0 whitespace-pre-wrap text-base font-medium">
                         {fields.text}
                     </Heading>
                     {!review && <Badge variant="default">Draft for review</Badge>}

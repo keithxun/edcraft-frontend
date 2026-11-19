@@ -9,15 +9,15 @@ export interface DomainInfo {
 const DOMAINS: Record<string, DomainInfo> = {
     code: {
         label: "Code",
-        badge: "Python · multiple choice",
+        badge: "Computing · multiple choice",
         promptPlaceholder:
-            "Describe the programming concept and what students should reason about.",
+            "Describe a programming task, or start with H2 for a syllabus family, e.g. H2 binary search.",
     },
     math: {
         label: "Mathematics",
         badge: "Mathematics · multiple choice",
         promptPlaceholder:
-            "Describe the maths skill, for example factorising quadratics with small integer roots.",
+            "Describe a maths skill, or start with H2 for a syllabus family, e.g. H2 hypothesis testing.",
     },
 };
 
