@@ -1,8 +1,13 @@
 import type {
     AuthoringQuestionPayload,
+    BiologyQuestionInstance,
+    BiologyTemplateCandidate,
+    ChemistryQuestionInstance,
+    ChemistryTemplateCandidate,
     CodeQuestionInstance,
     IrMathTemplateCandidate,
     MathQuestionInstance,
+    PhysicsTemplateCandidate,
 } from "../types";
 
 export interface PreviewChoice {
@@ -107,6 +112,112 @@ export function isIrMathTemplateCandidate(
         ) &&
         Array.isArray(body.distractors) &&
         body.distractors.every((distractor) => isRecord(distractor))
+    );
+}
+
+/**
+ * A biology question uses the same flat envelope as maths, so its cross and
+ * Punnett square are required. Maths carries an `equation` instead, keeping the
+ * two views apart.
+ */
+export function isBiologyQuestionPayload(
+    value: AuthoringQuestionPayload,
+): value is BiologyQuestionInstance {
+    if (!isRecord(value)) return false;
+    const record: Record<string, unknown> = value;
+    const cross = record.cross;
+    return (
+        typeof record.template_id === "string" &&
+        typeof record.seed === "number" &&
+        isRecord(record.parameters) &&
+        typeof record.question === "string" &&
+        Array.isArray(record.choices) &&
+        record.choices.every((choice) => typeof choice === "string") &&
+        typeof record.correct_index === "number" &&
+        typeof record.answer === "string" &&
+        isRecord(cross) &&
+        typeof cross.parent1 === "string" &&
+        typeof cross.parent2 === "string" &&
+        Array.isArray(record.punnett)
+    );
+}
+
+/** A monohybrid genetics candidate carries one `bio-mono/` item. */
+export function isBiologyTemplateCandidate(
+    value: unknown,
+): value is BiologyTemplateCandidate {
+    if (!isRecord(value) || !isRecord(value.item)) return false;
+    const item = value.item;
+    const { gene, question, text } = item;
+    return (
+        typeof value.template_id === "string" &&
+        typeof item.schema_version === "string" &&
+        item.schema_version.startsWith("bio-mono/") &&
+        isRecord(gene) &&
+        isRecord(question) &&
+        isRecord(text) &&
+        typeof text.template === "string" &&
+        Array.isArray(item.parameters) &&
+        Array.isArray(item.distractors)
+    );
+}
+
+/**
+ * A chemistry question is also a flat envelope, but it names the curated
+ * reaction it was built from. Requiring the reaction identifier keeps math and
+ * code payloads from being mistaken for chemistry.
+ */
+export function isChemistryQuestionPayload(
+    value: AuthoringQuestionPayload,
+): value is ChemistryQuestionInstance {
+    if (!isRecord(value)) return false;
+    return (
+        "reaction_id" in value &&
+        typeof value.reaction_id === "string" &&
+        typeof value.template_id === "string" &&
+        typeof value.seed === "number" &&
+        typeof value.question === "string" &&
+        Array.isArray(value.choices) &&
+        value.choices.every((choice) => typeof choice === "string") &&
+        typeof value.correct_index === "number" &&
+        typeof value.answer === "string"
+    );
+}
+
+/** A chemistry candidate names a supported item and its catalogue snapshot. */
+export function isChemistryTemplateCandidate(
+    value: unknown,
+): value is ChemistryTemplateCandidate {
+    if (!isRecord(value) || !isRecord(value.item) || !isRecord(value.catalogue)) {
+        return false;
+    }
+    const schemaVersion = value.item.schema_version;
+    if (schemaVersion === "chem-concept/0.1") {
+        return Array.isArray(value.catalogue.contexts);
+    }
+    return typeof schemaVersion === "string" &&
+        (schemaVersion.startsWith("chem-balance/") || schemaVersion === "chem-yield/0.1") &&
+        Array.isArray(value.catalogue.reactions);
+}
+
+/**
+ * A physics candidate carries a `physics-1d` item family and an authored
+ * answer recipe. Requiring both keeps other domains with a similar envelope
+ * from being mistaken for physics.
+ */
+export function isPhysicsTemplateCandidate(
+    value: unknown,
+): value is PhysicsTemplateCandidate {
+    if (!isRecord(value) || !isRecord(value.item)) return false;
+    const item = value.item;
+    const body = item.body;
+    if (!isRecord(body)) return false;
+    return (
+        typeof value.template_id === "string" &&
+        typeof item.schema_version === "string" &&
+        ((item.schema_version.startsWith("physics-1d/") ||
+            item.schema_version.startsWith("physics-h2/")) && isRecord(body.answer_recipe) ||
+            item.schema_version === "physics-h2-statements/1.0" && typeof body.text === "string")
     );
 }
 

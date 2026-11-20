@@ -17,7 +17,9 @@ import type {
 } from "../types";
 import {
     approvedReview,
+    biologyReview,
     needsReviewReview,
+    physicsReview,
     preview,
     stubReview,
     technicalFailureReview,
@@ -107,8 +109,8 @@ describe("ReviewPanel", () => {
             template: {
                 ...unapprovedReview.template!,
                 case_previews: [
-                    {case_id: "a", question: "Find the first area.", answer: "12"},
-                    {case_id: "b", question: "Find the second area.", answer: "18", choices: ["9", "18", "36"]},
+                    { case_id: "a", question: "Find the first area.", answer: "12", superseded_by: null },
+                    { case_id: "b", question: "Find the second area.", answer: "18", choices: ["9", "18", "36"], superseded_by: null },
                 ],
             },
         });
@@ -119,17 +121,329 @@ describe("ReviewPanel", () => {
         expect(cases.getByText("18")).toBeVisible();
     });
 
+    it.each(["math", "code"])("shows seed zero as a sampled %s variant", (domain) => {
+        renderPanel({
+            ...unapprovedReview,
+            domain,
+            request: { ...unapprovedReview.request, domain },
+            template: {
+                ...unapprovedReview.template!,
+                case_previews: [{
+                    case_id: "seed-0",
+                    seed: 0,
+                    question: "Choose the result for this input.",
+                    answer: "18",
+                    superseded_by: null,
+                }],
+            },
+        });
+
+        const variants = within(screen.getByRole("region", { name: "Sampled question variants" }));
+        expect(variants.getByRole("heading", { name: "Seed 0" })).toBeVisible();
+        expect(variants.getByText("Choose the result for this input.")).toBeVisible();
+        expect(variants.getByText("18")).toBeVisible();
+    });
+
+    it("explains an unsupported request without presenting an approval decision", () => {
+        vi.mocked(getAuthoringPreview).mockClear();
+        renderPanel({
+            ...unapprovedReview,
+            domain: "physics",
+            request: { ...unapprovedReview.request, domain: "physics" },
+            artifact_id: null,
+            artifact_sha256: null,
+            template: null,
+            checks: [],
+            error: {
+                code: "UNSUPPORTED_REQUEST",
+                message: "This request needs hands-on work or original measurements.",
+            },
+        });
+        const notice = screen.getByRole("alert", { name: "Unsupported request" });
+        expect(within(notice).getByText("This request needs hands-on work or original measurements.")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Approve question" })).not.toBeInTheDocument();
+        expect(screen.queryByText("Review problem")).not.toBeInTheDocument();
+        expect(getAuthoringPreview).not.toHaveBeenCalled();
+    });
+
+    it("shows every checked Physics scenario and its correct statement set before approval", () => {
+        vi.mocked(getAuthoringPreview).mockClear();
+        renderPanel({
+            ...unapprovedReview,
+            domain: "physics",
+            request: { ...unapprovedReview.request, domain: "physics" },
+            template: {
+                ...unapprovedReview.template!,
+                case_previews: [
+                    {
+                        case_id: "3c-1",
+                        outcome: "3(c)",
+                        question: "Assess the first motion graph.\n\nWhich statements are correct?",
+                        answer: "A and D only",
+                        choices: ["A and D only", "D only", "A, B and D only", "All four statements"],
+                        incorrect_statements_example: {
+                            question: "Use that graph again. Which listed statements are incorrect?",
+                            answer: "C only",
+                            choices: ["C only", "A and C only", "B and C only", "None of the statements"],
+                        },
+                        stimulus: {
+                            kind: "graph",
+                            x: "Time / s",
+                            y: "Velocity / m/s",
+                            series: [{ label: "Cart", points: [[0, 0], [2, 4]] }],
+                        },
+                    },
+                    {
+                        case_id: "3c-2",
+                        outcome: "3(c)",
+                        question: "Assess the second motion graph.",
+                        answer: "B only",
+                        choices: ["B only", "A and B only", "None of the statements", "B and C only"],
+                        incorrect_statements_example: {
+                            question: "Use the second graph. Which listed statements are incorrect?",
+                            answer: "A and C only",
+                            choices: ["A and C only", "C only", "A, B and C only", "A only"],
+                        },
+                        stimulus: {
+                            kind: "graph",
+                            x: "Time / s",
+                            y: "Position / m",
+                            series: [{ label: "Cart", points: [[0, 0], [2, 8]] }],
+                        },
+                    },
+                ],
+            },
+        });
+        const cases = screen.getByRole("region", { name: "Checked scenarios" });
+        expect(within(cases).getAllByText("3(c)")).toHaveLength(2);
+        expect(within(cases).getByText(/Assess the first motion graph/)).toBeInTheDocument();
+        expect(within(cases).getByText("Assess the second motion graph.")).toBeInTheDocument();
+        expect(within(cases).getByText("A and D only")).toBeInTheDocument();
+        expect(within(cases).getByText("B only")).toBeInTheDocument();
+        const [firstChoices, firstAlternate, secondChoices, secondAlternate] = within(cases).getAllByRole("list", { name: "Example answer choices" });
+        expect(within(firstChoices).getAllByRole("listitem")).toHaveLength(4);
+        expect(within(secondChoices).getAllByRole("listitem")).toHaveLength(4);
+        expect(within(firstChoices).getByText("A and D only").closest("li")).toHaveTextContent("Correct answer");
+        expect(within(firstChoices).getByText("D only").closest("li")).not.toHaveTextContent("Correct answer");
+        expect(within(secondChoices).getByText("None of the statements")).toBeInTheDocument();
+        expect(within(cases).getAllByRole("heading", { name: "Incorrect-statement example" })).toHaveLength(2);
+        expect(within(firstAlternate).getAllByRole("listitem")).toHaveLength(4);
+        expect(within(secondAlternate).getAllByRole("listitem")).toHaveLength(4);
+        expect(within(firstAlternate).getByText("C only").closest("li")).toHaveTextContent("Correct answer");
+        expect(within(secondAlternate).getByText("A and C only").closest("li")).toHaveTextContent("Correct answer");
+        expect(within(cases).getByText(/can change with the seed/)).toBeInTheDocument();
+        expect(within(cases).getByRole("img", { name: "Velocity / m/s against Time / s" })).toBeInTheDocument();
+        expect(within(cases).getByRole("img", { name: "Position / m against Time / s" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Approve question" })).toBeEnabled();
+        expect(getAuthoringPreview).not.toHaveBeenCalled();
+    });
+
     it("allows approval when advisory feedback differs and keeps it neutral", async () => {
         renderPanel(unapprovedReview);
 
         expect(await screen.findByText(previewInstanceQuestion())).toBeInTheDocument();
         expect(screen.getByText("Example question")).toBeInTheDocument();
+        expect(screen.queryByText("Checked cases")).not.toBeInTheDocument();
         expect(screen.getByText("Difficulty differs")).toBeInTheDocument();
         expect(screen.getByText("Relevance not checked")).toBeInTheDocument();
 
         const advisory = screen.getByText("Difficulty differs").closest("[data-advisory]");
         expect(advisory).toHaveClass("bg-muted/30");
         expect(screen.getByRole("button", { name: "Approve question" })).toBeEnabled();
+    });
+
+    it("shows a checked Physics calculation without statement-set instructions", () => {
+        vi.mocked(getAuthoringPreview).mockClear();
+        renderPanel({
+            ...physicsReview,
+            template: {
+                ...physicsReview.template!,
+                case_previews: [{
+                    case_id: "prefixes-1",
+                    question: "Convert 25 mm to metres.",
+                    answer: "0.025 m",
+                    choices: ["0.025 m", "0.25 m", "250 m"],
+                    stimulus: null,
+                    incorrect_statements_example: null,
+                }],
+            },
+        });
+
+        const scenarios = within(screen.getByRole("region", { name: "Checked scenarios" }));
+        expect(scenarios.getByText("0.025 m").closest("li")).toHaveTextContent("Correct answer");
+        expect(scenarios.queryByText(/Statement order/)).not.toBeInTheDocument();
+        expect(getAuthoringPreview).not.toHaveBeenCalled();
+    });
+
+    it("shows the actual options and key for both checked Biology cases", () => {
+        renderPanel({
+            ...unapprovedReview,
+            domain: "biology",
+            request: { ...unapprovedReview.request, domain: "biology" },
+            template: {
+                template_id: "biology.medium.two-cases",
+                candidate: { item: { schema_version: "bio-h2/1" } },
+                case_previews: [
+                    {
+                        case_id: "dihybrid.self",
+                        outcome: "2(x)",
+                        question: "What fraction of RrTt × RrTt offspring is red and tall?",
+                        answer: "9/16",
+                        choices: ["9/16", "3/4", "1/4", "3/16"],
+                    },
+                    {
+                        case_id: "dihybrid.test",
+                        outcome: "2(x), 2(y)",
+                        question: "What fraction of RrTt × rrtt offspring is white and tall?",
+                        answer: "1/4",
+                        choices: ["1/4", "1/2", "3/4", "3/16"],
+                        figure: {
+                            data_url: "data:image/png;base64,AA==",
+                            alt: "Illustrated test cross",
+                            credit: "EdCraft classroom schematic",
+                        },
+                    },
+                ],
+            },
+        });
+
+        const cases = screen.getByRole("region", { name: "Selected questions" });
+        for (const text of [
+            "What fraction of RrTt × RrTt offspring is red and tall?",
+            "What fraction of RrTt × rrtt offspring is white and tall?",
+            "Learning outcome 2(x), 2(y)",
+        ]) {
+            expect(within(cases).getByText(text)).toBeVisible();
+        }
+        const [first, second] = within(cases).getAllByRole("list", { name: "Answer choices" });
+        for (const [list, answer, distractor] of [[first, "9/16", "1/4"], [second, "1/4", "1/2"]] as const) {
+            expect(within(list).getAllByRole("listitem")).toHaveLength(4);
+            expect(within(list).getByText(answer).closest("li")).toHaveTextContent("Correct answer");
+            expect(within(list).getByText(distractor).closest("li")).not.toHaveTextContent("Correct answer");
+        }
+        expect(within(cases).getByRole("heading", { name: "dihybrid test" })).toBeVisible();
+        expect(within(cases).getByRole("img", { name: "Illustrated test cross" })).toBeVisible();
+        expect(screen.getByRole("button", { name: "Approve question" })).toBeEnabled();
+    });
+
+    it("shows all choices and marks one key for a current single Biology case", () => {
+        renderPanel({
+            ...unapprovedReview,
+            domain: "biology",
+            request: { ...unapprovedReview.request, domain: "biology" },
+            template: {
+                template_id: "biology.medium.single-case",
+                candidate: { item: { schema_version: "bio-h2/1" } },
+                case_previews: [{
+                    case_id: "dihybrid.self",
+                    question: "What fraction of the RrTt × RrTt offspring is red and tall?",
+                    outcome: "2(x)",
+                    answer: "9/16",
+                    choices: ["9/16", "3/4", "1/4", "3/16"],
+                    superseded_by: null,
+                }],
+            },
+        });
+        const cases = screen.getByRole("region", { name: "Selected questions" });
+        const options = within(cases).getByRole("list", { name: "Answer choices" });
+        expect(within(options).getAllByRole("listitem")).toHaveLength(4);
+        expect(within(options).getByText("9/16").closest("li")).toHaveTextContent("Correct answer");
+        expect(within(options).getAllByText("Correct answer")).toHaveLength(1);
+        expect(within(cases).queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Approve question" })).toBeEnabled();
+    });
+
+    it("keeps the parameterised monohybrid review on its seeded preview", () => {
+        renderPanel(biologyReview);
+        expect(screen.getByText("Example question")).toBeInTheDocument();
+        expect(screen.queryByRole("region", { name: "Selected questions" })).not.toBeInTheDocument();
+    });
+
+    it("recommends the corrected case on an existing Biology approval", () => {
+        renderPanel({
+            ...approvedReview,
+            domain: "biology",
+            request: { ...approvedReview.request, domain: "biology" },
+            template: {
+                template_id: "biology.medium.archived",
+                candidate: { item: { schema_version: "bio-h2/1" } },
+                case_previews: [{
+                    case_id: "skill.cell.osmosis",
+                    question: "In which direction does water move on balance?",
+                    answer: "Towards lower water potential",
+                    choices: ["Towards lower water potential", "Towards higher water potential"],
+                    figure: {
+                        data_url: "data:image/png;base64,AA==",
+                        alt: "Archived classroom diagram",
+                        credit: "EdCraft classroom schematic",
+                    },
+                    superseded_by: "skill.cell.osmosis_gradient",
+                }],
+            },
+        });
+        const cases = screen.getByRole("region", { name: "Selected questions" });
+        const notice = within(cases).getByRole("alert");
+        expect(notice).toHaveTextContent("Author the corrected Biology case");
+        expect(notice).toHaveTextContent("skill.cell.osmosis_gradient");
+        expect(within(cases).getByRole("img", { name: "Archived classroom diagram" })).toBeVisible();
+        expect(screen.getByRole("link", { name: "Create question set" })).toBeVisible();
+    });
+
+    it("shows every checked case and key beside the example question", async () => {
+        renderPanel({
+            ...unapprovedReview,
+            domain: "chemistry",
+            request: { ...unapprovedReview.request, domain: "chemistry" },
+            template: {
+                ...unapprovedReview.template!,
+                case_previews: [
+                    {
+                        case_id: "atom-a",
+                        outcome: null,
+                        question: "How many neutrons are in aluminium-27?",
+                        answer: "14",
+                        choices: ["13", "14", "15", "40"],
+                        key_source: "catalogue",
+                        key_evidence: ["separate_reference", "external_blind"],
+                    },
+                    {
+                        case_id: "ion-b",
+                        outcome: null,
+                        question: "How many electrons are in a chloride ion?",
+                        answer: "18",
+                        choices: ["18", "16", "17", "37"],
+                        key_source: "catalogue",
+                    },
+                ],
+            },
+        });
+
+        expect(await screen.findByText(previewInstanceQuestion())).toBeInTheDocument();
+        expect(screen.getByText("Checked cases")).toBeInTheDocument();
+        const atomCase = screen.getByText("How many neutrons are in aluminium-27?").closest("li")!;
+        expect(atomCase).toHaveTextContent("Answer 14");
+        expect(atomCase).toHaveTextContent("Separate reference solution");
+        expect(atomCase).toHaveTextContent("Independent blinded answer check");
+        expect(within(atomCase).getAllByRole("listitem").map((choice) => choice.textContent))
+            .toEqual(["13", "14", "15", "40"]);
+        const ionCase = screen.getByText("How many electrons are in a chloride ion?").closest("li");
+        expect(ionCase).toHaveTextContent("Answer 18");
+        expect(ionCase).toHaveTextContent("Catalogue key only");
+        expect(screen.getByRole("button", { name: "Approve question" })).toBeEnabled();
+        expect(screen.getByText(/separate solution checks cover only a subset/i)).toBeInTheDocument();
+    });
+
+    it("explains an unsupported format without presenting it as a system error", () => {
+        renderPanel({
+            ...needsReviewReview,
+            error: {
+                code: "UNSUPPORTED_REQUEST",
+                message: "Equipment handling requires direct observation.",
+            },
+        });
+        const notice = screen.getByText("Unsupported question format").closest("[role=alert]");
+        expect(notice).toHaveTextContent("Equipment handling requires direct observation.");
+        expect(screen.queryByText("Create a new question if this persists.")).not.toBeInTheDocument();
     });
 
     it("keeps raw identifiers inside a closed technical disclosure", async () => {

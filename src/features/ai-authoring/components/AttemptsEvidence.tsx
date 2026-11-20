@@ -1,6 +1,14 @@
 import { EvidenceDetails } from "./EvidenceDetails";
+import { ChemistryTemplateDetails } from "./ChemistryTemplateDetails";
 import { MathTemplateDetails } from "./MathTemplateDetails";
-import { isIrMathTemplateCandidate, sameCandidate } from "./questionPayload";
+import { PhysicsTemplateDetails } from "./PhysicsTemplateDetails";
+import { showsDomainView } from "../domains";
+import {
+    isChemistryTemplateCandidate,
+    isIrMathTemplateCandidate,
+    isPhysicsTemplateCandidate,
+    sameCandidate,
+} from "./questionPayload";
 import { ChecksDetails } from "./TechnicalDetailsSections";
 import { checkName } from "../checkMetadata";
 import type { ReviewAttempt } from "../types";
@@ -9,6 +17,8 @@ interface AttemptsEvidenceProps {
     attempts: ReviewAttempt[];
     /** The checked template, when there is one, used to avoid repeating it. */
     checkedCandidate?: unknown;
+    /** Authoring domain from the review request, when known. */
+    domain?: string | null;
 }
 
 function checkSummary(attempt: ReviewAttempt): string {
@@ -23,7 +33,11 @@ function checkSummary(attempt: ReviewAttempt): string {
  * time. Within an attempt, the candidate keeps its own disclosure so large code
  * templates, parameter tables and distractor tables stay scannable.
  */
-export function AttemptsEvidence({ attempts, checkedCandidate = null }: AttemptsEvidenceProps) {
+export function AttemptsEvidence({
+    attempts,
+    checkedCandidate = null,
+    domain = null,
+}: AttemptsEvidenceProps) {
     if (attempts.length === 0) return null;
     const latestNumber = attempts.reduce(
         (latest, attempt) => Math.max(latest, attempt.number),
@@ -76,6 +90,23 @@ export function AttemptsEvidence({ attempts, checkedCandidate = null }: Attempts
                                             readable={
                                                 isIrMathTemplateCandidate(attempt.candidate) ? (
                                                     <MathTemplateDetails
+                                                        candidate={attempt.candidate}
+                                                    />
+                                                ) : isChemistryTemplateCandidate(
+                                                      attempt.candidate,
+                                                  ) ? (
+                                                    <ChemistryTemplateDetails
+                                                        candidate={attempt.candidate}
+                                                        checks={attempt.checks}
+                                                    />
+                                                ) : showsDomainView(
+                                                      domain ?? "",
+                                                      "physics",
+                                                  ) &&
+                                                  isPhysicsTemplateCandidate(
+                                                      attempt.candidate,
+                                                  ) ? (
+                                                    <PhysicsTemplateDetails
                                                         candidate={attempt.candidate}
                                                     />
                                                 ) : undefined

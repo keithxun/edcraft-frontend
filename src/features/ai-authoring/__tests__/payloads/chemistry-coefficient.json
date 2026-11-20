@@ -1,0 +1,354 @@
+{
+ "candidate": {
+  "item": {
+   "schema_version": "chem-balance/0.1",
+   "family": "hydrate_dehydration",
+   "parameters": [
+    {
+     "name": "reaction",
+     "values": [
+      "hydrate.copper_sulfate",
+      "hydrate.magnesium_sulfate"
+     ]
+    },
+    {
+     "name": "species",
+     "values": [
+      "product:2"
+     ]
+    }
+   ],
+   "target": {
+    "kind": "coefficient"
+   },
+   "answer_recipe": {
+    "kind": "normalised_coefficients"
+   },
+   "distractors": [
+    {
+     "reason": null,
+     "kind": "perturb_coefficient",
+     "slot": "asked",
+     "delta": 1,
+     "misconception": "unbalanced_element"
+    },
+    {
+     "reason": null,
+     "kind": "scale_balanced",
+     "factor": 2,
+     "misconception": "non_reduced_coefficients"
+    }
+   ]
+  },
+  "template_id": "chemistry.medium.coefficient",
+  "difficulty": "medium",
+  "question_type": "mcq",
+  "catalogue": {
+   "catalogue_version": "chem-catalogue-2026.11-pilot.2",
+   "catalogue_sha256": "0eac49458b6485005f95dff6e1e34fa51066e75a9a99561cbcc94225a23ba5f4",
+   "family": {
+    "id": "hydrate_dehydration",
+    "title": "Dehydration of hydrated salts",
+    "description": "A hydrated salt loses its water of crystallisation on heating."
+   },
+   "reactions": [
+    {
+     "id": "hydrate.copper_sulfate",
+     "family": "hydrate_dehydration",
+     "name": "copper(II) sulfate dehydration",
+     "reactants": [
+      "CuSO4·5H2O"
+     ],
+     "products": [
+      "CuSO4",
+      "H2O"
+     ],
+     "source": "Standard school-chemistry reaction; citation pending owner review",
+     "variants": {}
+    },
+    {
+     "id": "hydrate.magnesium_sulfate",
+     "family": "hydrate_dehydration",
+     "name": "magnesium sulfate dehydration",
+     "reactants": [
+      "MgSO4·7H2O"
+     ],
+     "products": [
+      "MgSO4",
+      "H2O"
+     ],
+     "source": "Standard school-chemistry reaction; citation pending owner review",
+     "variants": {}
+    }
+   ]
+  }
+ },
+ "checks": [
+  {
+   "tool": "chemistry_verify_balance",
+   "version": "0.1.0",
+   "status": "passed",
+   "findings": [],
+   "details": {
+    "rows": [
+     {
+      "reaction_id": "hydrate.copper_sulfate",
+      "elements": [
+       "Cu",
+       "H",
+       "O",
+       "S"
+      ],
+      "matrix": [
+       [
+        1,
+        -1,
+        0
+       ],
+       [
+        10,
+        0,
+        -2
+       ],
+       [
+        9,
+        -4,
+        -1
+       ],
+       [
+        1,
+        -1,
+        0
+       ]
+      ],
+      "nullity": 1,
+      "coefficients": [
+       1,
+       1,
+       5
+      ],
+      "equation": "CuSO4·5H2O → CuSO4 + 5 H2O"
+     },
+     {
+      "reaction_id": "hydrate.magnesium_sulfate",
+      "elements": [
+       "H",
+       "Mg",
+       "O",
+       "S"
+      ],
+      "matrix": [
+       [
+        14,
+        0,
+        -2
+       ],
+       [
+        1,
+        -1,
+        0
+       ],
+       [
+        11,
+        -4,
+        -1
+       ],
+       [
+        1,
+        -1,
+        0
+       ]
+      ],
+      "nullity": 1,
+      "coefficients": [
+       1,
+       1,
+       7
+      ],
+      "equation": "MgSO4·7H2O → MgSO4 + 7 H2O"
+     }
+    ],
+    "rows_truncated": false,
+    "checking_mode": "property_based",
+    "examples_checked": 2,
+    "execution_calls": 2,
+    "max_examples": 32,
+    "max_execution_calls": 128,
+    "timeout_seconds": 30.0,
+    "seed": 0,
+    "whole_domain": true,
+    "declared_domain_size": 2,
+    "catalogue_version": "chem-catalogue-2026.11-pilot.2",
+    "catalogue_sha256": "0eac49458b6485005f95dff6e1e34fa51066e75a9a99561cbcc94225a23ba5f4"
+   },
+   "duration_ms": 0.0
+  },
+  {
+   "tool": "chemistry_verify_options",
+   "version": "0.1.0",
+   "status": "passed",
+   "findings": [],
+   "details": {
+    "rows": [
+     {
+      "reaction_id": "hydrate.copper_sulfate",
+      "asked_slot": "product:2",
+      "option": 0,
+      "recipe": {
+       "kind": "normalised_coefficients"
+      },
+      "misconception": null,
+      "rendered": "5",
+      "verdict": "key",
+      "reason": {}
+     },
+     {
+      "reaction_id": "hydrate.copper_sulfate",
+      "asked_slot": "product:2",
+      "option": 1,
+      "recipe": {
+       "reason": null,
+       "kind": "perturb_coefficient",
+       "slot": "asked",
+       "delta": 1,
+       "misconception": "unbalanced_element"
+      },
+      "misconception": "unbalanced_element",
+      "rendered": "6",
+      "verdict": "wrong",
+      "reason": {
+       "code": "COEFFICIENT_DIFFERS",
+       "expected": 5,
+       "actual": 6
+      }
+     },
+     {
+      "reaction_id": "hydrate.copper_sulfate",
+      "asked_slot": "product:2",
+      "option": 2,
+      "recipe": {
+       "reason": null,
+       "kind": "scale_balanced",
+       "factor": 2,
+       "misconception": "non_reduced_coefficients"
+      },
+      "misconception": "non_reduced_coefficients",
+      "rendered": "10",
+      "verdict": "wrong",
+      "reason": {
+       "code": "COEFFICIENT_DIFFERS",
+       "expected": 5,
+       "actual": 10
+      }
+     },
+     {
+      "reaction_id": "hydrate.magnesium_sulfate",
+      "asked_slot": "product:2",
+      "option": 0,
+      "recipe": {
+       "kind": "normalised_coefficients"
+      },
+      "misconception": null,
+      "rendered": "7",
+      "verdict": "key",
+      "reason": {}
+     },
+     {
+      "reaction_id": "hydrate.magnesium_sulfate",
+      "asked_slot": "product:2",
+      "option": 1,
+      "recipe": {
+       "reason": null,
+       "kind": "perturb_coefficient",
+       "slot": "asked",
+       "delta": 1,
+       "misconception": "unbalanced_element"
+      },
+      "misconception": "unbalanced_element",
+      "rendered": "8",
+      "verdict": "wrong",
+      "reason": {
+       "code": "COEFFICIENT_DIFFERS",
+       "expected": 7,
+       "actual": 8
+      }
+     },
+     {
+      "reaction_id": "hydrate.magnesium_sulfate",
+      "asked_slot": "product:2",
+      "option": 2,
+      "recipe": {
+       "reason": null,
+       "kind": "scale_balanced",
+       "factor": 2,
+       "misconception": "non_reduced_coefficients"
+      },
+      "misconception": "non_reduced_coefficients",
+      "rendered": "14",
+      "verdict": "wrong",
+      "reason": {
+       "code": "COEFFICIENT_DIFFERS",
+       "expected": 7,
+       "actual": 14
+      }
+     }
+    ],
+    "rows_truncated": false,
+    "checking_mode": "property_based",
+    "examples_checked": 2,
+    "execution_calls": 2,
+    "max_examples": 32,
+    "max_execution_calls": 128,
+    "timeout_seconds": 30.0,
+    "seed": 0,
+    "whole_domain": true,
+    "declared_domain_size": 2,
+    "catalogue_version": "chem-catalogue-2026.11-pilot.2",
+    "catalogue_sha256": "0eac49458b6485005f95dff6e1e34fa51066e75a9a99561cbcc94225a23ba5f4"
+   },
+   "duration_ms": 0.0
+  }
+ ],
+ "questions": [
+  {
+   "template_id": "chemistry.medium.coefficient",
+   "artifact_id": null,
+   "seed": 0,
+   "parameters": {
+    "reaction": "hydrate.copper_sulfate",
+    "species": "product:2"
+   },
+   "reaction_id": "hydrate.copper_sulfate",
+   "question": "A hydrated salt loses its water of crystallisation on heating. When the equation CuSO4·5H2O → CuSO4 + H2O is balanced using the smallest whole-number coefficients, what is the coefficient of H2O?",
+   "choices": [
+    "6",
+    "5",
+    "10"
+   ],
+   "correct_index": 1,
+   "answer": "5",
+   "requires_manual_review": true,
+   "choices_structured": null
+  },
+  {
+   "template_id": "chemistry.medium.coefficient",
+   "artifact_id": null,
+   "seed": 3,
+   "parameters": {
+    "reaction": "hydrate.copper_sulfate",
+    "species": "product:2"
+   },
+   "reaction_id": "hydrate.copper_sulfate",
+   "question": "A hydrated salt loses its water of crystallisation on heating. When the equation CuSO4·5H2O → CuSO4 + H2O is balanced using the smallest whole-number coefficients, what is the coefficient of H2O?",
+   "choices": [
+    "5",
+    "6",
+    "10"
+   ],
+   "correct_index": 0,
+   "answer": "5",
+   "requires_manual_review": true,
+   "choices_structured": null
+  }
+ ]
+}

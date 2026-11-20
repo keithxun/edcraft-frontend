@@ -90,7 +90,7 @@ export default function AiAuthoringPage() {
                 )}
             </div>
             <div hidden={!usingMaterials}>
-                <MaterialsAuthoring />
+                <MaterialsAuthoring domains={capabilitiesQuery.data?.enabled_domains} />
             </div>
         </PageShell>
     );

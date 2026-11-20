@@ -5,6 +5,7 @@
  * API for EdCraft Backend
  * OpenAPI spec version: 0.1.0
  */
+import type { ReviewCasePreview } from './reviewCasePreview';
 import type { ReviewTemplateCandidate } from './reviewTemplateCandidate';
 
 /**
@@ -13,5 +14,6 @@ import type { ReviewTemplateCandidate } from './reviewTemplateCandidate';
 export interface ReviewTemplate {
   template_id: string;
   candidate: ReviewTemplateCandidate;
+  case_previews?: ReviewCasePreview[] | null;
   language?: string | null;
 }

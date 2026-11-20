@@ -7,10 +7,17 @@ import type {
     AuthoringPreview,
     AuthoringQuestionPayload,
     AuthoringReview,
+    BiologyQuestionInstance,
+    BiologyTemplateCandidate,
+    ChemistryBalanceRow,
+    ChemistryOptionRow,
+    ChemistryQuestionInstance,
+    ChemistryTemplateCandidate,
     CodeQuestionInstance,
     CodeTemplateCandidate,
     IrMathTemplateCandidate,
     MathQuestionInstance,
+    PhysicsTemplateCandidate,
 } from "../types";
 
 const digest = "a".repeat(64);
@@ -615,4 +622,928 @@ export const mathBatch: AuthoringBatch = {
     domain: "math",
     artifact_id: "artifact-math",
     questions: [mathQuestionInstance, { ...mathQuestionInstance, seed: 5 }],
+};
+
+/** A biology question is a flat envelope distinguished by its cross. */
+export const biologyQuestionInstance: BiologyQuestionInstance = {
+    template_id: "biology.hard.0123456789ab",
+    artifact_id: "artifact-biology",
+    seed: 7,
+    parameters: { parent1: "Pp", parent2: "Pp", target: "Pp", n: "90" },
+    question:
+        "In a hypothetical flowering plant called the glimmerwort, purple petal colour is completely dominant over white. A Pp plant is crossed with a Pp plant. Of 90 offspring with purple petals, how many are expected to have genotype Pp?",
+    choices: ["45", "60", "30", "90"],
+    correct_index: 1,
+    answer: "60",
+    topic: "genetics.monohybrid.conditional_count",
+    requires_manual_review: true,
+    cross: { parent1: "Pp", parent2: "Pp" },
+    gametes: { parent1: ["P", "p"], parent2: ["P", "p"] },
+    punnett: [
+        ["PP", "Pp"],
+        ["Pp", "pp"],
+    ],
+    genotype_distribution: { PP: "1/4", Pp: "1/2", pp: "1/4" },
+    phenotype_distribution: { purple: "3/4", white: "1/4" },
+};
+
+export const biologyPreview: AuthoringPreview = {
+    ...preview,
+    domain: "biology",
+    artifact_id: "artifact-biology",
+    seed: 7,
+    question: biologyQuestionInstance,
+};
+
+export const biologyTemplateCandidate: BiologyTemplateCandidate = {
+    template_id: "biology.hard.0123456789ab",
+    difficulty: "hard",
+    question_type: "mcq",
+    item: {
+        schema_version: "bio-mono/0.1",
+        topic: "genetics.monohybrid.conditional_count",
+        organism: "a hypothetical flowering plant called the glimmerwort",
+        trait: "petal colour",
+        gene: {
+            symbol: "P",
+            dominant_phenotype: "purple",
+            recessive_phenotype: "white",
+        },
+        assumptions: {
+            inheritance: "autosomal",
+            dominance: "complete",
+            segregation: "mendelian",
+            allele_count: 2,
+        },
+        parameters: [
+            { name: "parent1", kind: "genotype", values: ["Pp"] },
+            { name: "parent2", kind: "genotype", values: ["Pp"] },
+            { name: "target", kind: "genotype", values: ["Pp"] },
+            { name: "n", kind: "count", values: ["30", "60", "90", "120"] },
+        ],
+        cross: { parent1: "parent1", parent2: "parent2" },
+        question: {
+            quantity: "expected_count",
+            target: { kind: "genotype", param: "target" },
+            given: { phenotype: "dominant" },
+            offspring_count: "n",
+            ratio_kind: null,
+        },
+        text: {
+            template:
+                "In {organism}, {dominant_phenotype} {trait} is completely dominant over {recessive_phenotype}. A {parent1} plant is crossed with a {parent2} plant. Of {n} offspring with {given_phenotype} petals, how many are expected to have genotype {target}?",
+        },
+        answer_recipe: {
+            rule: "exact",
+            claimed_examples: [
+                {
+                    parameters: {
+                        parent1: "Pp",
+                        parent2: "Pp",
+                        target: "Pp",
+                        n: "90",
+                    },
+                    answer: "60",
+                },
+            ],
+        },
+        distractors: [
+            {
+                rule: "unconditioned",
+                misconception:
+                    "unconditioned instead of conditioned probability",
+                reason: "uses 1/2 of all offspring",
+                value: null,
+            },
+            {
+                rule: "complement",
+                misconception: "counts homozygous dominant instead",
+                reason: "1/3 of N",
+                value: null,
+            },
+            {
+                rule: "fixed_value",
+                misconception: "every offspring",
+                reason: "",
+                value: "90",
+            },
+        ],
+    },
+};
+
+export const biologyReview: AuthoringReview = {
+    ...approvedReview,
+    domain: "biology",
+    artifact_id: "artifact-biology",
+    request: {
+        ...approvedReview.request,
+        domain: "biology",
+        prompt:
+            "Write a genetics question about a cross of two heterozygous parents.",
+    },
+    template: {
+        template_id: "biology.hard.0123456789ab",
+        candidate: biologyTemplateCandidate,
+    },
+    candidate: null,
+};
+
+export const biologyBatch: AuthoringBatch = {
+    ...batch,
+    domain: "biology",
+    artifact_id: "artifact-biology",
+    questions: [biologyQuestionInstance, { ...biologyQuestionInstance, seed: 8 }],
+};
+
+/**
+ * The genuine chemistry payloads. The values are copied exactly from
+ * `__tests__/payloads/chemistry-equation.json` and
+ * `__tests__/payloads/chemistry-coefficient.json`, which remain the source of
+ * truth. JSON imports are not enabled for tsconfig.app.json, so the values are
+ * typed here instead of imported.
+ */
+
+/** The check evidence shape ChemistryTemplateDetails reads: tool plus rows. */
+export interface ChemistryEvidenceCheck {
+    tool: string;
+    details: { rows: Array<ChemistryBalanceRow | ChemistryOptionRow> };
+}
+
+export const chemistryEquationBalanceRows: ChemistryBalanceRow[] = [
+    {
+        reaction_id: "comb.methane",
+        elements: ["C", "H", "O"],
+        matrix: [
+            [1, 0, -1, 0],
+            [4, 0, 0, -2],
+            [0, 2, -2, -1],
+        ],
+        nullity: 1,
+        coefficients: [1, 2, 1, 2],
+        equation: "CH4 + 2 O2 → CO2 + 2 H2O",
+    },
+    {
+        reaction_id: "comb.propane",
+        elements: ["C", "H", "O"],
+        matrix: [
+            [3, 0, -1, 0],
+            [8, 0, 0, -2],
+            [0, 2, -2, -1],
+        ],
+        nullity: 1,
+        coefficients: [1, 5, 3, 4],
+        equation: "C3H8 + 5 O2 → 3 CO2 + 4 H2O",
+    },
+];
+
+export const chemistryEquationOptionRows: ChemistryOptionRow[] = [
+    {
+        reaction_id: "comb.methane",
+        asked_slot: null,
+        option: 0,
+        recipe: { kind: "normalised_coefficients" },
+        misconception: null,
+        rendered: "CH4 + 2 O2 → CO2 + 2 H2O",
+        verdict: "key",
+        reason: {},
+    },
+    {
+        reaction_id: "comb.methane",
+        asked_slot: null,
+        option: 1,
+        recipe: {
+            reason: null,
+            kind: "perturb_coefficient",
+            slot: "product:2",
+            delta: 1,
+            misconception: "unbalanced_element",
+        },
+        misconception: "unbalanced_element",
+        rendered: "CH4 + 2 O2 → CO2 + 3 H2O",
+        verdict: "wrong",
+        reason: {
+            code: "ELEMENT_UNBALANCED",
+            element: "H",
+            left: 4,
+            right: 6,
+        },
+    },
+    {
+        reaction_id: "comb.methane",
+        asked_slot: null,
+        option: 2,
+        recipe: {
+            reason: null,
+            kind: "scale_balanced",
+            factor: 2,
+            misconception: "non_reduced_coefficients",
+        },
+        misconception: "non_reduced_coefficients",
+        rendered: "2 CH4 + 4 O2 → 2 CO2 + 4 H2O",
+        verdict: "wrong",
+        reason: {
+            code: "NOT_REDUCED",
+            divisor: 2,
+        },
+    },
+    {
+        reaction_id: "comb.methane",
+        asked_slot: null,
+        option: 3,
+        recipe: {
+            reason: null,
+            kind: "swap_species",
+            variant: "O2_as_O",
+            misconception: "wrong_species",
+        },
+        misconception: "wrong_species",
+        rendered: "CH4 + 4 O → CO2 + 2 H2O",
+        verdict: "wrong",
+        reason: {
+            code: "SPECIES_CHANGED",
+            slot: "reactant:2",
+            expected: "O2",
+            actual: "O",
+        },
+    },
+    {
+        reaction_id: "comb.propane",
+        asked_slot: null,
+        option: 0,
+        recipe: { kind: "normalised_coefficients" },
+        misconception: null,
+        rendered: "C3H8 + 5 O2 → 3 CO2 + 4 H2O",
+        verdict: "key",
+        reason: {},
+    },
+    {
+        reaction_id: "comb.propane",
+        asked_slot: null,
+        option: 1,
+        recipe: {
+            reason: null,
+            kind: "perturb_coefficient",
+            slot: "product:2",
+            delta: 1,
+            misconception: "unbalanced_element",
+        },
+        misconception: "unbalanced_element",
+        rendered: "C3H8 + 5 O2 → 3 CO2 + 5 H2O",
+        verdict: "wrong",
+        reason: {
+            code: "ELEMENT_UNBALANCED",
+            element: "H",
+            left: 8,
+            right: 10,
+        },
+    },
+    {
+        reaction_id: "comb.propane",
+        asked_slot: null,
+        option: 2,
+        recipe: {
+            reason: null,
+            kind: "scale_balanced",
+            factor: 2,
+            misconception: "non_reduced_coefficients",
+        },
+        misconception: "non_reduced_coefficients",
+        rendered: "2 C3H8 + 10 O2 → 6 CO2 + 8 H2O",
+        verdict: "wrong",
+        reason: {
+            code: "NOT_REDUCED",
+            divisor: 2,
+        },
+    },
+    {
+        reaction_id: "comb.propane",
+        asked_slot: null,
+        option: 3,
+        recipe: {
+            reason: null,
+            kind: "swap_species",
+            variant: "O2_as_O",
+            misconception: "wrong_species",
+        },
+        misconception: "wrong_species",
+        rendered: "C3H8 + 10 O → 3 CO2 + 4 H2O",
+        verdict: "wrong",
+        reason: {
+            code: "SPECIES_CHANGED",
+            slot: "reactant:2",
+            expected: "O2",
+            actual: "O",
+        },
+    },
+];
+
+export const chemistryCoefficientBalanceRows: ChemistryBalanceRow[] = [
+    {
+        reaction_id: "hydrate.copper_sulfate",
+        elements: ["Cu", "H", "O", "S"],
+        matrix: [
+            [1, -1, 0],
+            [10, 0, -2],
+            [9, -4, -1],
+            [1, -1, 0],
+        ],
+        nullity: 1,
+        coefficients: [1, 1, 5],
+        equation: "CuSO4·5H2O → CuSO4 + 5 H2O",
+    },
+    {
+        reaction_id: "hydrate.magnesium_sulfate",
+        elements: ["H", "Mg", "O", "S"],
+        matrix: [
+            [14, 0, -2],
+            [1, -1, 0],
+            [11, -4, -1],
+            [1, -1, 0],
+        ],
+        nullity: 1,
+        coefficients: [1, 1, 7],
+        equation: "MgSO4·7H2O → MgSO4 + 7 H2O",
+    },
+];
+
+export const chemistryCoefficientOptionRows: ChemistryOptionRow[] = [
+    {
+        reaction_id: "hydrate.copper_sulfate",
+        asked_slot: "product:2",
+        option: 0,
+        recipe: { kind: "normalised_coefficients" },
+        misconception: null,
+        rendered: "5",
+        verdict: "key",
+        reason: {},
+    },
+    {
+        reaction_id: "hydrate.copper_sulfate",
+        asked_slot: "product:2",
+        option: 1,
+        recipe: {
+            reason: null,
+            kind: "perturb_coefficient",
+            slot: "asked",
+            delta: 1,
+            misconception: "unbalanced_element",
+        },
+        misconception: "unbalanced_element",
+        rendered: "6",
+        verdict: "wrong",
+        reason: {
+            code: "COEFFICIENT_DIFFERS",
+            expected: 5,
+            actual: 6,
+        },
+    },
+    {
+        reaction_id: "hydrate.copper_sulfate",
+        asked_slot: "product:2",
+        option: 2,
+        recipe: {
+            reason: null,
+            kind: "scale_balanced",
+            factor: 2,
+            misconception: "non_reduced_coefficients",
+        },
+        misconception: "non_reduced_coefficients",
+        rendered: "10",
+        verdict: "wrong",
+        reason: {
+            code: "COEFFICIENT_DIFFERS",
+            expected: 5,
+            actual: 10,
+        },
+    },
+    {
+        reaction_id: "hydrate.magnesium_sulfate",
+        asked_slot: "product:2",
+        option: 0,
+        recipe: { kind: "normalised_coefficients" },
+        misconception: null,
+        rendered: "7",
+        verdict: "key",
+        reason: {},
+    },
+    {
+        reaction_id: "hydrate.magnesium_sulfate",
+        asked_slot: "product:2",
+        option: 1,
+        recipe: {
+            reason: null,
+            kind: "perturb_coefficient",
+            slot: "asked",
+            delta: 1,
+            misconception: "unbalanced_element",
+        },
+        misconception: "unbalanced_element",
+        rendered: "8",
+        verdict: "wrong",
+        reason: {
+            code: "COEFFICIENT_DIFFERS",
+            expected: 7,
+            actual: 8,
+        },
+    },
+    {
+        reaction_id: "hydrate.magnesium_sulfate",
+        asked_slot: "product:2",
+        option: 2,
+        recipe: {
+            reason: null,
+            kind: "scale_balanced",
+            factor: 2,
+            misconception: "non_reduced_coefficients",
+        },
+        misconception: "non_reduced_coefficients",
+        rendered: "14",
+        verdict: "wrong",
+        reason: {
+            code: "COEFFICIENT_DIFFERS",
+            expected: 7,
+            actual: 14,
+        },
+    },
+];
+
+export const chemistryEquationChecks: ChemistryEvidenceCheck[] = [
+    {
+        tool: "chemistry_verify_balance",
+        details: { rows: chemistryEquationBalanceRows },
+    },
+    {
+        tool: "chemistry_verify_options",
+        details: { rows: chemistryEquationOptionRows },
+    },
+];
+
+export const chemistryCoefficientChecks: ChemistryEvidenceCheck[] = [
+    {
+        tool: "chemistry_verify_balance",
+        details: { rows: chemistryCoefficientBalanceRows },
+    },
+    {
+        tool: "chemistry_verify_options",
+        details: { rows: chemistryCoefficientOptionRows },
+    },
+];
+
+/** The two genuine equation questions; the first is the common fixture. */
+export const chemistryEquationQuestionInstances: ChemistryQuestionInstance[] = [
+    {
+        template_id: "chemistry.medium.equation",
+        artifact_id: null,
+        seed: 0,
+        parameters: {
+            reaction: "comb.methane",
+        },
+        reaction_id: "comb.methane",
+        question:
+            "An alkane burns completely in oxygen to give carbon dioxide and water. Balance the equation CH4 + O2 → CO2 + H2O. Use the smallest whole-number coefficients.",
+        choices: [
+            "CH4 + 2 O2 → CO2 + 3 H2O",
+            "2 CH4 + 4 O2 → 2 CO2 + 4 H2O",
+            "CH4 + 2 O2 → CO2 + 2 H2O",
+            "CH4 + 4 O → CO2 + 2 H2O",
+        ],
+        correct_index: 2,
+        answer: "CH4 + 2 O2 → CO2 + 2 H2O",
+        requires_manual_review: true,
+        choices_structured: [
+            {
+                reactants: [
+                    { coefficient: 1, formula: "CH4" },
+                    { coefficient: 2, formula: "O2" },
+                ],
+                products: [
+                    { coefficient: 1, formula: "CO2" },
+                    { coefficient: 3, formula: "H2O" },
+                ],
+            },
+            {
+                reactants: [
+                    { coefficient: 2, formula: "CH4" },
+                    { coefficient: 4, formula: "O2" },
+                ],
+                products: [
+                    { coefficient: 2, formula: "CO2" },
+                    { coefficient: 4, formula: "H2O" },
+                ],
+            },
+            {
+                reactants: [
+                    { coefficient: 1, formula: "CH4" },
+                    { coefficient: 2, formula: "O2" },
+                ],
+                products: [
+                    { coefficient: 1, formula: "CO2" },
+                    { coefficient: 2, formula: "H2O" },
+                ],
+            },
+            {
+                reactants: [
+                    { coefficient: 1, formula: "CH4" },
+                    { coefficient: 4, formula: "O" },
+                ],
+                products: [
+                    { coefficient: 1, formula: "CO2" },
+                    { coefficient: 2, formula: "H2O" },
+                ],
+            },
+        ],
+    },
+    {
+        template_id: "chemistry.medium.equation",
+        artifact_id: null,
+        seed: 3,
+        parameters: {
+            reaction: "comb.propane",
+        },
+        reaction_id: "comb.propane",
+        question:
+            "An alkane burns completely in oxygen to give carbon dioxide and water. Balance the equation C3H8 + O2 → CO2 + H2O. Use the smallest whole-number coefficients.",
+        choices: [
+            "C3H8 + 5 O2 → 3 CO2 + 5 H2O",
+            "2 C3H8 + 10 O2 → 6 CO2 + 8 H2O",
+            "C3H8 + 10 O → 3 CO2 + 4 H2O",
+            "C3H8 + 5 O2 → 3 CO2 + 4 H2O",
+        ],
+        correct_index: 3,
+        answer: "C3H8 + 5 O2 → 3 CO2 + 4 H2O",
+        requires_manual_review: true,
+        choices_structured: [
+            {
+                reactants: [
+                    { coefficient: 1, formula: "C3H8" },
+                    { coefficient: 5, formula: "O2" },
+                ],
+                products: [
+                    { coefficient: 3, formula: "CO2" },
+                    { coefficient: 5, formula: "H2O" },
+                ],
+            },
+            {
+                reactants: [
+                    { coefficient: 2, formula: "C3H8" },
+                    { coefficient: 10, formula: "O2" },
+                ],
+                products: [
+                    { coefficient: 6, formula: "CO2" },
+                    { coefficient: 8, formula: "H2O" },
+                ],
+            },
+            {
+                reactants: [
+                    { coefficient: 1, formula: "C3H8" },
+                    { coefficient: 10, formula: "O" },
+                ],
+                products: [
+                    { coefficient: 3, formula: "CO2" },
+                    { coefficient: 4, formula: "H2O" },
+                ],
+            },
+            {
+                reactants: [
+                    { coefficient: 1, formula: "C3H8" },
+                    { coefficient: 5, formula: "O2" },
+                ],
+                products: [
+                    { coefficient: 3, formula: "CO2" },
+                    { coefficient: 4, formula: "H2O" },
+                ],
+            },
+        ],
+    },
+];
+
+/** The two genuine coefficient questions; the first is the common fixture. */
+export const chemistryCoefficientQuestionInstances: ChemistryQuestionInstance[] = [
+    {
+        template_id: "chemistry.medium.coefficient",
+        artifact_id: null,
+        seed: 0,
+        parameters: {
+            reaction: "hydrate.copper_sulfate",
+            species: "product:2",
+        },
+        reaction_id: "hydrate.copper_sulfate",
+        question:
+            "A hydrated salt loses its water of crystallisation on heating. When the equation CuSO4·5H2O → CuSO4 + H2O is balanced using the smallest whole-number coefficients, what is the coefficient of H2O?",
+        choices: ["6", "5", "10"],
+        correct_index: 1,
+        answer: "5",
+        requires_manual_review: true,
+        choices_structured: null,
+    },
+    {
+        template_id: "chemistry.medium.coefficient",
+        artifact_id: null,
+        seed: 3,
+        parameters: {
+            reaction: "hydrate.copper_sulfate",
+            species: "product:2",
+        },
+        reaction_id: "hydrate.copper_sulfate",
+        question:
+            "A hydrated salt loses its water of crystallisation on heating. When the equation CuSO4·5H2O → CuSO4 + H2O is balanced using the smallest whole-number coefficients, what is the coefficient of H2O?",
+        choices: ["5", "6", "10"],
+        correct_index: 0,
+        answer: "5",
+        requires_manual_review: true,
+        choices_structured: null,
+    },
+];
+
+export const chemistryQuestionInstance = chemistryEquationQuestionInstances[0];
+
+export const chemistryCoefficientQuestionInstance =
+    chemistryCoefficientQuestionInstances[0];
+
+export const chemistryPreview: AuthoringPreview = {
+    ...preview,
+    domain: "chemistry",
+    artifact_id: "artifact-chem",
+    question: chemistryQuestionInstance,
+};
+
+export const chemistryTemplateCandidate: ChemistryTemplateCandidate = {
+    item: {
+        schema_version: "chem-balance/0.1",
+        family: "alkane_combustion",
+        parameters: [
+            {
+                name: "reaction",
+                values: ["comb.methane", "comb.propane"],
+            },
+        ],
+        target: {
+            kind: "balanced_equation",
+        },
+        answer_recipe: {
+            kind: "normalised_coefficients",
+        },
+        distractors: [
+            {
+                reason: null,
+                kind: "perturb_coefficient",
+                slot: "product:2",
+                delta: 1,
+                misconception: "unbalanced_element",
+            },
+            {
+                reason: null,
+                kind: "scale_balanced",
+                factor: 2,
+                misconception: "non_reduced_coefficients",
+            },
+            {
+                reason: null,
+                kind: "swap_species",
+                variant: "O2_as_O",
+                misconception: "wrong_species",
+            },
+        ],
+    },
+    template_id: "chemistry.medium.equation",
+    difficulty: "medium",
+    question_type: "mcq",
+    catalogue: {
+        catalogue_version: "chem-catalogue-2026.11-pilot.2",
+        catalogue_sha256:
+            "0eac49458b6485005f95dff6e1e34fa51066e75a9a99561cbcc94225a23ba5f4",
+        family: {
+            id: "alkane_combustion",
+            title: "Complete combustion of alkanes",
+            description:
+                "An alkane burns completely in oxygen to give carbon dioxide and water.",
+        },
+        reactions: [
+            {
+                id: "comb.methane",
+                family: "alkane_combustion",
+                name: "methane combustion",
+                reactants: ["CH4", "O2"],
+                products: ["CO2", "H2O"],
+                source: "Standard school-chemistry reaction; citation pending owner review",
+                variants: {
+                    O2_as_O: {
+                        slot: "reactant:2",
+                        formula: "O",
+                    },
+                },
+            },
+            {
+                id: "comb.propane",
+                family: "alkane_combustion",
+                name: "propane combustion",
+                reactants: ["C3H8", "O2"],
+                products: ["CO2", "H2O"],
+                source: "Standard school-chemistry reaction; citation pending owner review",
+                variants: {
+                    O2_as_O: {
+                        slot: "reactant:2",
+                        formula: "O",
+                    },
+                },
+            },
+        ],
+    },
+};
+
+export const chemistryCoefficientTemplateCandidate: ChemistryTemplateCandidate = {
+    item: {
+        schema_version: "chem-balance/0.1",
+        family: "hydrate_dehydration",
+        parameters: [
+            {
+                name: "reaction",
+                values: ["hydrate.copper_sulfate", "hydrate.magnesium_sulfate"],
+            },
+            {
+                name: "species",
+                values: ["product:2"],
+            },
+        ],
+        target: {
+            kind: "coefficient",
+        },
+        answer_recipe: {
+            kind: "normalised_coefficients",
+        },
+        distractors: [
+            {
+                reason: null,
+                kind: "perturb_coefficient",
+                slot: "asked",
+                delta: 1,
+                misconception: "unbalanced_element",
+            },
+            {
+                reason: null,
+                kind: "scale_balanced",
+                factor: 2,
+                misconception: "non_reduced_coefficients",
+            },
+        ],
+    },
+    template_id: "chemistry.medium.coefficient",
+    difficulty: "medium",
+    question_type: "mcq",
+    catalogue: {
+        catalogue_version: "chem-catalogue-2026.11-pilot.2",
+        catalogue_sha256:
+            "0eac49458b6485005f95dff6e1e34fa51066e75a9a99561cbcc94225a23ba5f4",
+        family: {
+            id: "hydrate_dehydration",
+            title: "Dehydration of hydrated salts",
+            description:
+                "A hydrated salt loses its water of crystallisation on heating.",
+        },
+        reactions: [
+            {
+                id: "hydrate.copper_sulfate",
+                family: "hydrate_dehydration",
+                name: "copper(II) sulfate dehydration",
+                reactants: ["CuSO4·5H2O"],
+                products: ["CuSO4", "H2O"],
+                source: "Standard school-chemistry reaction; citation pending owner review",
+                variants: {},
+            },
+            {
+                id: "hydrate.magnesium_sulfate",
+                family: "hydrate_dehydration",
+                name: "magnesium sulfate dehydration",
+                reactants: ["MgSO4·7H2O"],
+                products: ["MgSO4", "H2O"],
+                source: "Standard school-chemistry reaction; citation pending owner review",
+                variants: {},
+            },
+        ],
+    },
+};
+
+const chemistryBalanceCheck: AuthoringCheck = {
+    tool: "chemistry_verify_balance",
+    status: "passed",
+    advisory: false,
+    findings: [],
+    error: null,
+};
+
+const chemistryOptionsCheck: AuthoringCheck = {
+    tool: "chemistry_verify_options",
+    status: "passed",
+    advisory: false,
+    findings: [],
+    error: null,
+};
+
+export const chemistryReview: AuthoringReview = {
+    ...approvedReview,
+    domain: "chemistry",
+    artifact_id: "artifact-chem",
+    request: {
+        ...approvedReview.request,
+        domain: "chemistry",
+        prompt: "Balance combustion equations for simple alkanes.",
+    },
+    template: {
+        template_id: "chemistry.medium.equation",
+        candidate: chemistryTemplateCandidate,
+    },
+    checks: [chemistryBalanceCheck, chemistryOptionsCheck],
+    candidate: null,
+};
+
+export const physicsTemplateCandidate: PhysicsTemplateCandidate = {
+    template_id: "physics.medium.abc123",
+    difficulty: "medium",
+    question_type: "mcq",
+    item: {
+        schema_version: "physics-1d/0.1",
+        topic: "newton2.acceleration_from_forces",
+        axis: { orientation: "horizontal", positive: "right" },
+        parameters: [
+            { name: "m", quantity: "mass", unit: "kg", values: ["2", "4"] },
+            { name: "F1", quantity: "force", unit: "N", values: ["30", "50"] },
+            { name: "F2", quantity: "force", unit: "N", values: ["4", "10"] },
+        ],
+        body: {
+            target: "acceleration",
+            mass: "m",
+            net_force: null,
+            forces: [
+                { param: "F1", direction: "positive", label: "push" },
+                { param: "F2", direction: "negative", label: "friction" },
+            ],
+            acceleration: null,
+            unknown_force: null,
+            text: "A cart of mass {m} is pushed with a force of {F1}. A friction force of {F2} also acts on it.",
+            answer_form: "magnitude_and_direction",
+            display: { decimals: 2 },
+            answer_recipe: {
+                op: "div",
+                args: [
+                    {
+                        op: "sub",
+                        args: [{ param: "F1" }, { param: "F2" }],
+                    },
+                    { param: "m" },
+                ],
+            },
+            distractors: [
+                {
+                    recipe: {
+                        op: "div",
+                        args: [
+                            {
+                                op: "add",
+                                args: [{ param: "F1" }, { param: "F2" }],
+                            },
+                            { param: "m" },
+                        ],
+                    },
+                    misconception: "added_opposing_forces",
+                    explanation: "Adds the friction force instead of subtracting it.",
+                },
+                {
+                    recipe: {
+                        op: "div",
+                        args: [{ param: "F1" }, { param: "m" }],
+                    },
+                    misconception: "ignored_opposing_force",
+                    explanation: "Leaves out the friction force.",
+                },
+            ],
+        },
+    },
+};
+
+export const physicsReview: AuthoringReview = {
+    ...approvedReview,
+    domain: "physics",
+    artifact_id: "artifact-physics",
+    request: {
+        ...approvedReview.request,
+        domain: "physics",
+        prompt: "Write a question about acceleration from two opposing forces.",
+    },
+    template: {
+        template_id: "physics.medium.abc123",
+        candidate: physicsTemplateCandidate,
+    },
+    candidate: null,
+    validation_limits: {
+        validator_version: "mcp-physics-template-v1",
+        checking_mode: "property_based",
+        examples_checked: 8,
+        execution_calls: 16,
+        max_examples: 25,
+        max_execution_calls: 40,
+        timeout_seconds: 10,
+        seed: 11,
+        whole_domain: true,
+        declared_domain_size: 8,
+    },
 };

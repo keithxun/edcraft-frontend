@@ -19,6 +19,24 @@ const DOMAINS: Record<string, DomainInfo> = {
         promptPlaceholder:
             "Describe a maths skill, or start with H2 for a syllabus family, e.g. H2 hypothesis testing.",
     },
+    biology: {
+        label: "Biology",
+        badge: "H2 Biology · multiple choice",
+        promptPlaceholder:
+            "Describe the H2 Biology topic and skill, for example interpreting a dihybrid test cross.",
+    },
+    chemistry: {
+        label: "Chemistry",
+        badge: "Chemistry · multiple choice",
+        promptPlaceholder:
+            "Describe the balancing skill, for example balancing combustion equations for simple alkanes.",
+    },
+    physics: {
+        label: "Physics",
+        badge: "Physics · multiple choice",
+        promptPlaceholder:
+            "Describe the physics skill, for example finding average force from a change in momentum or comparing ideal gas states.",
+    },
 };
 
 const GENERIC_DOMAIN: DomainInfo = {

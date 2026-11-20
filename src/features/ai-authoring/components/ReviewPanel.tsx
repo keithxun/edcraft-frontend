@@ -14,6 +14,7 @@ import type {
     AuthoringReview,
 } from "../types";
 import { ApprovalControls } from "./ApprovalControls";
+import { CasePreviews } from "./CasePreviews";
 import { RequestSummary } from "./RequestSummary";
 import { RetryRequestLink } from "./RetryRequestLink";
 import { ChecksPanel, type ChecksAdvisory } from "./ChecksPanel";
@@ -146,10 +147,23 @@ function relevanceAdvisory(
 }
 
 export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPanelProps) {
+    if (review.error?.code === "UNSUPPORTED_REQUEST") {
+        return (
+            <div className="space-y-4">
+                <RequestSummary request={review.request} />
+                <Alert aria-label="Unsupported request">
+                    <AlertTitle>Unsupported question format</AlertTitle>
+                    <AlertDescription>{review.error.message}</AlertDescription>
+                </Alert>
+                <TechnicalDetails review={review} result={result} />
+            </div>
+        );
+    }
+
     const canApprove = getApprovalBlockers(review).length === 0;
     const difficulty = review.difficulty ?? result?.difficulty;
     const relevance = review.relevance ?? result?.relevance;
-    const { domain } = review.request;
+    const { domain } = review;
     const candidate: unknown = review.template?.candidate;
     const checkedH2Candidate =
         (domain === "math" || domain === "code") &&
@@ -162,13 +176,13 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
     const relevanceFeedback = relevanceAdvisory(relevance, Boolean(checkedH2Candidate));
     const draft = getReviewDraft(review);
     const draftTemplate = review.template ?? (draft ? draftTemplateFor(draft.candidate) : null);
+    const casePreviews = review.template?.case_previews;
     const showingDraft = !review.template && Boolean(draft);
     const checks = review.template ? (review.checks ?? []) : (draft?.checks ?? review.checks ?? []);
     const advisories: ChecksAdvisory[] = [difficultyFeedback, relevanceFeedback];
     const approved = isApproved(review);
-    const previewTitle = review.template?.case_previews?.some((item) => item.seed != null)
-        ? "Sampled question variants"
-        : "Questions eligible for approval";
+    const unsupported = review.error?.code === "UNSUPPORTED_REQUEST";
+    const hasPhysicsCases = domain === "physics" && Boolean(casePreviews?.length);
 
     return (
         <div className="space-y-6">
@@ -176,37 +190,17 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
                 <div className="space-y-4 @3xl/review:col-span-8">
                     <RequestSummary request={review.request} checkedH2Candidate={checkedH2Candidate} />
                     <WarningsPanel warnings={filterMismatchWarnings(review.warnings)} />
-                    {review.template?.case_previews?.length ? (
-                        <section aria-label={previewTitle} className="space-y-3 rounded-lg border p-4">
-                            <h3 className="font-medium">{previewTitle}</h3>
-                            <ol className="list-decimal space-y-3 pl-5">
-                                {review.template.case_previews.map((item) => (
-                                    <li key={item.case_id}>
-                                        <p className="whitespace-pre-wrap">{item.question}</p>
-                                        {item.choices?.length ? (
-                                            <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
-                                                {item.choices.map((choice) => (
-                                                    <li key={choice} className="whitespace-pre-wrap">
-                                                        {choice}{choice === item.answer && <strong> (correct answer)</strong>}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p className="mt-1 text-sm"><strong>Correct answer</strong> {item.answer}</p>
-                                        )}
-                                    </li>
-                                ))}
-                            </ol>
-                        </section>
-                    ) : null}
-                    <ReviewQuestionPreview
-                        jobId={jobId}
-                        domain={review.request.domain}
-                        artifactSha256={showingDraft ? null : review.artifact_sha256}
-                        draftTemplate={draftTemplate}
-                        showingDraft={showingDraft}
-                        onStaleArtifact={onStaleArtifact}
-                    />
+                    <CasePreviews cases={casePreviews} domain={domain} />
+                    {!hasPhysicsCases && (
+                        <ReviewQuestionPreview
+                            jobId={jobId}
+                            domain={domain}
+                            artifactSha256={showingDraft ? null : review.artifact_sha256}
+                            draftTemplate={draftTemplate}
+                            showingDraft={showingDraft}
+                            onStaleArtifact={onStaleArtifact}
+                        />
+                    )}
                 </div>
 
                 <aside className="space-y-4 @3xl/review:col-span-4">
@@ -226,9 +220,13 @@ export function ReviewPanel({ jobId, review, result, onStaleArtifact }: ReviewPa
                                     {review.error && (
                                         <Alert variant="destructive" className="mt-4">
                                             <AlertCircle className="h-4 w-4" />
-                                            <AlertTitle>Review problem</AlertTitle>
+                                            <AlertTitle>
+                                                {unsupported ? "Unsupported question format" : "Review problem"}
+                                            </AlertTitle>
                                             <AlertDescription>
-                                                Create a new question if this persists.
+                                                {unsupported
+                                                    ? review.error.message
+                                                    : "Create a new question if this persists."}
                                             </AlertDescription>
                                         </Alert>
                                     )}

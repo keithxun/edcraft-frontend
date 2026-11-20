@@ -15,6 +15,7 @@ export interface MaterialPracticeBatch {
    * @maximum 2147483647
    */
   seed: number;
+  validator_revision: string;
   generator_version: number;
   sources: MaterialSourceRef[];
   input_sha256: string;

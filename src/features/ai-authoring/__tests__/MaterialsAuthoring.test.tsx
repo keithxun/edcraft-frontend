@@ -28,7 +28,7 @@ const questions = Array.from({ length: 5 }, (_, index) => ({
 }));
 
 function practiceBatch(seed: number, sources: MaterialPracticeBatch["sources"] = []): MaterialPracticeBatch {
-    return { questions, seed, generator_version: 2, sources, input_sha256: "fixture-receipt" };
+    return { questions, seed, validator_revision: "fixture-revision", generator_version: 2, sources, input_sha256: "fixture-receipt" };
 }
 
 async function retrieveEvidence(user: ReturnType<typeof userEvent.setup>) {
@@ -90,6 +90,24 @@ describe("MaterialsAuthoring", () => {
         await user.click(screen.getByRole("button", { name: "From module materials" }));
         expect(screen.getByRole("heading", { name: "Generate from module materials" })).toBeVisible();
         expect(screen.getByText("Loading question settings…")).not.toBeVisible();
+    });
+
+    it("binds the selected subject to reviewed evidence and resets approval if it changes", async () => {
+        const user = userEvent.setup();
+        render(<MaterialsAuthoring domains={["code", "physics"]} />);
+        const subject = screen.getByLabelText("Subject");
+        expect(within(subject).queryByRole("option", { name: "Biology" })).toBeNull();
+        await user.selectOptions(subject, "code");
+        await selectSources(user);
+        await retrieveEvidence(user);
+        await user.click(screen.getByRole("button", { name: "Propose a task" }));
+        expect(proposeMaterialMatch).toHaveBeenCalledWith(expect.objectContaining({ domain: "code" }));
+        await user.click(await screen.findByRole("button", { name: "Confirm task" }));
+        await user.click(screen.getByRole("button", { name: "Generate five MCQs" }));
+        expect(generateMaterialQuestions).toHaveBeenCalledWith(expect.objectContaining({ domain: "code" }));
+        await user.selectOptions(subject, "physics");
+        expect(screen.queryByRole("button", { name: "Replay set" })).toBeNull();
+        expect(screen.getByRole("button", { name: "Propose a task" })).toBeEnabled();
     });
 
     it("proposes from exact excerpts, generates after confirmation, and replays with visible sources", async () => {

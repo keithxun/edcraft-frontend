@@ -170,31 +170,7 @@ EdCraft frontend can be run in a containerized environment using Docker. This pr
 
 #### Quick Start with Docker Compose
 
-1. Clone the repository:
-```bash
-git clone https://github.com/edcraft-org/edcraft-frontend.git
-cd edcraft-frontend
-```
-
-2. Build and start all services:
-```bash
-# Assume backend and database started
-docker-compose up -d
-```
-
-3. Access the application:
-   - Frontend: http://localhost:3000
-   - API (proxied): http://localhost:3000/api/*
-
-4. View logs:
-```bash
-docker-compose logs -f frontend
-```
-
-5. Stop services:
-```bash
-docker-compose down
-```
+Keep the `edcraft-frontend` and `edcraft-backend` checkouts beside each other. In the backend directory, configure the database as described in its README and run `docker compose --profile demo up --build -d`. The frontend listens on http://localhost:3000 and forwards `/api/` to the backend.
 
 #### Build Docker Image Only
 
@@ -206,6 +182,7 @@ docker build -t edcraft-frontend .
 docker run -d \
   --name edcraft-frontend \
   -p 3000:80 \
+  -e BACKEND_ORIGIN=http://edcraft-backend:8000 \
   --network edcraft-network \
   edcraft-frontend
 ```

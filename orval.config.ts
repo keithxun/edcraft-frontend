@@ -2,7 +2,10 @@ import { defineConfig } from 'orval';
 
 export default defineConfig({
   edcraft: {
-    input: { target: 'http://localhost:8000/openapi.json' },
+    input: {
+      target: 'http://localhost:8000/openapi.json',
+      override: { transformer: './orval-input.cjs' },
+    },
     output: {
       target: 'src/api/edcraftClient.ts',
       schemas: 'src/api/models',

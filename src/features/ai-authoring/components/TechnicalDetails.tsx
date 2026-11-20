@@ -1,10 +1,19 @@
 import { useEffect, useRef } from "react";
 import type { AuthoringResult, AuthoringReview } from "../types";
+import { showsDomainView } from "../domains";
 import { modelLabel } from "../format";
 import { AttemptsEvidence } from "./AttemptsEvidence";
+import { BiologyTemplateDetails } from "./BiologyTemplateDetails";
+import { ChemistryTemplateDetails } from "./ChemistryTemplateDetails";
 import { EvidenceDetails } from "./EvidenceDetails";
 import { MathTemplateDetails } from "./MathTemplateDetails";
-import { isIrMathTemplateCandidate } from "./questionPayload";
+import { PhysicsTemplateDetails } from "./PhysicsTemplateDetails";
+import {
+    isBiologyTemplateCandidate,
+    isChemistryTemplateCandidate,
+    isIrMathTemplateCandidate,
+    isPhysicsTemplateCandidate,
+} from "./questionPayload";
 import {
     ChecksDetails,
     DifficultyDetails,
@@ -139,6 +148,7 @@ export function TechnicalDetails({ review, result }: TechnicalDetailsProps) {
                 <AttemptsEvidence
                     attempts={attempts}
                     checkedCandidate={review.template?.candidate ?? null}
+                    domain={review.request.domain}
                 />
                 <EvidenceDetails
                     summary="Fixed plan"
@@ -191,6 +201,19 @@ export function TechnicalDetails({ review, result }: TechnicalDetailsProps) {
                     readable={
                         isIrMathTemplateCandidate(template) ? (
                             <MathTemplateDetails candidate={template} />
+                        ) : isBiologyTemplateCandidate(template) ? (
+                            <BiologyTemplateDetails candidate={template} />
+                        ) : isChemistryTemplateCandidate(template) ? (
+                            <ChemistryTemplateDetails
+                                candidate={template}
+                                checks={checks}
+                            />
+                        ) : showsDomainView(review.request.domain, "physics") &&
+                          isPhysicsTemplateCandidate(template) ? (
+                            <PhysicsTemplateDetails
+                                candidate={template}
+                                limits={review.validation_limits ?? null}
+                            />
                         ) : undefined
                     }
                 />

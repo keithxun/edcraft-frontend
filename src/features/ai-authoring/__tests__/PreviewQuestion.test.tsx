@@ -4,7 +4,12 @@ import userEvent from "@testing-library/user-event";
 import { PreviewQuestion } from "../components/PreviewQuestion";
 import { ReadableValue } from "../components/ReadableValue";
 import type { CodeQuestionInstance } from "../types";
-import { mathQuestionInstance, previewInstance, stubQuestionInstance } from "./fixtures";
+import {
+    biologyQuestionInstance,
+    mathQuestionInstance,
+    previewInstance,
+    stubQuestionInstance,
+} from "./fixtures";
 
 vi.mock("../components/ReadOnlyCode", () => ({
     ReadOnlyCode: ({ code, label }: { code: string; label: string }) => (
@@ -40,6 +45,63 @@ const structuredInstance: CodeQuestionInstance = {
 
 describe("PreviewQuestion", () => {
     afterEach(cleanup);
+
+    it("renders the supplied circuit symbol as a shape next to the Physics statements", () => {
+        const instance = {
+            ...mathQuestionInstance,
+            target: "h2_statement_set",
+            topic: "h2.syllabus_9478.skill_16a",
+            question: "Read the symbol.\n\nA. It shows a cell.\n\nWhich listed statements are correct?",
+            choices: ["A only", "None of the statements"],
+            answer: "A only",
+            correct_index: 0,
+            stimulus: {
+                kind: "diagram",
+                nodes: [["P", 0, 0], ["Q", 4, 0]],
+                edges: [["P", "Q", "X", false]],
+                components: { 0: "cell" },
+            },
+        };
+        render(<PreviewQuestion instance={instance} domain="physics" variant="review" />);
+        const svg = screen.getByRole("img", { name: "Labelled Physics schematic" });
+        expect(svg.querySelector('path[d*="M-3 -11V11"]')).not.toBeNull();
+        expect(screen.getByText(/one long and one short perpendicular line/)).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: /A\. It shows a cell/ })).toBeInTheDocument();
+        expect(screen.queryByText("✓")).not.toBeInTheDocument();
+    });
+
+    it.each(["h2_statement_set", "h2_task"])(
+        "renders graph and observation labels for Physics %s questions",
+        (target) => {
+            const instance = {
+                ...mathQuestionInstance,
+                target,
+                topic: "h2.syllabus_9478.skill_3c",
+                stimulus: {
+                    kind: "graph",
+                    x: "Time / s",
+                    y: "Velocity / m/s",
+                    series: [{ label: "Cart", points: [[0, 0], [2, 4]] }],
+                },
+            };
+            const { rerender } = render(
+                <PreviewQuestion instance={instance} domain="physics" variant="review" />,
+            );
+            expect(screen.getByRole("img", { name: "Velocity / m/s against Time / s" })).toBeInTheDocument();
+            expect(screen.getByText("Graph coordinates")).toBeInTheDocument();
+            const recorded = {
+                ...instance,
+                stimulus: {
+                    kind: "table",
+                    headers: ["Exposure / s", "Counts"],
+                    rows: [["60", "90"], ["20", "120"]],
+                },
+            };
+            rerender(<PreviewQuestion instance={recorded} domain="physics" variant="review" />);
+            expect(screen.getByRole("columnheader", { name: "Exposure / s" })).toBeInTheDocument();
+            expect(screen.getByRole("cell", { name: "120" })).toBeInTheDocument();
+        },
+    );
 
     it("distinguishes Python values from strings and missing data", () => {
         render(<ReadableValue value={[null, "None", true, "True", 1, "1", "", undefined]} />);
@@ -286,5 +348,129 @@ describe("PreviewQuestion", () => {
         expect(screen.queryByLabelText("Question inputs")).not.toBeInTheDocument();
         expect(screen.queryByText("Inputs")).not.toBeInTheDocument();
         expect(screen.queryByText(/\.py$/)).not.toBeInTheDocument();
+    });
+
+    it("renders a biology question with the worked-out Punnett square", () => {
+        render(
+            <PreviewQuestion instance={biologyQuestionInstance} domain="biology" />,
+        );
+
+        expect(
+            screen.getByRole("heading", { name: biologyQuestionInstance.question }),
+        ).toBeInTheDocument();
+
+        for (const [index, choice] of biologyQuestionInstance.choices.entries()) {
+            const label = screen.getByText(`${String.fromCharCode(65 + index)}.`, {
+                exact: true,
+            });
+            const value = label.parentElement?.querySelector("div");
+            expect(value).not.toBeNull();
+            expect(value?.textContent).toBe(choice);
+        }
+
+        expect(screen.getByText("✓")).toBeInTheDocument();
+        expect(
+            screen.getByLabelText("How the answer is worked out"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole("table", {
+                name: "Punnett square for a cross between Pp and Pp.",
+            }),
+        ).toBeInTheDocument();
+        expect(screen.getByLabelText("Question inputs")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Question code")).not.toBeInTheDocument();
+    });
+
+    it("keeps biology review neutral until the answer is revealed", async () => {
+        const user = userEvent.setup();
+        render(
+            <PreviewQuestion
+                instance={biologyQuestionInstance}
+                domain="biology"
+                variant="review"
+            />,
+        );
+
+        expect(
+            screen.getByRole("heading", { name: biologyQuestionInstance.question }),
+        ).toBeInTheDocument();
+        expect(screen.queryByText("✓")).not.toBeInTheDocument();
+        // The working reveals the answer, so review keeps it collapsed.
+        expect(
+            screen.getByLabelText("How the answer is worked out").closest("details"),
+        ).not.toHaveAttribute("open");
+        expect(screen.queryByLabelText("Question inputs")).not.toBeInTheDocument();
+        expect(screen.queryByText(/The correct choice is highlighted below/)).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", { name: "Show Answer" }));
+
+        expect(screen.getByText("✓")).toBeInTheDocument();
+    });
+
+    it("shows a curated H2 biology explanation only when its working is expanded", () => {
+        const instance = {
+            template_id: "biology.medium.h2-case",
+            case_id: "dihybrid.self",
+            question: "What fraction of the offspring has both dominant phenotypes?",
+            choices: ["9/16", "3/4", "1/16", "1/2"],
+            answer: "9/16",
+            correct_index: 0,
+            explanation: "The independent probabilities are each 3/4.",
+            seed: 0,
+        };
+        render(<PreviewQuestion instance={instance} domain="biology" variant="review" />);
+        expect(screen.getByRole("heading", { name: instance.question })).toBeInTheDocument();
+        const working = screen.getByText("How the answer is worked out").closest("details");
+        expect(working).not.toHaveAttribute("open");
+        expect(working).toHaveTextContent(instance.explanation);
+    });
+
+    it("renders a packaged H2 Biology figure with an accessible description", () => {
+        const figure = {
+            data_url: "data:image/png;base64,iVBORw0KGgo=",
+            alt: "Two branches join at the nearest split.",
+            credit: "Original EdCraft classroom schematic",
+        };
+        const instance = {
+            template_id: "biology.medium.h2-case",
+            case_id: "skill.visual.tree",
+            question: "Which pair shares the most recent common ancestor?",
+            choices: ["P and Q", "Q and R"],
+            answer: "P and Q",
+            correct_index: 0,
+            figure,
+            seed: 0,
+        };
+        render(<PreviewQuestion instance={instance} domain="biology" variant="review" />);
+        expect(screen.getByRole("img", { name: figure.alt })).toHaveAttribute("src", figure.data_url);
+        expect(screen.getByText(figure.credit)).toBeInTheDocument();
+    });
+
+    it("does not treat a maths payload as biology", () => {
+        render(
+            <PreviewQuestion instance={mathQuestionInstance} domain="biology" />,
+        );
+
+        expect(
+            screen.getByRole("heading", { name: mathQuestionInstance.question }),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByLabelText("How the answer is worked out"),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/Punnett square/)).not.toBeInTheDocument();
+    });
+
+    it("does not treat a biology payload as maths", () => {
+        render(
+            <PreviewQuestion instance={biologyQuestionInstance} domain="math" />,
+        );
+
+        expect(
+            screen.getByRole("heading", { name: biologyQuestionInstance.question }),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByLabelText("How the answer is worked out"),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText(/Punnett square/)).not.toBeInTheDocument();
     });
 });

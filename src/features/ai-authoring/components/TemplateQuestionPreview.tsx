@@ -1,11 +1,17 @@
 import { QuestionContent } from "@/features/questions/components/QuestionContent";
 import type {
     AuthoringTemplateCandidate,
+    BiologyTemplateCandidate,
+    ChemistryReactionSnapshot,
+    ChemistryTemplateCandidate,
     CodeTemplateCandidate,
     IrMathTemplateCandidate,
+    PhysicsTemplateCandidate,
     ReviewTemplate,
 } from "../types";
 import { showsDomainView } from "../domains";
+import { ChemEquation } from "./ChemFormula";
+import { chemistryTargetLabel } from "./chemistryRender";
 import { EvidenceDetails } from "./EvidenceDetails";
 import {
     firstParameterValues,
@@ -17,7 +23,19 @@ import {
     renderIrSampleEquationTex,
 } from "./mathIrRender";
 import { MathTex } from "./MathTex";
-import { isIrMathTemplateCandidate, isRecord } from "./questionPayload";
+import {
+    misconceptionLabel,
+    renderPhysicsRecipe,
+    renderPhysicsRecipeTex,
+    renderPhysicsSampleStem,
+} from "./physicsRender";
+import {
+    isBiologyTemplateCandidate,
+    isChemistryTemplateCandidate,
+    isIrMathTemplateCandidate,
+    isPhysicsTemplateCandidate,
+    isRecord,
+} from "./questionPayload";
 import { QuestionInputs } from "./QuestionInputs";
 import { ReadOnlyCode } from "./ReadOnlyCode";
 
@@ -179,6 +197,228 @@ function IrMathTemplateView({
     );
 }
 
+/** The authored template with each placeholder marked while staying readable. */
+function TemplateText({ template }: { template: string }) {
+    return (
+        <span className="whitespace-pre-wrap break-words">
+            {template.split(/(\{[^}]+\})/).map((part, index) =>
+                part.startsWith("{") && part.endsWith("}") ? (
+                    <span key={index} className="rounded bg-muted px-1 font-mono text-sm">
+                        {part}
+                    </span>
+                ) : (
+                    <span key={index}>{part}</span>
+                ),
+            )}
+        </span>
+    );
+}
+
+/**
+ * Genetics template rendered as the authored text, with placeholders marked,
+ * plus the answer the recipe claims for its first example.
+ */
+function BiologyTemplateView({ candidate }: { candidate: BiologyTemplateCandidate }) {
+    const template = candidate?.item;
+    const text = template?.text?.template ?? "";
+    const example = template?.answer_recipe?.claimed_examples?.[0] ?? null;
+
+    return (
+        <article className="space-y-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {template?.topic ?? ""}
+            </p>
+
+            <h3 className="min-w-0 text-base font-medium">
+                <TemplateText template={text} />
+            </h3>
+
+            <p className="text-xs text-muted-foreground">
+                Each placeholder is filled with the values of a generated question.
+            </p>
+
+            <section aria-label="Claimed example answer" className="space-y-1">
+                <h4 className="text-sm font-medium">Claimed example answer</h4>
+                {example ? (
+                    <>
+                        <p className="break-words font-mono text-sm">{example.answer}</p>
+                        <p className="break-words text-xs text-muted-foreground">
+                            {Object.entries(example.parameters ?? {})
+                                .map(([name, value]) => `${name} = ${value}`)
+                                .join(", ")}
+                        </p>
+                    </>
+                ) : (
+                    <p className="text-sm text-muted-foreground">
+                        No example answer declared.
+                    </p>
+                )}
+            </section>
+        </article>
+    );
+}
+
+/** The skeleton equation for one catalogue reaction. */
+function reactionSkeleton(reaction: ChemistryReactionSnapshot): string {
+    const reactants = (reaction.reactants ?? []).join(" + ");
+    const products = (reaction.products ?? []).join(" + ");
+    return `${reactants} → ${products}`;
+}
+
+/**
+ * Chemistry template rendered as one representative reaction. The catalogue
+ * decides which reactions can appear, so the preview names the count rather
+ * than inventing a concrete question.
+ */
+function ChemistryTemplateView({ candidate }: { candidate: ChemistryTemplateCandidate }) {
+    const item = candidate.item;
+    const reactions = candidate.catalogue?.reactions ?? [];
+    const first = reactions[0];
+    const contexts = candidate.catalogue?.contexts ?? [];
+    const family = candidate.catalogue?.family;
+    const familyTitle = family?.title ?? "";
+    const familyDescription = family?.description ?? "";
+    const targetKind = item?.target?.kind ?? null;
+    const count = reactions.length;
+    let varietyNote = count === 1
+            ? "Every generated question uses the same reaction, so seeds do not vary the question."
+            : `Each generated question uses one of ${count} reactions.`;
+    if (targetKind === "concept") {
+        varietyNote = contexts.length === 1
+            ? "Every generated question uses this context."
+            : `Each generated question uses one of ${contexts.length} contexts.`;
+    }
+    if (targetKind === "theoretical_yield") {
+        const varyingAmounts = item.parameters.some((axis) =>
+            (axis.name === "reactant_1_mmol" || axis.name === "reactant_2_mmol")
+            && axis.values.length > 1,
+        );
+        varietyNote = varyingAmounts
+            ? "Generated questions vary the starting reactant amounts."
+            : `Each generated question uses fixed starting amounts and one of ${count} reactions.`;
+    }
+
+    return (
+        <article className="space-y-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {familyTitle}
+            </p>
+
+            {familyDescription.length > 0 && (
+                <h3 className="min-w-0 text-base font-medium">{familyDescription}</h3>
+            )}
+
+            {first && (
+                <p className="break-words text-center text-xl font-medium">
+                    <ChemEquation equation={reactionSkeleton(first)} />
+                </p>
+            )}
+
+            {contexts[0] && <p className="break-words text-sm">{contexts[0].question}</p>}
+
+            <section aria-label="Target" className="space-y-1">
+                <h4 className="text-sm font-medium">Target</h4>
+                <p className="text-sm">
+                    {targetKind === null
+                        ? "Not specified"
+                        : chemistryTargetLabel(targetKind)}
+                </p>
+            </section>
+
+            <p className="text-xs text-muted-foreground">
+                {varietyNote}
+            </p>
+        </article>
+    );
+}
+
+/**
+ * Physics template rendered as one representative instance. The stem fills in
+ * the first value of each parameter; the recipe stays symbolic so reviewers see
+ * the template the engine grades.
+ */
+function PhysicsTemplateView({ candidate }: { candidate: PhysicsTemplateCandidate }) {
+    const template = candidate.item;
+    const body = template.body;
+    const rows = Array.isArray(template.parameters) ? template.parameters : [];
+    const parameters = Object.fromEntries(
+        rows.map((parameter) => [
+            parameter.name,
+            parameter.values,
+        ]),
+    );
+    const answer = body.answer_recipe ? renderPhysicsRecipe(body.answer_recipe) : null;
+    const answerTex = body.answer_recipe ? renderPhysicsRecipeTex(body.answer_recipe) : null;
+    const distractors = body.distractors ?? [];
+
+    return (
+        <article className="space-y-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {template.topic || template.family_id}
+            </p>
+
+            <h3 className="min-w-0 whitespace-pre-wrap text-base font-medium">
+                {renderPhysicsSampleStem(template)}
+            </h3>
+
+            <p className="text-xs text-muted-foreground">
+                {template.schema_version === "physics-h2/1.0"
+                    ? "Sample uses the first value of each parameter."
+                    : "Sample uses the first value of each parameter. EdCraft adds the direction convention, the assumptions and the question sentence."}
+            </p>
+
+            <section aria-label="Template parameters" className="space-y-1">
+                <h4 className="text-sm font-medium">Parameters</h4>
+                <QuestionInputs inputs={parameters} />
+            </section>
+
+            <section aria-label="Correct answer" className="space-y-1">
+                <h4 className="text-sm font-medium">
+                    Correct answer (authored recipe)
+                </h4>
+                {answer !== null ? (
+                    <p className="break-words font-mono text-sm">
+                        {answerTex !== null ? <MathTex latex={answerTex} /> : answer}
+                    </p>
+                ) : (
+                    <p className="text-sm text-muted-foreground">
+                        No answer recipe declared.
+                    </p>
+                )}
+            </section>
+
+            <section aria-label="Distractors" className="space-y-2">
+                <h4 className="text-sm font-medium">Wrong choices</h4>
+                <ul className="space-y-2">
+                    {distractors.map((distractor, index) => {
+                        const recipe = renderPhysicsRecipe(distractor.recipe);
+                        const recipeTex = renderPhysicsRecipeTex(distractor.recipe);
+                        return (
+                            <li
+                                key={index}
+                                className="rounded border bg-background/60 p-2"
+                            >
+                                {recipe !== null && (
+                                    <p className="break-words font-mono text-sm">
+                                        {recipeTex !== null ? (
+                                            <MathTex latex={recipeTex} />
+                                        ) : (
+                                            recipe
+                                        )}
+                                    </p>
+                                )}
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {misconceptionLabel(distractor.misconception)}
+                                </p>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </section>
+        </article>
+    );
+}
+
 /** Domain-neutral fallback: show the candidate fields without code assumptions. */
 function GenericTemplateView({ candidate }: { candidate: AuthoringTemplateCandidate }) {
     const record: Record<string, unknown> = isRecord(candidate) ? candidate : {};
@@ -215,11 +455,27 @@ export function TemplateQuestionPreview({
     // the field-based fallback.
     const showMath =
         showsDomainView(domain, "math") && isIrMathTemplateCandidate(candidate);
+    const showBiology =
+        showsDomainView(domain, "biology") && isBiologyTemplateCandidate(candidate);
+    const showChemistry =
+        showsDomainView(domain, "chemistry") &&
+        isChemistryTemplateCandidate(candidate);
+    const showPhysics =
+        showsDomainView(domain, "physics") && isPhysicsTemplateCandidate(candidate);
     const showCode =
         showsDomainView(domain, "code") && isCodeCandidate(candidate);
 
+    if (showChemistry) {
+        return <ChemistryTemplateView candidate={candidate} />;
+    }
     if (showMath) {
         return <IrMathTemplateView candidate={candidate} />;
+    }
+    if (showBiology) {
+        return <BiologyTemplateView candidate={candidate} />;
+    }
+    if (showPhysics) {
+        return <PhysicsTemplateView candidate={candidate} />;
     }
     return showCode ? (
         <CodeTemplateView candidate={candidate} />

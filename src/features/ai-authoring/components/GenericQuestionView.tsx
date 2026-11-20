@@ -1,4 +1,5 @@
 import { QuestionContent } from "@/features/questions/components/QuestionContent";
+import type { ReactNode } from "react";
 import type { AuthoringQuestionPayload } from "../types";
 import { MathTex } from "./MathTex";
 import { buildQuestionFields } from "./questionPayload";
@@ -10,6 +11,11 @@ interface GenericQuestionViewProps {
     /** LaTeX for maths choices, in the same order as the payload choices. */
     choicesLatex?: string[];
     answerLatex?: string;
+    /**
+     * Domain-specific choice renderer. Returning undefined falls back to the
+     * LaTeX source or the readable value, so callers only override what differs.
+     */
+    optionRenderer?: (value: unknown, index: number) => ReactNode | undefined;
 }
 
 function renderReadableValue(value: unknown) {
@@ -37,6 +43,7 @@ export function GenericQuestionView({
     review,
     choicesLatex,
     answerLatex,
+    optionRenderer,
 }: GenericQuestionViewProps) {
     const fields = buildQuestionFields(payload);
     const renderBaseValue = fields.flat ? renderFlatValue : renderReadableValue;
@@ -50,6 +57,8 @@ export function GenericQuestionView({
         );
 
     const renderOption = (value: unknown, index: number) => {
+        const custom = optionRenderer?.(value, index);
+        if (custom !== undefined) return custom;
         const latex = choicesLatex?.[index];
         return typeof latex === "string" && latex.length > 0 ? (
             <MathTex className="break-words text-sm" latex={latex} />

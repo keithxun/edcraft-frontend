@@ -15,6 +15,7 @@ RUN npx vite build
 FROM nginx:1.29-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx-api.template /etc/nginx/edcraft-api.template
 COPY config.js.template /etc/nginx/config.js.template
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

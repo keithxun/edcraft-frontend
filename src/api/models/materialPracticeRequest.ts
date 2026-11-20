@@ -10,6 +10,7 @@ import type { MaterialSourceRef } from './materialSourceRef';
 export interface MaterialPracticeRequest {
   /** @maxItems 750 */
   sources?: MaterialSourceRef[];
+  domain?: string | null;
   /**
    * @minLength 1
    * @maxLength 60000

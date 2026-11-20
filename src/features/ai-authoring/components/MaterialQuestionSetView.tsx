@@ -54,6 +54,7 @@ export function MaterialQuestionSetView({ result, sources, examReference, onRepl
                     <h3 className="font-semibold">Generated questions</h3>
                     <div className="flex flex-wrap gap-x-4 text-sm text-muted-foreground">
                         <span>Seed {result.seed}</span>
+                        {result.validator_revision && <span title={result.validator_revision}>Validator {result.validator_revision.slice(0, 8)}</span>}
                         {result.generator_version !== undefined && <span>Generator version {result.generator_version}</span>}
                     </div>
                 </div>

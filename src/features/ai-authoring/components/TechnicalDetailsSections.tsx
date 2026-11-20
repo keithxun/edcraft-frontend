@@ -29,6 +29,7 @@ function isStockReason(reason: string, stock: Set<string>): boolean {
 function subjectLabel(domain: string): string {
     if (domain === "code") return "Programming";
     if (domain === "math") return "Mathematics";
+    if (domain === "physics") return "Physics";
     return domainLabel(domain);
 }
 

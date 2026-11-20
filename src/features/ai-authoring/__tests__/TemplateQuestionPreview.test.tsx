@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import type { CodeTemplateCandidate } from "../types";
 import { TemplateQuestionPreview } from "../components/TemplateQuestionPreview";
 import {
     approvedReview,
+    biologyReview,
     mathIrReview,
+    physicsReview,
     stubReview,
 } from "./fixtures";
 
@@ -82,5 +84,89 @@ describe("TemplateQuestionPreview", () => {
         ).toBeInTheDocument();
         expect(screen.queryByText("Answer expression")).not.toBeInTheDocument();
         expect(screen.queryByLabelText("Template code")).not.toBeInTheDocument();
+    });
+
+    it("renders a biology candidate with marked placeholders and its example answer", () => {
+        render(
+            <TemplateQuestionPreview template={biologyReview.template!} domain="biology" />,
+        );
+
+        const heading = screen.getByRole("heading", { level: 3 });
+        expect(heading).toHaveTextContent(
+            "In {organism}, {dominant_phenotype} {trait} is completely dominant",
+        );
+        const placeholders = Array.from(heading.querySelectorAll(".font-mono")).map(
+            (placeholder) => placeholder.textContent,
+        );
+        expect(placeholders).toContain("{organism}");
+        expect(placeholders).toContain("{target}");
+
+        const answer = screen.getByLabelText("Claimed example answer");
+        expect(within(answer).getByText("60")).toBeInTheDocument();
+        expect(
+            within(answer).getByText(
+                "parent1 = Pp, parent2 = Pp, target = Pp, n = 90",
+            ),
+        ).toBeInTheDocument();
+
+        expect(screen.queryByText("Template fields")).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Template code")).not.toBeInTheDocument();
+    });
+
+    it("keeps the generic fallback when the domain does not match a biology candidate", () => {
+        render(
+            <TemplateQuestionPreview template={biologyReview.template!} domain="math" />,
+        );
+
+        expect(screen.getByText("Template fields")).toBeInTheDocument();
+        expect(screen.queryByText("Claimed example answer")).not.toBeInTheDocument();
+        expect(screen.queryByText(/Punnett square/)).not.toBeInTheDocument();
+    });
+
+    it("renders a physics candidate as a sample stem", () => {
+        render(
+            <TemplateQuestionPreview template={physicsReview.template!} domain="physics" />,
+        );
+
+        expect(
+            screen.getByRole("heading", {
+                name: "A cart of mass 2 kg is pushed with a force of 30 N to the right. A friction force of 4 N to the left also acts on it.",
+            }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText("newton2.acceleration_from_forces"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(
+                "Sample uses the first value of each parameter. EdCraft adds the direction convention, the assumptions and the question sentence.",
+            ),
+        ).toBeInTheDocument();
+        expect(screen.getByText("Parameters")).toBeInTheDocument();
+        expect(screen.getByText('["2", "4"]')).toBeInTheDocument();
+
+        const answerSection = screen.getByLabelText("Correct answer");
+        expect(answerSection.querySelector("annotation")?.textContent).toBe(
+            "\\frac{F_{1} - F_{2}}{m}",
+        );
+
+        const distractorSection = screen.getByLabelText("Distractors");
+        expect(distractorSection.querySelectorAll(".katex")).toHaveLength(2);
+        expect(
+            Array.from(distractorSection.querySelectorAll("annotation")).map(
+                (annotation) => annotation.textContent,
+            ),
+        ).toEqual(["\\frac{F_{1} + F_{2}}{m}", "\\frac{F_{1}}{m}"]);
+        expect(screen.getByText("Added opposing forces")).toBeInTheDocument();
+        expect(screen.getByText("Ignored the opposing force")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Template code")).not.toBeInTheDocument();
+    });
+
+    it("keeps the generic view for a physics candidate outside the physics domain", () => {
+        render(
+            <TemplateQuestionPreview template={physicsReview.template!} domain="math" />,
+        );
+
+        expect(screen.getByText("Template fields")).toBeInTheDocument();
+        expect(screen.queryByText("Correct answer (authored recipe)")).not.toBeInTheDocument();
     });
 });

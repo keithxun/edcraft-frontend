@@ -23,6 +23,8 @@ import { MaterialExamPicker, type MaterialExamExcerpt } from "./MaterialExamPick
 import { MaterialPdfPicker } from "./MaterialPdfPicker";
 import { MaterialQuestionSetView, type MaterialSource } from "./MaterialQuestionSetView";
 
+import { domainLabel } from "../domains";
+
 const MAX_SEED = 2_147_483_647;
 const MAX_LECTURE_EXCERPT_LENGTH = 60_000;
 const MAX_EXAM_EXCERPT_LENGTH = 24_000;
@@ -63,7 +65,7 @@ function LecturePdfPicker({ pdf, selectedPages, onSelectPage, onRemove }: {
     );
 }
 
-export function MaterialsAuthoring() {
+export function MaterialsAuthoring({ domains = [] }: { domains?: string[] }) {
     const [collection, setCollection] = useState(0);
 
     return (
@@ -72,15 +74,16 @@ export function MaterialsAuthoring() {
                 <CardTitle as="h2">Generate from module materials</CardTitle>
                 <CardDescription>Upload lecture PDFs, choose a topic and review source evidence before generating five practice MCQs.</CardDescription>
             </CardHeader>
-            <ModuleCollection key={collection} onReset={() => setCollection((previous) => previous + 1)} />
+            <ModuleCollection domains={domains} key={collection} onReset={() => setCollection((previous) => previous + 1)} />
         </Card>
     );
 }
 
-function ModuleCollection({ onReset }: { onReset: () => void }) {
+function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: string[] }) {
     const id = useId();
     const { pdfs, importPdf, removePdf } = useMaterialPdfs();
     const [moduleName, setModuleName] = useState("");
+    const [domain, setDomain] = useState("");
     const [topic, setTopic] = useState("");
     const [suggestions, setSuggestions] = useState<string[] | null>(null);
     const [strategy, setStrategy] = useState<MaterialRetrievalRequestStrategy>("selected");
@@ -115,6 +118,7 @@ function ModuleCollection({ onReset }: { onReset: () => void }) {
         return [{ pdf, text, reference: { document, page, role: "lecture" as const, edited: text !== original } }];
     });
     const excerpts = {
+        ...(domain ? { domain } : {}),
         lecture: lectureSources.map(({ text }) => text).join("\n\n"),
         exam: exam?.text ?? "",
         topic: topic.trim(),
@@ -244,6 +248,21 @@ function ModuleCollection({ onReset }: { onReset: () => void }) {
                         value={moduleName}
                         onChange={(event) => setModuleName(event.currentTarget.value)}
                     />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`${id}-subject`}>Subject</Label>
+                    <select
+                        id={`${id}-subject`}
+                        className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                        value={domain}
+                        onChange={(event) => {
+                            setDomain(event.currentTarget.value);
+                            invalidateProposal();
+                        }}
+                    >
+                        <option value="">Detect from selected material</option>
+                        {domains.map((subject) => <option key={subject} value={subject}>{domainLabel(subject)}</option>)}
+                    </select>
                 </div>
                 <Button type="button" variant="outline" onClick={onReset}>New collection</Button>
             </div>

@@ -13,7 +13,12 @@ import type {
     AuthoringReview,
     ValidationLimits,
 } from "../types";
-import { approvedReview, mathIrReview } from "./fixtures";
+import {
+    approvedReview,
+    biologyReview,
+    mathIrReview,
+    physicsReview,
+} from "./fixtures";
 
 const limits: ValidationLimits = {
     validator_version: "mcp-math-template-v1",
@@ -268,6 +273,28 @@ describe("TechnicalDetails readable labels", () => {
         expect(screen.getAllByText("Correct answer").length).toBeGreaterThan(0);
         expect(screen.getByText("Template details")).toBeInTheDocument();
         expect(screen.getAllByLabelText("Goal")).toHaveLength(1);
+    });
+
+    it("shows the biology subject label and readable genetics template details", () => {
+        render(<TechnicalDetails review={biologyReview} result={null} />);
+
+        expect(screen.getByText("Biology")).toBeInTheDocument();
+        expect(screen.getByText("Template details")).toBeInTheDocument();
+        expect(screen.getByLabelText("Organism and trait")).toBeInTheDocument();
+        expect(screen.getByLabelText("Gene")).toBeInTheDocument();
+        expect(screen.getByLabelText("Cross")).toBeInTheDocument();
+        expect(screen.getByLabelText("Answer recipe")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Goal")).not.toBeInTheDocument();
+    });
+
+    it("shows physics template details in the physics domain", () => {
+        render(<TechnicalDetails review={physicsReview} result={null} />);
+
+        expect(screen.getAllByText("Physics").length).toBeGreaterThan(0);
+        expect(screen.getByText("a = F_net / m")).toBeInTheDocument();
+        expect(
+            screen.getByText("Checked for all 8 combinations"),
+        ).toBeInTheDocument();
     });
 
     it("falls back to the generic view for a partial maths payload", () => {

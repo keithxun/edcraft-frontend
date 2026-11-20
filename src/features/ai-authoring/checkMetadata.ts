@@ -11,6 +11,15 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
     math_verify_answer_form: "Answer form",
     math_validate_options: "Answer choices",
     math_verify_text_fidelity: "Question wording",
+    biology_verify_cross: "Correct answer",
+    biology_validate_options: "Answer choices",
+    biology_verify_text_fidelity: "Question wording",
+    chemistry_verify_balance: "Balanced equation",
+    chemistry_verify_options: "Answer choices",
+    physics_verify_item: "Correct answer",
+    physics_validate_options: "Answer choices",
+    physics_verify_text: "Question wording",
+    physics_verify_text_fidelity: "Question meaning",
     application_distractor_count: "Number of wrong choices",
     assess_template_relevance: "Relevance",
 };
@@ -29,6 +38,24 @@ const CHECK_DESCRIPTIONS: Record<string, string> = {
         "Checks that every wrong choice is wrong and that no two choices are equal.",
     math_verify_text_fidelity:
         "Checks that the question wording describes the same problem as the maths.",
+    biology_verify_cross:
+        "Checks the exact inheritance calculation or the answer in the selected H2 case.",
+    biology_validate_options:
+        "Checks that every wrong choice is wrong and that no two choices are equal.",
+    biology_verify_text_fidelity:
+        "Checks the cross wording or that the selected H2 case uses its approved question text.",
+    chemistry_verify_balance:
+        "Checks that every reaction in the template has exactly one balanced form with the smallest whole-number coefficients.",
+    chemistry_verify_options:
+        "Checks that every wrong choice is unbalanced, not reduced, uses a wrong species or gives a different coefficient, and that no two choices are equal.",
+    physics_verify_item:
+        "Checks that the template's answer matches F = m a for every set of values tried.",
+    physics_validate_options:
+        "Checks that every wrong choice is wrong, different from the others and shown exactly.",
+    physics_verify_text_fidelity:
+        "Checks that the rendered question describes the intended setup and asks for the intended quantity.",
+    physics_verify_text:
+        "Checks that every value in the question comes from a checked parameter.",
     application_distractor_count:
         "Checks that there are at least as many wrong choices as you asked for.",
     assess_template_relevance: "Checks that the question matches what you asked for.",
@@ -97,6 +124,55 @@ const CHECK_SUPPORT: Record<string, CheckSupport> = {
             "It checks the form for every set of values tried.",
         ],
     },
+    biology_verify_cross: {
+        supports: [
+            "Custom one-gene crosses and curated H2 cases, including dihybrid questions.",
+            "Probabilities as exact fractions, whole-number expected counts and labelled ratios.",
+            "Templates with few combinations are checked in full. Larger ones are sampled.",
+        ],
+    },
+    biology_validate_options: {
+        supports: [
+            "Wrong choices come from exact recipes or the approved H2 case.",
+            "Choices that are equal in value count as duplicates.",
+        ],
+    },
+    biology_verify_text_fidelity: {
+        supports: [
+            "The wording must describe the same parents, given offspring and target.",
+            "A second model reads custom cross wording. H2 cases use approved text.",
+        ],
+    },
+    chemistry_verify_balance: {
+        supports: [
+            "Neutral formulas with parentheses and hydrates, such as Ca(OH)2 and CuSO4·5H2O.",
+            "Reactions come from a curated catalogue. The model does not invent species.",
+            "Charges, state symbols, electrons and isotopes are not supported.",
+        ],
+    },
+    chemistry_verify_options: {
+        supports: ["Every reaction the template can use is checked."],
+    },
+    physics_verify_item: {
+        supports: [
+            "One object on one horizontal line, with SI units only (kg, N, m/s²).",
+            "Answers must be exact at the number of decimal places shown.",
+        ],
+    },
+    physics_validate_options: {
+        supports: [
+            "A wrong choice may come from a unit slip. It is still shown in the answer's unit.",
+        ],
+    },
+    physics_verify_text_fidelity: {
+        supports: [
+            "Built-in H2 questions are checked directly against their registered cases.",
+            "For free-text questions, a model reads up to three versions without seeing the template.",
+        ],
+    },
+    physics_verify_text: {
+        supports: ["Numbers written directly in the wording are rejected."],
+    },
     application_distractor_count: {
         supports: [
             "EdCraft runs this on every question.",
@@ -108,6 +184,7 @@ const CHECK_SUPPORT: Record<string, CheckSupport> = {
             "A second model rates the difficulty against a written rubric.",
             "A mismatch is shown for your judgement and never blocks approval.",
             "The maths rubric is provisional.",
+            "The physics rubric is provisional.",
         ],
     },
     assess_template_relevance: {
