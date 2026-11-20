@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import { toast } from "sonner";
+import type { MaterialRetrievalRequest } from "./models/materialRetrievalRequest";
 
 export class ApiError extends Error {
     status: number;
@@ -129,3 +130,8 @@ instance.interceptors.response.use(
 export const axiosInstance = <T>(config: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
     return instance.request<T>(config);
 };
+
+export function materialRetrievalAxiosInstance<T>(config: AxiosRequestConfig<MaterialRetrievalRequest>) {
+    const request = config.data?.strategy === "semantic" ? { ...config, timeout: 180_000 } : config;
+    return axiosInstance<T>(request);
+}

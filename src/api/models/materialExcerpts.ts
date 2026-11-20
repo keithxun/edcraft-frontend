@@ -5,18 +5,19 @@
  * API for EdCraft Backend
  * OpenAPI spec version: 0.1.0
  */
+import type { MaterialSourceRef } from './materialSourceRef';
 
 export interface MaterialExcerpts {
+  /** @maxItems 750 */
+  sources?: MaterialSourceRef[];
   /**
    * @minLength 1
    * @maxLength 60000
    * @pattern \S
    */
   lecture: string;
-  /**
-   * @minLength 1
-   * @maxLength 60000
-   * @pattern \S
-   */
-  exam: string;
+  /** @maxLength 24000 */
+  exam?: string;
+  /** @maxLength 500 */
+  topic?: string;
 }

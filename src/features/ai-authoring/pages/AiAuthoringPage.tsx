@@ -45,7 +45,7 @@ export default function AiAuthoringPage() {
                     variant={usingMaterials ? "secondary" : "outline"}
                     onClick={() => setMode("materials")}
                 >
-                    From CS1010E materials
+                    From module materials
                 </Button>
             </div>
 

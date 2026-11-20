@@ -8,6 +8,14 @@ export default defineConfig({
       schemas: 'src/api/models',
       client: 'axios',
       override: {
+        operations: {
+          retrieve_material_evidence_ai_authoring_materials_retrieve_post: {
+            mutator: {
+              path: './src/api/axiosInstance.ts',
+              name: 'materialRetrievalAxiosInstance',
+            },
+          },
+        },
         mutator: {
           path: './src/api/axiosInstance.ts',
           name: 'axiosInstance',

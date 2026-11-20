@@ -1,12 +1,17 @@
 import { useState } from "react";
-import type { MaterialPracticeBatch, MaterialPracticeQuestion } from "@/api/models";
+import type { MaterialPracticeBatch, MaterialPracticeQuestion, MaterialSourceRef } from "@/api/models";
 import { Button } from "@/components/ui/button";
 import { materialPageUrl } from "../hooks/useMaterialPdf";
 import type { MaterialPdf } from "../hooks/useMaterialPdf";
 
+export interface MaterialSource {
+    pdf: MaterialPdf;
+    reference: MaterialSourceRef;
+}
+
 interface MaterialQuestionSetViewProps {
     result: MaterialPracticeBatch;
-    sources: { pdf: MaterialPdf; pages: number[] }[];
+    sources: MaterialSource[];
     examReference: string;
     onReplay: () => void;
 }
@@ -56,10 +61,10 @@ export function MaterialQuestionSetView({ result, sources, examReference, onRepl
             </div>
             <div className="space-y-2 rounded-lg bg-muted p-3 text-sm">
                 <h4 className="font-medium">Source references</h4>
-                <p>{examReference}</p>
+                {examReference && <p>{examReference}</p>}
                 <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                    {sources.flatMap(({ pdf, pages }) => pages.map((page) => (
-                        <li key={`${pdf.url}/${page}`} className="break-words">
+                    {sources.map(({ pdf, reference: { document, page, role, edited } }) => (
+                        <li key={`${role}/${document}/${page}`} className="break-words">
                             <a
                                 href={materialPageUrl(pdf.url, page)}
                                 target="_blank"
@@ -68,8 +73,9 @@ export function MaterialQuestionSetView({ result, sources, examReference, onRepl
                             >
                                 {pdf.file.name}, page {page}
                             </a>
+                            {edited && <span className="text-muted-foreground"> (edited excerpt)</span>}
                         </li>
-                    )))}
+                    ))}
                 </ul>
             </div>
             <ol className="grid gap-4 lg:grid-cols-2">

@@ -1,5 +1,6 @@
 import { useId } from "react";
 import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { materialPageUrl } from "../hooks/useMaterialPdf";
@@ -11,10 +12,11 @@ interface MaterialPdfPickerProps {
     pdf: MaterialPdf | null;
     selectedPages: number[];
     previewPage: number;
-    onImport: (file: File) => void;
-    onSelectPage: (page: number, selected: boolean) => void;
+    onImport?: (file: File) => void;
+    onRemove?: () => void;
+    onSelectPage?: (page: number, selected: boolean) => void;
     onPreviewPage: (page: number) => void;
-    children: ReactNode;
+    children?: ReactNode;
 }
 
 export function MaterialPdfPicker({
@@ -24,6 +26,7 @@ export function MaterialPdfPicker({
     selectedPages,
     previewPage,
     onImport,
+    onRemove,
     onSelectPage,
     onPreviewPage,
     children,
@@ -36,37 +39,51 @@ export function MaterialPdfPicker({
     return (
         <section aria-label={`${label} source`} className="min-w-0 space-y-4 rounded-lg border p-4">
             <div className="space-y-2">
-                <Label htmlFor={inputId}>{label}</Label>
-                <Input
-                    id={inputId}
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    onChange={(event) => {
-                        const file = event.currentTarget.files?.[0];
-                        if (file) onImport(file);
-                        event.currentTarget.value = "";
-                    }}
-                />
-                {pdf && <p className="break-words text-xs text-muted-foreground">{pdf.file.name}</p>}
+                {onImport && (
+                    <>
+                        <Label htmlFor={inputId}>{label}</Label>
+                        <Input
+                            id={inputId}
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            onChange={(event) => {
+                                const file = event.currentTarget.files?.[0];
+                                if (file) onImport(file);
+                                event.currentTarget.value = "";
+                            }}
+                        />
+                    </>
+                )}
+                {pdf && (
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="break-all text-sm font-medium">{pdf.file.name}</p>
+                        {onRemove && (
+                            <Button type="button" size="sm" variant="ghost" aria-label={`Remove ${pdf.file.name}`} onClick={onRemove}>
+                                Remove
+                            </Button>
+                        )}
+                    </div>
+                )}
                 {pdf?.pending && <p role="status" className="text-sm text-muted-foreground">Reading PDF…</p>}
                 {pdf?.error && <p role="alert" className="text-sm text-destructive">{pdf.error}</p>}
             </div>
 
-            {pageCount > 0 && (
+            {pageCount > 0 && onSelectPage && (
                 <fieldset className="space-y-2">
                     <legend className="text-sm font-medium">{pagesLabel}</legend>
                     <div className="flex max-h-28 flex-wrap gap-2 overflow-auto p-1">
-                        {pdf?.pages.map((_, index) => {
+                        {pdf?.pages.map((text, index) => {
                             const page = index + 1;
                             return (
                                 <label key={page} className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-sm">
                                     <input
                                         type="checkbox"
                                         checked={selectedPages.includes(page)}
+                                        disabled={!text.trim()}
                                         onChange={(event) => onSelectPage(page, event.currentTarget.checked)}
                                         className="accent-primary"
                                     />
-                                    Page {page}
+                                    Page {page}{!text.trim() && " (no text)"}
                                 </label>
                             );
                         })}

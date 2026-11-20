@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MaterialPracticeQuestion } from './materialPracticeQuestion';
+import type { MaterialSourceRef } from './materialSourceRef';
 
 export interface MaterialPracticeBatch {
   questions: MaterialPracticeQuestion[];
@@ -15,4 +16,6 @@ export interface MaterialPracticeBatch {
    */
   seed: number;
   generator_version: number;
+  sources: MaterialSourceRef[];
+  input_sha256: string;
 }
