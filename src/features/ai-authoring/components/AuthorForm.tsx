@@ -44,15 +44,18 @@ import type {
     AuthoringDifficulty,
     AuthoringRetryPrefill,
 } from "../types";
+import type { MaterialAuthoringSelection } from "./MaterialsAuthoring";
 import { ModelPickerField } from "./ModelPickerField";
+import { SourceExcerpts } from "./SourceExcerpts";
 
 const DIFFICULTY_ORDER: AuthoringDifficulty[] = ["easy", "medium", "hard"];
 
 interface AuthorFormProps {
     capabilities: AuthoringCapabilities;
+    selection?: MaterialAuthoringSelection | null;
 }
 
-export function AuthorForm({ capabilities }: AuthorFormProps) {
+export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const createJob = useCreateAuthoringJob();
@@ -79,7 +82,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
     );
 
     const state = location.state as { authoringPrefill?: Partial<AuthoringRetryPrefill> } | null;
-    const prefill = state?.authoringPrefill;
+    const prefill: Partial<AuthoringRetryPrefill> | undefined = selection ?? state?.authoringPrefill;
     const prefilledPrompt =
         typeof prefill?.prompt === "string" ? prefill.prompt.slice(0, 4000) : "";
     const prefilledDifficulty =
@@ -127,7 +130,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         resolver: zodResolver(authoringSchema),
         defaultValues: {
             prompt: prefilledPrompt,
-            domain: defaultDomain,
+            domain: prefill?.domain && domains.includes(prefill.domain) ? prefill.domain : defaultDomain,
             difficulty: prefilledDifficulty,
             distractors: prefilledDistractors,
             model_source: initialSelection.source,
@@ -166,6 +169,7 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
         createJob.mutate(
             {
                 domain: values.domain,
+                ...(prefill?.materials ? { materials: prefill.materials } : {}),
                 prompt: values.prompt,
                 difficulty: values.difficulty,
                 num_distractors: values.distractors,
@@ -247,13 +251,15 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                     </div>
                 )}
 
-                {prefill && !submitError && (
+                {prefill && !selection && !submitError && (
                     <div className="mb-4">
                         <Alert>
                             <RotateCcw className="h-4 w-4" />
                             <AlertTitle>Prefilled from your last request</AlertTitle>
                             <AlertDescription>
-                                Adjust anything, then create the question.
+                                {prefill.materials
+                                    ? "Your question settings and source excerpts are attached."
+                                    : "Adjust anything, then create the question."}
                             </AlertDescription>
                         </Alert>
                     </div>
@@ -363,9 +369,10 @@ export function AuthorForm({ capabilities }: AuthorFormProps) {
                                 )}
                             />
 
-                            {syllabusPrompts && (
+                            {prefill?.materials && <SourceExcerpts materials={prefill.materials} />}
+                            {syllabusPrompts && Object.keys(syllabusPrompts).length > 0 && (
                                 <label className="flex flex-col gap-2 text-sm">
-                                    Add a checked H2 family to the prompt
+                                    Add an H2 topic to the prompt
                                     <select
                                         value=""
                                         className="rounded-md border bg-background p-2"

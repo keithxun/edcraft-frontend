@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AuthoringJudgeSelections } from './authoringJudgeSelections';
+import type { AuthoringMaterials } from './authoringMaterials';
 import type { AuthoringRequestViewDifficulty } from './authoringRequestViewDifficulty';
 
 /**
@@ -14,6 +15,7 @@ import type { AuthoringRequestViewDifficulty } from './authoringRequestViewDiffi
 export interface AuthoringRequestView {
   prompt: string;
   difficulty: AuthoringRequestViewDifficulty;
+  materials?: AuthoringMaterials | null;
   /**
    * @minimum 1
    * @maximum 10

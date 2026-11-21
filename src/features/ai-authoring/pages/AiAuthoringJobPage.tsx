@@ -14,6 +14,7 @@ import {
     StaleArtifactNotice,
 } from "../components/PageState";
 import { ProgressPanel } from "../components/ProgressPanel";
+import { RequestSummary } from "../components/RequestSummary";
 import { RetryRequestLink } from "../components/RetryRequestLink";
 import { ReviewPanel } from "../components/ReviewPanel";
 import { TechnicalDetails } from "../components/TechnicalDetails";
@@ -164,10 +165,13 @@ export default function AiAuthoringJobPage() {
                                 review &&
                                 !hasDraft &&
                                 !reviewQuery.isError && (
-                                    <TechnicalDetails
-                                        review={review}
-                                        result={job.result ?? null}
-                                    />
+                                    <>
+                                        {review.request.materials && <RequestSummary request={review.request} />}
+                                        <TechnicalDetails
+                                            review={review}
+                                            result={job.result ?? null}
+                                        />
+                                    </>
                                 )}
                         </>
                     )}

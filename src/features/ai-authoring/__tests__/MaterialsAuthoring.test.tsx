@@ -1,45 +1,41 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { ApiError } from "@/api/axiosInstance";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MaterialPracticeBatch } from "@/api/models";
 import { MaterialsAuthoring } from "../components/MaterialsAuthoring";
 import AiAuthoringPage from "../pages/AiAuthoringPage";
 import {
+    createAuthoringJob,
+    getAuthoringCapabilities,
+    listAuthoringJobs,
+} from "../services/ai-authoring.service";
+import {
     extractMaterialPages,
-    generateMaterialQuestions,
-    proposeMaterialMatch,
     retrieveMaterialEvidence,
     suggestMaterialTopics,
 } from "../services/materials.service";
+import { capabilities } from "./fixtures";
 
 vi.mock("../services/materials.service");
 vi.mock("../services/ai-authoring.service", () => ({
-    getAuthoringCapabilities: vi.fn(() => new Promise(() => {})),
+    getAuthoringCapabilities: vi.fn(),
+    listAuthoringJobs: vi.fn(),
+    createAuthoringJob: vi.fn(),
 }));
 
-const match = { family: "list_trace", task: "Trace list changes", reason: "Both sources use list tracing." };
-const questions = Array.from({ length: 5 }, (_, index) => ({
-    stem: `Trace variant ${index + 1}.`,
-    options: ["Keep the original list", "Append an item"],
-    correct_index: 1,
-    explanation: "Appending adds an item at the end.",
-}));
-
-function practiceBatch(seed: number, sources: MaterialPracticeBatch["sources"] = []): MaterialPracticeBatch {
-    return { questions, seed, validator_revision: "fixture-revision", generator_version: 2, sources, input_sha256: "fixture-receipt" };
-}
+const onContinue = vi.fn();
 
 async function retrieveEvidence(user: ReturnType<typeof userEvent.setup>) {
     await user.click(screen.getByRole("button", { name: "Retrieve evidence" }));
     await screen.findByRole("group", { name: "Lecture evidence" });
 }
 
-async function selectSources(user: ReturnType<typeof userEvent.setup>) {
-    await user.upload(screen.getByLabelText("Lecture PDFs"), new File(["lecture"], "lecture.pdf", { type: "application/pdf" }));
-    await user.upload(screen.getByLabelText("Past-paper PDF"), new File(["exam"], "exam.pdf", { type: "application/pdf" }));
-    await user.click(await within(screen.getByRole("group", { name: "lecture.pdf pages" })).findByRole("checkbox", { name: "Page 2" }));
+async function selectSources(user: ReturnType<typeof userEvent.setup>, lecture = "lecture.pdf", exam = "exam.pdf") {
+    await user.upload(screen.getByLabelText("Lecture PDFs"), new File(["lecture"], lecture, { type: "application/pdf" }));
+    await user.upload(screen.getByLabelText("Past-paper PDF"), new File(["exam"], exam, { type: "application/pdf" }));
+    await user.click(await within(screen.getByRole("group", { name: `${lecture} pages` })).findByRole("checkbox", { name: "Page 2" }));
     await user.click(await within(screen.getByRole("group", { name: "Past-paper pages" })).findByRole("checkbox", { name: "Page 1" }));
     await user.type(screen.getByLabelText("Topic"), "Lists");
     await user.type(screen.getByLabelText("Exam question reference"), "Q2(b)");
@@ -58,6 +54,8 @@ describe("MaterialsAuthoring", () => {
                 : { pages: ["Given xs = [3].\n(a) Define a list.\n(b) Trace the list after append.", "Another question"] },
         );
         vi.clearAllMocks();
+        vi.mocked(getAuthoringCapabilities).mockImplementation(() => new Promise(() => {}));
+        vi.mocked(listAuthoringJobs).mockResolvedValue([]);
         vi.mocked(suggestMaterialTopics).mockResolvedValue({ topics: ["Lists"] });
         vi.mocked(retrieveMaterialEvidence).mockImplementation(async ({ pages, selected }) => ({
             topics: [],
@@ -67,8 +65,6 @@ describe("MaterialsAuthoring", () => {
                 score: null,
             })),
         }));
-        vi.mocked(proposeMaterialMatch).mockResolvedValue(match);
-        vi.mocked(generateMaterialQuestions).mockImplementation(async ({ seed, sources }) => practiceBatch(seed, sources));
     });
 
     afterEach(() => {
@@ -92,134 +88,91 @@ describe("MaterialsAuthoring", () => {
         expect(screen.getByText("Loading question settings…")).not.toBeVisible();
     });
 
-    it("binds the selected subject to reviewed evidence and resets approval if it changes", async () => {
-        const user = userEvent.setup();
-        render(<MaterialsAuthoring domains={["code", "physics"]} />);
-        const subject = screen.getByLabelText("Subject");
-        expect(within(subject).queryByRole("option", { name: "Biology" })).toBeNull();
-        await user.selectOptions(subject, "code");
-        await selectSources(user);
-        await retrieveEvidence(user);
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-        expect(proposeMaterialMatch).toHaveBeenCalledWith(expect.objectContaining({ domain: "code" }));
-        await user.click(await screen.findByRole("button", { name: "Confirm task" }));
-        await user.click(screen.getByRole("button", { name: "Generate five MCQs" }));
-        expect(generateMaterialQuestions).toHaveBeenCalledWith(expect.objectContaining({ domain: "code" }));
-        await user.selectOptions(subject, "physics");
-        expect(screen.queryByRole("button", { name: "Replay set" })).toBeNull();
-        expect(screen.getByRole("button", { name: "Propose a task" })).toBeEnabled();
-    });
-
-    it("proposes from exact excerpts, generates after confirmation, and replays with visible sources", async () => {
-        const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
-        await selectSources(user);
-        await user.click(screen.getByText("View original lecture.pdf"));
-        expect(screen.getByTitle("lecture.pdf, page 2")).toHaveAttribute("src", "blob:lecture.pdf#page=2");
-        const extractedPage = screen.getByLabelText("Extracted past-paper page 1");
-        expect(extractedPage).toBeInstanceOf(HTMLTextAreaElement);
-        (extractedPage as HTMLTextAreaElement).setSelectionRange(0, "Given xs = [3].".length);
-        await user.click(screen.getByRole("button", { name: "Add selection to shared stem" }));
-        expect(screen.getByLabelText("Shared stem (optional)")).toHaveValue("Given xs = [3].");
-        await retrieveEvidence(user);
-        fireEvent.change(screen.getByLabelText("lecture.pdf, page 2 excerpt"), { target: { value: "Edited list example" } });
-        expect(within(screen.getByRole("group", { name: "Lecture evidence" })).getByText("Edited excerpt")).toBeVisible();
-
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-        expect(await screen.findByText("Trace list changes")).toBeInTheDocument();
-        const reviewedExcerpts = {
-            lecture: "Edited list example",
-            topic: "Lists",
-            exam: "Given xs = [3].\n\n(b) Trace the list after append.",
-            sources: [
-                { document: "1: lecture.pdf", page: 2, role: "lecture", edited: true },
-                { document: "1: exam.pdf", page: 1, role: "exam", edited: true },
-            ],
-        };
-        expect(proposeMaterialMatch).toHaveBeenCalledWith(reviewedExcerpts);
-        expect(screen.queryByRole("button", { name: "Generate five MCQs" })).not.toBeInTheDocument();
-
-        await user.click(screen.getByRole("button", { name: "Confirm task" }));
-        fireEvent.change(screen.getByLabelText("Replay seed"), { target: { value: "23" } });
-        await user.click(screen.getByRole("button", { name: "Generate five MCQs" }));
-        expect(await screen.findByText("Trace variant 5.")).toBeInTheDocument();
-        const lectureCitation = screen.getByRole("link", { name: "lecture.pdf, page 2" });
-        expect(lectureCitation).toHaveAttribute("href", "blob:lecture.pdf#page=2");
-        expect(lectureCitation.closest("li")).toHaveTextContent("(edited excerpt)");
-        expect(screen.getByRole("link", { name: "exam.pdf, page 1" })).toHaveAttribute("href", "blob:exam.pdf#page=1");
-        expect(screen.getByText("Q2(b)")).toBeInTheDocument();
-        expect(screen.getByText("Seed 23")).toBeInTheDocument();
-        expect(screen.queryByText("Appending adds an item at the end.")).not.toBeInTheDocument();
-        await user.click(screen.getAllByRole("button", { name: "Reveal answer" })[0]);
-        expect(screen.getByText("Appending adds an item at the end.")).toBeInTheDocument();
-
-        await user.click(screen.getByRole("button", { name: "Replay set" }));
-        expect(await screen.findByText("Trace variant 5.")).toBeInTheDocument();
-        expect(generateMaterialQuestions).toHaveBeenCalledTimes(2);
-        const frozenRequest = { ...reviewedExcerpts, family: "list_trace", seed: 23 };
-        expect(generateMaterialQuestions).toHaveBeenNthCalledWith(1, frozenRequest);
-        expect(generateMaterialQuestions).toHaveBeenNthCalledWith(2, frozenRequest);
-    });
-
-    it("shows the explanation for a mismatch and prevents confirmation", async () => {
-        vi.mocked(proposeMaterialMatch).mockResolvedValueOnce({ family: null, task: "", reason: "The selected question assesses recursion." });
-        const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
-        await selectSources(user);
-        await retrieveEvidence(user);
-
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-
-        expect(await screen.findByText("The selected question assesses recursion.")).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Confirm task" })).not.toBeInTheDocument();
-    });
-
-    it("requires a new confirmation when the selected supported task changes", async () => {
-        vi.mocked(proposeMaterialMatch).mockResolvedValueOnce({
-            family: "recursive-max",
-            task: "Trace recursive maximum",
-            reason: "The exam combines both halves using maximum.",
-            alternatives: [{
-                family: "recursive-sum-squares",
-                task: "Trace recursive sum of squares",
-                reason: "The lecture applies the same split to a sum of squares.",
-            }],
+    it("submits reviewed sources and question settings through the ordinary job flow", async () => {
+        vi.mocked(getAuthoringCapabilities).mockResolvedValue(capabilities);
+        vi.mocked(extractMaterialPages)
+            .mockResolvedValueOnce({ pages: ["Lecture introduction", "Worked list example"] })
+            .mockResolvedValueOnce({ pages: ["Given xs = [3].\n(b) Trace the list after append."] });
+        vi.mocked(createAuthoringJob).mockResolvedValue({
+            job_id: "uploaded-job",
+            status_url: "/ai-authoring/uploaded-job",
         });
-        vi.mocked(generateMaterialQuestions).mockResolvedValueOnce(practiceBatch(0));
         const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
-        await selectSources(user);
+        render(
+            <QueryClientProvider client={new QueryClient()}>
+                <MemoryRouter initialEntries={["/ai-authoring"]}>
+                    <Routes>
+                        <Route path="/ai-authoring" element={<AiAuthoringPage />} />
+                        <Route path="/ai-authoring/uploaded-job" element={<h1>Job review</h1>} />
+                    </Routes>
+                </MemoryRouter>
+            </QueryClientProvider>,
+        );
+
+        await screen.findByLabelText("Prompt");
+        await user.click(screen.getByRole("button", { name: "From module materials" }));
+        await user.selectOptions(screen.getByLabelText("Subject"), "code");
+        await selectSources(user, "module.pdf", "module.pdf");
         await retrieveEvidence(user);
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
+        fireEvent.change(screen.getByLabelText("module.pdf, page 2 excerpt"), {
+            target: { value: "Reviewed list example" },
+        });
+        await user.click(screen.getByRole("button", { name: "Continue to question settings" }));
+        expect(screen.getByRole("button", { name: "From module materials" }))
+            .toHaveAttribute("aria-pressed", "true");
+        const excerpts = screen.getByText("Source excerpts");
+        await user.click(excerpts);
+        expect(within(excerpts.parentElement!).getByText("Reviewed list example")).toBeVisible();
+        expect(screen.getByText("Lecture · module.pdf · Page 2")).toBeVisible();
+        expect(screen.getByText("Past paper · module.pdf · Page 1")).toBeVisible();
+        await user.click(screen.getByRole("radio", { name: "Hard" }));
+        await user.click(screen.getByRole("button", { name: "Create question" }));
 
-        expect(await screen.findByRole("radio", { name: "Trace recursive maximum" })).toBeChecked();
-        await user.click(screen.getByRole("button", { name: "Confirm task" }));
-        await user.click(screen.getByRole("radio", { name: "Trace recursive sum of squares" }));
-        expect(screen.queryByRole("button", { name: "Generate five MCQs" })).not.toBeInTheDocument();
-        await user.click(screen.getByRole("button", { name: "Confirm task" }));
-        await user.click(screen.getByRole("button", { name: "Generate five MCQs" }));
-
-        expect(await screen.findByText("Generator version 2")).toBeInTheDocument();
-        expect(generateMaterialQuestions).toHaveBeenLastCalledWith(expect.objectContaining({ family: "recursive-sum-squares" }));
+        expect(await screen.findByRole("heading", { name: "Job review" })).toBeVisible();
+        expect(createAuthoringJob).toHaveBeenCalledWith(expect.objectContaining({
+            domain: "code",
+            prompt: expect.stringContaining("Q2(b)"),
+            difficulty: "hard",
+            materials: {
+                lecture: [{ document: "module.pdf", pages: [2], text: "Reviewed list example", edited: true }],
+                exam: { document: "module.pdf", pages: [1], text: "(b) Trace the list after append.", edited: true },
+            },
+        }));
     });
 
-    it("ignores a late proposal after the exact exam selection changes", async () => {
-        let finishProposal!: (value: typeof match) => void;
-        vi.mocked(proposeMaterialMatch).mockReturnValueOnce(new Promise((resolve) => {
-            finishProposal = resolve;
-        }));
+    it("rejects an overlong source name before extraction and shows the backend page limit", async () => {
         const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
+        render(<MaterialsAuthoring domains={["code"]} onContinue={onContinue} />);
+        const lectures = screen.getByLabelText("Lecture PDFs");
+        await user.upload(lectures, new File(["lecture"], "a".repeat(297) + ".pdf", { type: "application/pdf" }));
+        expect(screen.getByRole("alert")).toHaveTextContent("filename up to 300 characters");
+        expect(extractMaterialPages).not.toHaveBeenCalled();
+
+        vi.mocked(extractMaterialPages).mockRejectedValueOnce(
+            new ApiError(413, "Upload a PDF with at most 300 pages."),
+        );
+        await user.upload(lectures, new File(["lecture"], "long.pdf", { type: "application/pdf" }));
+        expect(await screen.findByText("Upload a PDF with at most 300 pages.")).toBeVisible();
+        expect(screen.getByRole("button", { name: "Retrieve evidence" })).toBeDisabled();
+    });
+
+    it("hands the exact edited lecture, selected exam question, and chosen subject to authoring", async () => {
+        const user = userEvent.setup();
+        render(<MaterialsAuthoring domains={["code", "physics"]} onContinue={onContinue} />);
         await selectSources(user);
         await retrieveEvidence(user);
-
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-        fireEvent.change(screen.getByLabelText("Question or subpart"), { target: { value: "(a) Define a list." } });
-        await act(async () => finishProposal(match));
-
-        expect(screen.queryByText("Trace list changes")).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Confirm task" })).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Propose a task" })).toBeEnabled();
+        const next = screen.getByRole("button", { name: "Continue to question settings" });
+        expect(next).toBeDisabled();
+        await user.selectOptions(screen.getByLabelText("Subject"), "code");
+        fireEvent.change(screen.getByLabelText("lecture.pdf, page 2 excerpt"), { target: { value: "Edited evidence." } });
+        await user.click(next);
+        expect(onContinue).toHaveBeenCalledWith({
+            domain: "code", prompt: expect.stringContaining("Q2(b)"),
+            materials: {
+                lecture: [{ document: "lecture.pdf", pages: [2], text: "Edited evidence.", edited: true }],
+                exam: { document: "exam.pdf", pages: [1], text: "(b) Trace the list after append.", edited: true },
+            },
+        });
     });
 
     it("accepts a shared stem and an exact subpart from different PDF pages", async () => {
@@ -229,7 +182,8 @@ describe("MaterialsAuthoring", () => {
             "(b) Show the final value.\n(c) Explain the output.",
         ] });
         const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
+        render(<MaterialsAuthoring domains={["code"]} onContinue={onContinue} />);
+        await user.selectOptions(screen.getByLabelText("Subject"), "code");
         await selectSources(user);
         await retrieveEvidence(user);
         fireEvent.change(screen.getByLabelText("Question or subpart"), { target: { value: "" } });
@@ -242,22 +196,18 @@ describe("MaterialsAuthoring", () => {
         questionPage.setSelectionRange(0, questionPage.value.indexOf("\n"));
         await user.click(screen.getByRole("button", { name: "Add selection to question" }));
 
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-        expect(proposeMaterialMatch).toHaveBeenLastCalledWith({
-            lecture: "Loop trace lecture",
-            topic: "Lists",
-            exam: "Given a loop, trace count.\n\n(b) Show the final value.",
-            sources: [
-                { document: "1: lecture.pdf", page: 2, role: "lecture", edited: false },
-                { document: "1: exam.pdf", page: 1, role: "exam", edited: false },
-                { document: "1: exam.pdf", page: 2, role: "exam", edited: false },
-            ],
-        });
+        await user.click(screen.getByRole("button", { name: "Continue to question settings" }));
+        expect(onContinue).toHaveBeenLastCalledWith(expect.objectContaining({
+            materials: expect.objectContaining({
+                exam: { document: "exam.pdf", pages: [1, 2], text: "Given a loop, trace count.\n\n(b) Show the final value.", edited: false },
+            }),
+        }));
     });
 
     it("clears unverified exam text when a source page is removed", async () => {
         const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
+        render(<MaterialsAuthoring domains={["code"]} onContinue={onContinue} />);
+        await user.selectOptions(screen.getByLabelText("Subject"), "code");
         await selectSources(user);
         await retrieveEvidence(user);
         const sharedStem = screen.getByLabelText("Shared stem (optional)");
@@ -268,27 +218,27 @@ describe("MaterialsAuthoring", () => {
         await user.click(pages.getByRole("checkbox", { name: "Page 2" }));
         expect(sharedStem).toHaveValue("Given xs = [3].");
         expect(question).toHaveValue("(b) Trace the list after append.");
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-        await user.click(await screen.findByRole("button", { name: "Confirm task" }));
+        await user.click(screen.getByRole("button", { name: "Continue to question settings" }));
 
         await user.click(pages.getByRole("checkbox", { name: "Page 1" }));
 
         expect(pages.getByRole("checkbox", { name: "Page 2" })).toBeChecked();
         expect(sharedStem).toHaveValue("");
         expect(question).toHaveValue("");
-        expect(screen.getByRole("button", { name: "Propose a task" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Continue to question settings" })).toBeEnabled();
         expect(screen.queryByRole("button", { name: "Generate five MCQs" })).not.toBeInTheDocument();
     });
 
     it("limits the combined exam selection independently of the lecture excerpt", async () => {
         const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
+        render(<MaterialsAuthoring domains={["code"]} onContinue={onContinue} />);
+        await user.selectOptions(screen.getByLabelText("Subject"), "code");
         await selectSources(user);
         await retrieveEvidence(user);
         fireEvent.change(screen.getByLabelText("lecture.pdf, page 2 excerpt"), { target: { value: "L".repeat(25_000) } });
         fireEvent.change(screen.getByLabelText("Shared stem (optional)"), { target: { value: "S".repeat(23_997) } });
         const question = screen.getByLabelText("Question or subpart");
-        const propose = screen.getByRole("button", { name: "Propose a task" });
+        const propose = screen.getByRole("button", { name: "Continue to question settings" });
 
         fireEvent.change(question, { target: { value: "QQ" } });
         expect(propose).toBeDisabled();
@@ -296,26 +246,6 @@ describe("MaterialsAuthoring", () => {
         fireEvent.change(question, { target: { value: "Q" } });
         expect(propose).toBeEnabled();
         expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    });
-
-    it("ignores a late generated set after a selected lecture page changes", async () => {
-        let finishGeneration!: (value: MaterialPracticeBatch) => void;
-        vi.mocked(generateMaterialQuestions).mockReturnValueOnce(new Promise((resolve) => {
-            finishGeneration = resolve;
-        }));
-        const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
-        await selectSources(user);
-        await retrieveEvidence(user);
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-        await user.click(await screen.findByRole("button", { name: "Confirm task" }));
-        await user.click(screen.getByRole("button", { name: "Generate five MCQs" }));
-        await user.click(within(screen.getByRole("group", { name: "lecture.pdf pages" })).getByRole("checkbox", { name: "Page 1" }));
-        await act(async () => finishGeneration(practiceBatch(0)));
-
-        expect(screen.queryByRole("region", { name: "Generated questions" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Generate five MCQs" })).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Propose a task" })).toBeDisabled();
     });
 
     it("uses a suggested topic and current collection only without a past paper", async () => {
@@ -328,7 +258,8 @@ describe("MaterialsAuthoring", () => {
         vi.mocked(extractMaterialPages).mockImplementation(async (file) =>
             file.size === 1 ? { pages: ["Derivative basics", "Power rule"] } : { pages: ["Chain rule example"] },
         );
-        render(<MaterialsAuthoring />);
+        render(<MaterialsAuthoring domains={["code"]} onContinue={onContinue} />);
+        await user.selectOptions(screen.getByLabelText("Subject"), "code");
         await user.type(screen.getByLabelText("Module name (optional)"), "MA1521");
         await user.upload(screen.getByLabelText("Lecture PDFs"), [
             new File(["A"], "notes.pdf", { type: "application/pdf" }),
@@ -344,15 +275,12 @@ describe("MaterialsAuthoring", () => {
         expect(request).toMatchObject({ topic: "Chain rule", strategy: "semantic", selected: [], limit: 3 });
         expect(request.pages.map(({ text }) => text)).toEqual(["Derivative basics", "Power rule", "Chain rule example"]);
         expect(new Set(request.pages.map(({ document }) => document)).size).toBe(2);
-        expect(screen.getByLabelText("notes.pdf, page 1 excerpt")).toHaveValue("Chain rule example");
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-        await user.click(await screen.findByRole("button", { name: "Confirm task" }));
-        await user.click(screen.getByRole("button", { name: "Generate five MCQs" }));
-        const result = await screen.findByRole("region", { name: "Generated questions" });
-        expect(within(result).getByRole("link", { name: "notes.pdf, page 1" })).toBeVisible();
-        expect(generateMaterialQuestions).toHaveBeenLastCalledWith(expect.objectContaining({
-            lecture: "Chain rule example", exam: "", topic: "Chain rule",
-            sources: [{ document: "2: notes.pdf", page: 1, role: "lecture", edited: false }],
+        expect(screen.getByRole("region", { name: "notes.pdf source" })).toBeVisible();
+        expect(screen.getByRole("region", { name: "notes.pdf (upload 2) source" })).toBeVisible();
+        expect(screen.getByLabelText("notes.pdf (upload 2), page 1 excerpt")).toHaveValue("Chain rule example");
+        await user.click(screen.getByRole("button", { name: "Continue to question settings" }));
+        expect(onContinue).toHaveBeenCalledWith(expect.objectContaining({
+            materials: { lecture: [{ document: "notes.pdf (upload 2)", pages: [1], text: "Chain rule example", edited: false }], exam: null },
         }));
 
         await user.click(screen.getByRole("button", { name: "New collection" }));
@@ -369,7 +297,8 @@ describe("MaterialsAuthoring", () => {
             finishRetrieval = resolve;
         }));
         const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
+        render(<MaterialsAuthoring domains={["code"]} onContinue={onContinue} />);
+        await user.selectOptions(screen.getByLabelText("Subject"), "code");
         await selectSources(user);
         await user.click(screen.getByRole("button", { name: "Retrieve evidence" }));
         fireEvent.change(screen.getByLabelText("Question or subpart"), { target: { value: "Trace the list." } });
@@ -377,9 +306,9 @@ describe("MaterialsAuthoring", () => {
         await act(async () => finishRetrieval({ topics: [], evidence: [{ ...request.pages[1], score: null }] }));
 
         expect(screen.getByLabelText("lecture.pdf, page 2 excerpt")).toHaveValue("Worked list example");
-        await user.click(screen.getByRole("button", { name: "Propose a task" }));
-        expect(proposeMaterialMatch).toHaveBeenLastCalledWith(expect.objectContaining({
-            lecture: "Worked list example", exam: "Trace the list.", topic: "Lists",
+        await user.click(screen.getByRole("button", { name: "Continue to question settings" }));
+        expect(onContinue).toHaveBeenCalledWith(expect.objectContaining({
+            materials: expect.objectContaining({ exam: expect.objectContaining({ text: "Trace the list." }) }),
         }));
     });
 
@@ -389,7 +318,8 @@ describe("MaterialsAuthoring", () => {
             finishRetrieval = resolve;
         }));
         const user = userEvent.setup();
-        render(<MaterialsAuthoring />);
+        render(<MaterialsAuthoring domains={["code"]} onContinue={onContinue} />);
+        await user.selectOptions(screen.getByLabelText("Subject"), "code");
         const input = screen.getByLabelText("Lecture PDFs");
         await user.upload(input, new File(["lecture"], "lecture.pdf", { type: "application/pdf" }));
         await user.upload(input, new File(["lecture2"], "lecture2.pdf", { type: "application/pdf" }));
@@ -412,6 +342,6 @@ describe("MaterialsAuthoring", () => {
         }));
 
         expect(screen.queryByRole("group", { name: "Lecture evidence" })).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Propose a task" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Continue to question settings" })).toBeDisabled();
     });
 });

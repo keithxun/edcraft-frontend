@@ -93,7 +93,7 @@ describe("check labels and descriptions", () => {
             "Checks that every value in the question comes from a checked parameter.",
         );
         expect(checkDescription(check("assess_template_relevance"))).toBe(
-            "Checks that the question matches what you asked for.",
+            "A model estimates how closely the question matches your request.",
         );
         expect(checkDescription(check("assess_template_difficulty"))).toBe(
             "Checks that the estimated difficulty matches the level you chose.",

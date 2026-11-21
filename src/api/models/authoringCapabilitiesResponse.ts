@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AuthoringCapabilitiesResponseDifficultyLabelsItem } from './authoringCapabilitiesResponseDifficultyLabelsItem';
+import type { AuthoringCapabilitiesResponseSyllabusPrompts } from './authoringCapabilitiesResponseSyllabusPrompts';
 import type { AuthoringModelProfile } from './authoringModelProfile';
 import type { JudgeDisplay } from './judgeDisplay';
 import type { ProviderConnectionResponse } from './providerConnectionResponse';
@@ -15,6 +16,7 @@ import type { ProviderConnectionResponse } from './providerConnectionResponse';
  */
 export interface AuthoringCapabilitiesResponse {
   enabled_domains: string[];
+  syllabus_prompts?: AuthoringCapabilitiesResponseSyllabusPrompts;
   difficulty_labels: AuthoringCapabilitiesResponseDifficultyLabelsItem[];
   model_profiles: AuthoringModelProfile[];
   connections?: ProviderConnectionResponse[];

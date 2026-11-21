@@ -21,6 +21,7 @@ export interface MaterialPracticeRequest {
   exam?: string;
   /** @maxLength 500 */
   topic?: string;
+  input_sha256?: string | null;
   /**
    * @minLength 1
    * @maxLength 64

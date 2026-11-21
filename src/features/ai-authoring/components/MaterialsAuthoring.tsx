@@ -1,31 +1,23 @@
 import { useId, useRef, useState } from "react";
 import type {
     MaterialEvidence,
-    MaterialExcerpts,
-    MaterialPracticeBatch,
+    AuthoringMaterials,
     MaterialRetrievalRequestStrategy,
-    MaterialTaskProposal,
 } from "@/api/models";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { domainLabel } from "../domains";
 import { getAuthoringErrorMessage } from "../errors";
 import { materialPageUrl, useMaterialPdfs, type MaterialPdf } from "../hooks/useMaterialPdf";
 import {
-    generateMaterialQuestions,
-    proposeMaterialMatch,
     retrieveMaterialEvidence,
     suggestMaterialTopics,
 } from "../services/materials.service";
 import { MaterialExamPicker, type MaterialExamExcerpt } from "./MaterialExamPicker";
 import { MaterialPdfPicker } from "./MaterialPdfPicker";
-import { MaterialQuestionSetView, type MaterialSource } from "./MaterialQuestionSetView";
-
-import { domainLabel } from "../domains";
-
-const MAX_SEED = 2_147_483_647;
 const MAX_LECTURE_EXCERPT_LENGTH = 60_000;
 const MAX_EXAM_EXCERPT_LENGTH = 24_000;
 const RETRIEVAL_LIMIT = 3;
@@ -34,11 +26,16 @@ const MAX_COLLECTION_PAGES = 750;
 const MAX_COLLECTION_LENGTH = 4_000_000;
 const MAX_SOURCE_REFS = 750;
 
-type TaskSnapshot = MaterialTaskProposal & {
-    excerpts: MaterialExcerpts;
-    sources: MaterialSource[];
-    examReference: string;
-};
+export interface MaterialAuthoringSelection {
+    domain: string;
+    prompt: string;
+    materials: AuthoringMaterials;
+}
+
+interface MaterialsProps {
+    domains?: string[];
+    onContinue: (selection: MaterialAuthoringSelection) => void;
+}
 
 function LecturePdfPicker({ pdf, selectedPages, onSelectPage, onRemove }: {
     pdf: MaterialPdf;
@@ -50,8 +47,8 @@ function LecturePdfPicker({ pdf, selectedPages, onSelectPage, onRemove }: {
 
     return (
         <MaterialPdfPicker
-            label={pdf.file.name}
-            pagesLabel={`${pdf.file.name} pages`}
+            label={pdf.label}
+            pagesLabel={`${pdf.label} pages`}
             pdf={pdf}
             selectedPages={selectedPages}
             previewPage={previewPage}
@@ -65,21 +62,21 @@ function LecturePdfPicker({ pdf, selectedPages, onSelectPage, onRemove }: {
     );
 }
 
-export function MaterialsAuthoring({ domains = [] }: { domains?: string[] }) {
+export function MaterialsAuthoring({ domains = [], onContinue }: MaterialsProps) {
     const [collection, setCollection] = useState(0);
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle as="h2">Generate from module materials</CardTitle>
-                <CardDescription>Upload lecture PDFs, choose a topic and review source evidence before generating five practice MCQs.</CardDescription>
+                <CardDescription>Upload lecture PDFs, choose a topic and review source evidence before writing and checking questions with your selected model.</CardDescription>
             </CardHeader>
-            <ModuleCollection domains={domains} key={collection} onReset={() => setCollection((previous) => previous + 1)} />
+            <ModuleCollection domains={domains} onContinue={onContinue} key={collection} onReset={() => setCollection((previous) => previous + 1)} />
         </Card>
     );
 }
 
-function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: string[] }) {
+function ModuleCollection({ onReset, domains = [], onContinue }: MaterialsProps & { onReset: () => void }) {
     const id = useId();
     const { pdfs, importPdf, removePdf } = useMaterialPdfs();
     const [moduleName, setModuleName] = useState("");
@@ -90,12 +87,7 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
     const [selectedPages, setSelectedPages] = useState<Record<string, number[]>>({});
     const [evidence, setEvidence] = useState<MaterialEvidence[] | null>(null);
     const [exam, setExam] = useState<MaterialExamExcerpt | null>(null);
-    const [seedText, setSeedText] = useState("0");
-    const [proposal, setProposal] = useState<TaskSnapshot | null>(null);
-    const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
-    const [confirmed, setConfirmed] = useState(false);
-    const [result, setResult] = useState<MaterialPracticeBatch | null>(null);
-    const [pending, setPending] = useState<"topics" | "retrieve" | "proposal" | "generate" | null>(null);
+    const [pending, setPending] = useState<"topics" | "retrieve" | null>(null);
     const [error, setError] = useState<string | null>(null);
     const requestVersion = useRef(0);
 
@@ -126,30 +118,15 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
     const lectureTooLong = excerpts.lecture.length > MAX_LECTURE_EXCERPT_LENGTH;
     const examTooLong = excerpts.exam.length > MAX_EXAM_EXCERPT_LENGTH;
     const tooManySourcePages = lectureSources.length + (exam?.pages.length ?? 0) > MAX_SOURCE_REFS;
-    const canPropose = excerpts.lecture && !lectureTooLong && !examTooLong && !tooManySourcePages;
-    const seed = Number(seedText);
-    const validSeed = seedText !== "" && Number.isInteger(seed) && seed >= 0 && seed <= MAX_SEED;
+    const canContinue = domain && topic.trim() && excerpts.lecture && !lectureTooLong && !examTooLong && !tooManySourcePages;
 
     function cancelPendingRequest() {
         requestVersion.current += 1;
         setPending(null);
     }
 
-    function resetConfirmation() {
-        if (pending === "proposal" || pending === "generate") cancelPendingRequest();
-        setConfirmed(false);
-        setResult(null);
-        setError(null);
-    }
-
-    function invalidateProposal() {
-        resetConfirmation();
-        setProposal(null);
-        setSelectedFamily(null);
-    }
-
     function invalidateEvidence() {
-        invalidateProposal();
+        setError(null);
         if (pending === "retrieve") cancelPendingRequest();
         setEvidence(null);
     }
@@ -205,37 +182,26 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
         });
     }
 
-    function propose() {
-        if (!canPropose || pending) return;
-        invalidateProposal();
-        const sources: MaterialSource[] = [...lectureSources];
-        if (exam) {
-            sources.push(...exam.pages.map((page): MaterialSource => ({
-                pdf: exam.pdf,
-                reference: { document: exam.pdf.id, page, role: "exam", edited: exam.editedPages.includes(page) },
-            })));
-        }
-        const reviewedExcerpts = { ...excerpts, sources: sources.map(({ reference }) => reference) };
-        void runRequest("proposal", "A practice task could not be proposed.", async (isCurrent) => {
-            const proposed = await proposeMaterialMatch(reviewedExcerpts);
-            if (!isCurrent()) return;
-            setProposal({ ...proposed, excerpts: reviewedExcerpts, sources, examReference: exam?.reference ?? "" });
-            setSelectedFamily(proposed.family);
+    function continueAuthoring() {
+        if (!canContinue || pending) return;
+        const lecture = lectureSources.map(({ pdf, text, reference }) => ({
+            document: pdf.label, text, pages: [reference.page], edited: reference.edited,
+        }));
+        const task = exam
+            ? "Use the assessed skill and style of the selected exam question."
+            : "Use the reviewed lecture material.";
+        onContinue({
+            domain,
+            prompt: `Create a multiple-choice question on ${topic.trim()}${moduleName.trim() ? ` for ${moduleName.trim()}` : ""}. ${task}${exam?.reference ? ` Exam question: ${exam.reference}.` : ""}`,
+            materials: {
+                lecture,
+                exam: exam ? {
+                    document: exam.pdf.file.name, pages: exam.pages, text: exam.text,
+                    edited: exam.editedPages.length > 0,
+                } : null,
+            },
         });
     }
-
-    function generate(chosenSeed: number) {
-        if (!confirmed || !proposal || !selectedFamily || pending) return;
-        setResult(null);
-        void runRequest("generate", "The practice questions could not be generated.", async (isCurrent) => {
-            const generated = await generateMaterialQuestions({ ...proposal.excerpts, family: selectedFamily, seed: chosenSeed });
-            if (isCurrent()) setResult(generated);
-        });
-    }
-
-    const matches = proposal?.family && proposal.alternatives?.length
-        ? [proposal, ...proposal.alternatives]
-        : [];
 
     return (
         <CardContent className="space-y-6">
@@ -244,6 +210,7 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
                     <Label htmlFor={`${id}-module`}>Module name (optional)</Label>
                     <Input
                         id={`${id}-module`}
+                        maxLength={200}
                         placeholder="e.g. MA1521"
                         value={moduleName}
                         onChange={(event) => setModuleName(event.currentTarget.value)}
@@ -257,10 +224,10 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
                         value={domain}
                         onChange={(event) => {
                             setDomain(event.currentTarget.value);
-                            invalidateProposal();
+                            setError(null);
                         }}
                     >
-                        <option value="">Detect from selected material</option>
+                        <option value="">Choose a subject</option>
                         {domains.map((subject) => <option key={subject} value={subject}>{domainLabel(subject)}</option>)}
                     </select>
                 </div>
@@ -364,7 +331,7 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
                     </Button>
                 </div>
                 <MaterialExamPicker onChange={(excerpt) => {
-                    invalidateProposal();
+                    setError(null);
                     setExam(excerpt);
                 }} />
             </div>
@@ -387,11 +354,11 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
                             <div key={`${document}/${page}`} className="space-y-2">
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <Label htmlFor={excerptId}>{pdf.file.name}, page {page} excerpt</Label>
+                                        <Label htmlFor={excerptId}>{pdf.label}, page {page} excerpt</Label>
                                         {text !== pdf.pages[page - 1] && <span className="text-xs text-muted-foreground">Edited excerpt</span>}
                                     </div>
                                     <a href={materialPageUrl(pdf.url, page)} target="_blank" rel="noreferrer" className="text-sm text-primary underline underline-offset-2">
-                                        Open {pdf.file.name}, page {page}
+                                        Open {pdf.label}, page {page}
                                     </a>
                                 </div>
                                 <Textarea
@@ -401,7 +368,7 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
                                     value={text}
                                     onChange={(event) => {
                                         const text = event.currentTarget.value;
-                                        invalidateProposal();
+                                        setError(null);
                                         setEvidence((previous) =>
                                             previous?.map((item, itemIndex) => itemIndex === index ? { ...item, text } : item) ?? null,
                                         );
@@ -415,84 +382,10 @@ function ModuleCollection({ onReset, domains }: { onReset: () => void; domains: 
             {lectureTooLong && <p role="alert" className="text-sm text-destructive">Limit lecture evidence to 60,000 characters total.</p>}
             {examTooLong && <p role="alert" className="text-sm text-destructive">Limit the shared stem and question to 24,000 characters total.</p>}
             {tooManySourcePages && <p role="alert" className="text-sm text-destructive">Use up to 750 source pages across the lecture and past-paper excerpts.</p>}
-            <Button type="button" disabled={!canPropose || pending !== null} onClick={propose}>
-                {pending === "proposal" ? "Finding a task…" : "Propose a task"}
+            <Button type="button" disabled={!canContinue || pending !== null} onClick={continueAuthoring}>
+                Continue to question settings
             </Button>
-            {proposal && (
-                <section aria-label="Proposed task" className="space-y-3 rounded-lg border p-4">
-                    <h3 className="font-semibold">{proposal.family ? "Proposed task" : "No supported task"}</h3>
-                    {matches.length > 0 ? (
-                        <fieldset className="space-y-2">
-                            <legend className="mb-2 text-sm">Choose a supported task</legend>
-                            {matches.map((match, index) => (
-                                <label key={match.family} className="flex items-start gap-2 rounded-md border p-3 text-sm">
-                                    <input
-                                        type="radio"
-                                        name={`${id}-match`}
-                                        checked={match.family === selectedFamily}
-                                        aria-labelledby={`${id}-match-label-${index}`}
-                                        aria-describedby={`${id}-match-reason-${index}`}
-                                        onChange={() => {
-                                            resetConfirmation();
-                                            setSelectedFamily(match.family);
-                                        }}
-                                        className="mt-1 accent-primary"
-                                    />
-                                    <span className="space-y-1">
-                                        <span id={`${id}-match-label-${index}`} className="block font-medium">{match.task}</span>
-                                        <span id={`${id}-match-reason-${index}`} className="block text-muted-foreground">{match.reason}</span>
-                                    </span>
-                                </label>
-                            ))}
-                        </fieldset>
-                    ) : (
-                        <div className="space-y-1">
-                            {proposal.task && <p className="font-medium">{proposal.task}</p>}
-                            <p className="text-sm text-muted-foreground">{proposal.reason}</p>
-                        </div>
-                    )}
-                    {selectedFamily && !confirmed && (
-                        <Button type="button" variant="outline" onClick={() => setConfirmed(true)}>Confirm task</Button>
-                    )}
-                    {confirmed && (
-                        <div className="flex flex-wrap items-end gap-3">
-                            <div className="space-y-2">
-                                <Label htmlFor={`${id}-seed`}>Replay seed</Label>
-                                <Input
-                                    id={`${id}-seed`}
-                                    type="number"
-                                    min={0}
-                                    max={MAX_SEED}
-                                    step={1}
-                                    value={seedText}
-                                    aria-invalid={!validSeed}
-                                    aria-describedby={!validSeed ? `${id}-seed-error` : undefined}
-                                    onChange={(event) => setSeedText(event.currentTarget.value)}
-                                    className="w-40"
-                                />
-                            </div>
-                            <Button type="button" disabled={!validSeed || pending !== null} onClick={() => void generate(seed)}>
-                                {pending === "generate" ? "Generating questions…" : "Generate five MCQs"}
-                            </Button>
-                        </div>
-                    )}
-                    {confirmed && !validSeed && (
-                        <p id={`${id}-seed-error`} className="text-sm text-destructive">Enter a whole number from 0 to 2,147,483,647.</p>
-                    )}
-                </section>
-            )}
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-            {result && proposal && (
-                <MaterialQuestionSetView
-                    result={result}
-                    sources={proposal.sources}
-                    examReference={proposal.examReference}
-                    onReplay={() => {
-                        setSeedText(String(result.seed));
-                        void generate(result.seed);
-                    }}
-                />
-            )}
         </CardContent>
     );
 }

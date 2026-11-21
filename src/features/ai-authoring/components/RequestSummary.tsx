@@ -3,6 +3,7 @@ import { domainLabel } from "../domains";
 import { capitalize, modelLabel } from "../format";
 import type { AuthoringReview } from "../types";
 import { isRecord } from "./questionPayload";
+import { SourceExcerpts } from "./SourceExcerpts";
 
 function capabilityLabel(value: string) {
     return value.replaceAll("_", " ");
@@ -101,6 +102,7 @@ export function RequestSummary({
                     {domainLabel(request.domain)} · {capitalize(request.difficulty)} ·{" "}
                     {request.num_distractors + 1} choices · {modelLabel(request)}
                 </p>
+                {request.materials && <SourceExcerpts materials={request.materials} />}
             </CardContent>
         </Card>
     );

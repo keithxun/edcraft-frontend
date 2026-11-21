@@ -60,6 +60,11 @@ export function PreviewQuestion({
     const physics = domain === "physics" && isRecord(payload) ? payload : null;
     const wrapsPhysicsPrompt =
         physics?.target === "h2_statement_set" || physics?.target === "h2_task";
+    const wrapsTracePrompt = domain === "code" && fields.flat;
+    const wrapsFitPrompt =
+        domain === "biology" &&
+        isRecord(payload) &&
+        payload.operation === "chi_square_goodness_of_fit";
     const h2Explanation =
         domain === "biology" &&
         isRecord(instance) &&
@@ -81,7 +86,7 @@ export function PreviewQuestion({
                 )
             ) : (
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                    <Heading className={wrapsPhysicsPrompt
+                    <Heading className={wrapsPhysicsPrompt || wrapsTracePrompt || wrapsFitPrompt
                         ? "min-w-0 whitespace-pre-wrap text-base font-medium"
                         : "min-w-0 text-base font-medium"}>
                         {fields.text}

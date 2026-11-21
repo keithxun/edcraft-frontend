@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { getAuthoringErrorMessage } from "../errors";
 import { extractMaterialPages } from "../services/materials.service";
 
+const MAX_SOURCE_NAME_LENGTH = 300;
+
 export interface MaterialPdf {
     id: string;
     file: File;
+    label: string;
     url: string;
     pages: string[];
     pending: boolean;
@@ -18,6 +21,7 @@ export function materialPageUrl(url: string, page: number) {
 export function useMaterialPdfs() {
     const [pdfs, setPdfs] = useState<MaterialPdf[]>([]);
     const nextId = useRef(1);
+    const uploadsByName = useRef(new Map<string, number>());
     const resources = useRef(new Map<string, string>());
 
     useEffect(() => {
@@ -38,11 +42,22 @@ export function useMaterialPdfs() {
     }
 
     function importPdf(file: File) {
-        const id = `${nextId.current++}: ${file.name}`;
+        const id = String(nextId.current++);
+        const ordinal = (uploadsByName.current.get(file.name) ?? 0) + 1;
+        uploadsByName.current.set(file.name, ordinal);
+        const label = ordinal === 1 ? file.name : `${file.name} (upload ${ordinal})`;
+        if (Array.from(label.trim()).length > MAX_SOURCE_NAME_LENGTH) {
+            setPdfs((previous) => [...previous, {
+                id, file, label, url: "", pages: [], pending: false,
+                error: "Use a PDF filename up to 300 characters.",
+            }]);
+            return;
+        }
         const preview = file.type === "application/pdf" ? file : new Blob([file], { type: "application/pdf" });
         const reading: MaterialPdf = {
             id,
             file,
+            label,
             url: URL.createObjectURL(preview),
             pages: [],
             pending: true,

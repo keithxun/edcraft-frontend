@@ -106,7 +106,8 @@ import type {
   VerifyEmailResponse
 } from './models';
 
-import { axiosInstance, materialRetrievalAxiosInstance } from './axiosInstance';
+import { axiosInstance } from './axiosInstance';
+import { materialRetrievalAxiosInstance } from './axiosInstance';
 export const getEdCraftBackendAPI = () => {
 /**
  * Submit an input generation job. Poll GET /jobs/{job_id} for the result.
@@ -264,7 +265,8 @@ const retrieveMaterialEvidenceAiAuthoringMaterialsRetrievePost = (
     }
 
 /**
- * Identify a checked task from the reviewed lecture evidence and optional exam.
+ * Retired family selector. New material requests use the authoring job endpoint.
+ * @deprecated
  * @summary Propose Material Task
  */
 const proposeMaterialTaskAiAuthoringMaterialsProposePost = (
@@ -279,7 +281,8 @@ const proposeMaterialTaskAiAuthoringMaterialsProposePost = (
     }
 
 /**
- * Recheck the excerpts and generate a reproducible batch for the chosen task.
+ * Old clients must submit a checked authoring job to generate new questions.
+ * @deprecated
  * @summary Generate Material Practice
  */
 const generateMaterialPracticeAiAuthoringMaterialsGeneratePost = (

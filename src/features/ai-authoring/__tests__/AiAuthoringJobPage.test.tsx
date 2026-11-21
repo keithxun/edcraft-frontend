@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "@/api/axiosInstance";
 import AiAuthoringJobPage from "../pages/AiAuthoringJobPage";
+import type { AuthoringRetryPrefill } from "../types";
 import {
     createAuthoringJob,
     decideAuthoringApproval,
@@ -61,9 +62,14 @@ function OpenJob2Button() {
 function CreatePageProbe() {
     const location = useLocation();
     const prefill = (
-        location.state as { authoringPrefill?: { prompt?: string } } | null
+        location.state as { authoringPrefill?: AuthoringRetryPrefill } | null
     )?.authoringPrefill;
-    return <div>Create page prefill: {prefill?.prompt}</div>;
+    return (
+        <>
+            <div>Create page prefill: {prefill?.prompt}</div>
+            {prefill?.materials?.exam && <div>Retried exam: {prefill.materials.exam.text}</div>}
+        </>
+    );
 }
 
 function renderJobPage() {
@@ -99,6 +105,29 @@ describe("AiAuthoringJobPage", () => {
     });
 
     afterEach(cleanup);
+
+    it("shows the exact source passages in failed-job review and keeps them on retry", async () => {
+        vi.mocked(getAuthoringJob).mockResolvedValueOnce(failedJob);
+        vi.mocked(getAuthoringReview).mockResolvedValueOnce({
+            ...failedReview,
+            request: {
+                ...failedReview.request,
+                materials: {
+                    lecture: [{ document: "notes.pdf (upload 2)", pages: [3], text: "Edited list example", edited: true }],
+                    exam: { document: "exam.pdf", pages: [4], text: "Trace the final list." },
+                },
+            },
+        });
+        const user = userEvent.setup();
+        renderJobPage();
+
+        await user.click(await screen.findByText("Source excerpts"));
+        expect(screen.getByText("Lecture · notes.pdf (upload 2) · Page 3")).toBeVisible();
+        expect(screen.getByText("Edited list example")).toBeVisible();
+        expect(screen.getByText("Trace the final list.")).toBeVisible();
+        await user.click(screen.getByRole("link", { name: "Retry request" }));
+        expect(screen.getByText("Retried exam: Trace the final list.")).toBeVisible();
+    });
 
     it("resumes the job from the URL without creating another job", async () => {
         renderJobPage();

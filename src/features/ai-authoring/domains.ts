@@ -11,19 +11,19 @@ const DOMAINS: Record<string, DomainInfo> = {
         label: "Code",
         badge: "Computing · multiple choice",
         promptPlaceholder:
-            "Describe a programming task, or start with H2 for a syllabus family, e.g. H2 binary search.",
+            "Describe the task, for example tracing the front index in a circular queue.",
     },
     math: {
         label: "Mathematics",
         badge: "Mathematics · multiple choice",
         promptPlaceholder:
-            "Describe a maths skill, or start with H2 for a syllabus family, e.g. H2 hypothesis testing.",
+            "Describe the task, for example finding sample variance from summary totals.",
     },
     biology: {
         label: "Biology",
         badge: "H2 Biology · multiple choice",
         promptPlaceholder:
-            "Describe the H2 Biology topic and skill, for example interpreting a dihybrid test cross.",
+            "Describe the H2 Biology topic and skill, for example calculating an offspring probability for a hypothetical single-gene cross.",
     },
     chemistry: {
         label: "Chemistry",
@@ -35,7 +35,7 @@ const DOMAINS: Record<string, DomainInfo> = {
         label: "Physics",
         badge: "Physics · multiple choice",
         promptPlaceholder:
-            "Describe the physics skill, for example finding average force from a change in momentum or comparing ideal gas states.",
+            "Describe the physics skill, for example finding final velocity from initial velocity, acceleration and time.",
     },
 };
 

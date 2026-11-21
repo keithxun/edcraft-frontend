@@ -46,6 +46,35 @@ const structuredInstance: CodeQuestionInstance = {
 describe("PreviewQuestion", () => {
     afterEach(cleanup);
 
+    it("preserves the count rows in a Biology goodness-of-fit question", () => {
+        const instance = {
+            operation: "chi_square_goodness_of_fit",
+            question: "Observed phenotype counts\nSmooth leaves: 21\nRuffled leaves: 13",
+            choices: ["χ² = 1.88", "χ² = 2.50"],
+            answer: "χ² = 1.88",
+            correct_index: 0,
+        };
+        render(<PreviewQuestion instance={instance} domain="biology" />);
+        expect(screen.getByRole("heading", { name: /Observed phenotype counts/ }))
+            .toHaveClass("whitespace-pre-wrap");
+        expect(screen.getByText("✓")).toBeVisible();
+    });
+
+    it("preserves the separate operation lines in an H2 Computing trace", () => {
+        const instance = {
+            ...mathQuestionInstance,
+            family: "authored-queue",
+            question: "Queue capacity 4.\nEnqueue(7)\nDequeue()\nWhat is the front index?",
+            choices: ["1", "2", "3"],
+            answer: "1",
+            correct_index: 0,
+        };
+        render(<PreviewQuestion instance={instance} domain="code" />);
+        expect(screen.getByRole("heading", { name: /Queue capacity 4/ }))
+            .toHaveClass("whitespace-pre-wrap");
+        expect(screen.getByText("✓")).toBeVisible();
+    });
+
     it("renders the supplied circuit symbol as a shape next to the Physics statements", () => {
         const instance = {
             ...mathQuestionInstance,

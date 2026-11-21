@@ -57,7 +57,7 @@ describe("AuthorForm", () => {
         });
         const user = userEvent.setup();
         await user.type(screen.getByLabelText("Prompt"), "Include a sorted array.");
-        await user.selectOptions(screen.getByLabelText("Add a checked H2 family to the prompt"), example);
+        await user.selectOptions(screen.getByLabelText("Add an H2 topic to the prompt"), example);
         expect(screen.getByLabelText("Prompt")).toHaveValue(example + "\nInclude a sorted array.");
     });
 
@@ -108,6 +108,27 @@ describe("AuthorForm", () => {
         expect(screen.getByRole("radio", { name: "Easy" })).toBeChecked();
         expect(screen.getByLabelText("Wrong choices (distractors)")).toHaveValue(3);
         expect(screen.queryByText("Prefilled")).not.toBeInTheDocument();
+    });
+
+    it("shows the saved excerpts on retry and submits them with the updated prompt", async () => {
+        const materials = {
+            lecture: [{ document: "lecture.pdf", pages: [1], text: "Indexed lists" }],
+            exam: { document: "exam.pdf", pages: [2], text: "Find the last element." },
+        };
+        renderForm({ prompt: "Create a list question.", difficulty: "easy", num_distractors: 3, materials });
+        const user = userEvent.setup();
+        await user.click(screen.getByText("Source excerpts"));
+        expect(screen.getByText("Find the last element.")).toBeVisible();
+        const prompt = screen.getByLabelText("Prompt");
+        await user.clear(prompt);
+        await user.type(prompt, "Ask for the return value of a list function.");
+        await user.click(screen.getByRole("button", { name: "Create question" }));
+        await waitFor(() => {
+            expect(createAuthoringJob).toHaveBeenLastCalledWith(expect.objectContaining({
+                prompt: "Ask for the return value of a list function.",
+                materials,
+            }));
+        });
     });
 
     it("submits with the selected connection and default model", async () => {

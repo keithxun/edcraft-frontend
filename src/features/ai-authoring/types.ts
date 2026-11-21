@@ -3,6 +3,7 @@
 // the UI needs them. Generated models are never edited by hand.
 import type {
     ApprovalRequest,
+    AuthoringMaterials,
     AuthoringCapabilitiesResponse,
     AuthoringJudgeSelections,
     AuthoringJobStatusResponse,
@@ -605,6 +606,8 @@ export type GenerationMetadata = ApiGenerationMetadata;
 
 /** Values carried from a failed job into the start-page form. */
 export interface AuthoringRetryPrefill {
+    domain?: string;
+    materials?: AuthoringMaterials | null;
     prompt: string;
     difficulty: AuthoringDifficulty;
     num_distractors: number;

@@ -34,7 +34,7 @@ export function MaterialPdfPicker({
     const inputId = useId();
     const previewId = useId();
     const pageCount = pdf?.pages.length ?? 0;
-    const previewUrl = pdf ? materialPageUrl(pdf.url, previewPage) : null;
+    const previewUrl = pdf?.url ? materialPageUrl(pdf.url, previewPage) : null;
 
     return (
         <section aria-label={`${label} source`} className="min-w-0 space-y-4 rounded-lg border p-4">
@@ -56,9 +56,9 @@ export function MaterialPdfPicker({
                 )}
                 {pdf && (
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="break-all text-sm font-medium">{pdf.file.name}</p>
+                        <p className="break-all text-sm font-medium">{pdf.label}</p>
                         {onRemove && (
-                            <Button type="button" size="sm" variant="ghost" aria-label={`Remove ${pdf.file.name}`} onClick={onRemove}>
+                            <Button type="button" size="sm" variant="ghost" aria-label={`Remove ${pdf.label}`} onClick={onRemove}>
                                 Remove
                             </Button>
                         )}

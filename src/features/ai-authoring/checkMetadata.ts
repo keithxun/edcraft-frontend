@@ -6,6 +6,7 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
     code_require_features: "Required features",
     code_validate_answers_and_distractors: "Answers and wrong choices",
     code_verify_template_structure: "Question template",
+    code_verify_authored_h2_trace: "Trace answer and choices",
     assess_template_difficulty: "Difficulty",
     math_verify_item_spec: "Correct answer",
     math_verify_answer_form: "Answer form",
@@ -14,6 +15,10 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
     biology_verify_cross: "Correct answer",
     biology_validate_options: "Answer choices",
     biology_verify_text_fidelity: "Question wording",
+    chemistry_verify_authored_task: "Chemical calculation and choices",
+    physics_verify_authored_task: "Physical calculation and choices",
+    application_material_variants: "Variation in practice questions",
+    application_visible_variants: "Variation in practice questions",
     chemistry_verify_balance: "Balanced equation",
     chemistry_verify_options: "Answer choices",
     physics_verify_item: "Correct answer",
@@ -25,10 +30,20 @@ const FRIENDLY_CHECK_LABELS: Record<string, string> = {
 };
 
 const CHECK_DESCRIPTIONS: Record<string, string> = {
+    chemistry_verify_authored_task:
+        "Calculates the result from the displayed formulas and quantities and checks the answer choices.",
+    physics_verify_authored_task:
+        "Applies the stated physical laws in order and checks units, rounding and answer choices.",
+    application_material_variants:
+        "Compares up to 16 seeds for at least two different problems from the reviewed material.",
+    application_visible_variants:
+        "Compares up to 16 seeds for at least two different problems, ignoring option order.",
     code_require_features: "Checks that the code uses the Python features you asked for.",
     code_validate_answers_and_distractors:
         "Checks that the answer is right and every wrong choice is different.",
     code_verify_template_structure: "Checks that the question template is complete and renders.",
+    code_verify_authored_h2_trace:
+        "Simulates the visible queue or merge operations and checks the answer and choices on sampled inputs.",
     assess_template_difficulty:
         "Checks that the estimated difficulty matches the level you chose.",
     math_verify_item_spec: "Checks that the maths engine gets the same answer as the template.",
@@ -58,7 +73,7 @@ const CHECK_DESCRIPTIONS: Record<string, string> = {
         "Checks that every value in the question comes from a checked parameter.",
     application_distractor_count:
         "Checks that there are at least as many wrong choices as you asked for.",
-    assess_template_relevance: "Checks that the question matches what you asked for.",
+    assess_template_relevance: "A model estimates how closely the question matches your request.",
 };
 
 export function friendlyCheckLabel(tool: string): string {
@@ -98,6 +113,13 @@ const CHECK_SUPPORT: Record<string, CheckSupport> = {
         supports: [
             "Runs the code on a fixed sample of inputs.",
             "The answer must be right and every wrong choice different.",
+        ],
+    },
+    code_verify_authored_h2_trace: {
+        supports: [
+            "Circular queue operations, including wraparound and reinserting a dequeued value.",
+            "Stable merges, including ties and intermediate checkpoints.",
+            "Parameter boundaries and one set of distinct, type-compatible wrong choices.",
         ],
     },
     math_verify_item_spec: {

@@ -16,11 +16,15 @@ interface RetryRequestLinkProps {
 export function RetryRequestLink({
     request,
     title = "Retry this request",
-    description = "Your prompt and settings will be filled in on the create page.",
+    description = request.materials
+        ? "Your prompt, settings and source excerpts will be filled in on the create page."
+        : "Your prompt and settings will be filled in on the create page.",
     actionLabel = "Retry request",
 }: RetryRequestLinkProps) {
     const prefill: AuthoringRetryPrefill = {
         prompt: request.prompt,
+        domain: request.domain,
+        materials: request.materials,
         difficulty: request.difficulty,
         num_distractors: request.num_distractors,
         model_profile: request.model_profile,
