@@ -18,8 +18,11 @@ import type {
     ApprovalInput,
     CreateAuthoringJobRequest,
     GenerateInput,
+    JudgeCompatibility,
     JudgeCompatibilityRequest,
 } from "../types";
+
+const JUDGE_COMPATIBILITY_FRESHNESS = 60_000;
 
 // Scope every AI query key to the current owner so cached data from a prior
 // account can never be selected while the new owner's request is in flight.
@@ -41,8 +44,13 @@ export function useJudgeCompatibility(
     hasManualModel: boolean,
 ) {
     const ownerId = useOwnerId();
+    const queryClient = useQueryClient();
     const selectionKey = JSON.stringify(request);
     const [settledSelection, setSettledSelection] = useState(selectionKey);
+    const [refreshedSelection, setRefreshedSelection] = useState<{
+        ownerId: string | null;
+        selectionKey: string;
+    } | null>(null);
     const isSettling = hasManualModel && selectionKey !== settledSelection;
 
     useEffect(() => {
@@ -51,19 +59,47 @@ export function useJudgeCompatibility(
         return () => clearTimeout(timer);
     }, [isSettling, selectionKey]);
 
+    const queryKey = [...queryKeys.aiAuthoring.judgeCompatibility(), ownerId, request] as const;
     const query = useQuery({
-        queryKey: [...queryKeys.aiAuthoring.judgeCompatibility(), ownerId, request],
+        queryKey,
         queryFn: request && !isSettling ? ({ signal }) => getJudgeCompatibility(request, signal) : skipToken,
         networkMode: "always",
         retry: false,
-        staleTime: 60_000,
+        staleTime: JUDGE_COMPATIBILITY_FRESHNESS,
     });
     const isChecking = request !== null && (isSettling || query.isPending || query.isFetching);
+    const result = !isChecking && query.isSuccess ? query.data : undefined;
+    const shouldReview = Boolean(
+        result &&
+        refreshedSelection?.ownerId === ownerId &&
+        refreshedSelection.selectionKey === selectionKey,
+    );
+
+    function confirmCurrentResult() {
+        const activeOwner = useUserStore.getState().user?.id ?? null;
+        const latest = queryClient.getQueryState<JudgeCompatibility>(queryKey);
+        if (
+            activeOwner !== ownerId || !result || !latest ||
+            latest.fetchStatus !== "idle" || latest.status !== "success" || latest.data !== result
+        ) {
+            return false;
+        }
+        if (latest.isInvalidated || Date.now() - latest.dataUpdatedAt >= JUDGE_COMPATIBILITY_FRESHNESS) {
+            setRefreshedSelection({ ownerId, selectionKey });
+            void query.refetch();
+            return false;
+        }
+        if (shouldReview) setRefreshedSelection(null);
+        return true;
+    }
+
     return {
         isChecking,
-        result: !isChecking && query.isSuccess ? query.data : undefined,
+        result,
+        shouldReview,
         isError: !isChecking && query.isError,
         refetch: query.refetch,
+        confirmCurrentResult,
     };
 }
 

@@ -208,6 +208,27 @@ describe("AuthorForm", () => {
         expect(getJudgeCompatibility).toHaveBeenCalledTimes(2);
     });
 
+    it("refreshes an expired check on submission and shows the new warning before creating", async () => {
+        const user = userEvent.setup();
+        renderForm(undefined, connectionCapabilities);
+        const create = screen.getByRole("button", { name: "Create question" });
+        await waitFor(() => expect(create).toBeEnabled());
+        await user.type(screen.getByLabelText("Prompt"), "Create a loop question.");
+        vi.mocked(getJudgeCompatibility).mockResolvedValueOnce({
+            difficulty: { status: "compatible", provider: "openai", model: "gpt-test" },
+            relevance: { status: "fallback", provider: "openai", model: "gpt-mini" },
+        });
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_001);
+
+        await user.click(create);
+
+        expect(await screen.findByText("Relevance will use OpenAI gpt-mini.")).toBeVisible();
+        expect(screen.getByText("Review the model check and submit again.")).toBeVisible();
+        expect(createAuthoringJob).not.toHaveBeenCalled();
+        await user.click(create);
+        await waitFor(() => expect(createAuthoringJob).toHaveBeenCalledTimes(1));
+    });
+
     it("checks the completed model name when the user enters it manually", async () => {
         const user = userEvent.setup();
         renderForm(undefined, {

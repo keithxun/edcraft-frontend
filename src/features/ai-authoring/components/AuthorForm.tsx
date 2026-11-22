@@ -219,7 +219,9 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
         isChecking: checkingCompatibility,
         isError: compatibilityFailed,
         result: checkedModels,
+        shouldReview: shouldReviewCompatibility,
         refetch: checkCompatibilityAgain,
+        confirmCurrentResult,
     } = useJudgeCompatibility(modelRequest, hasManualModel);
 
     useEffect(() => {
@@ -243,6 +245,7 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
         ) {
             return;
         }
+        if (!confirmCurrentResult()) return;
 
         setSubmitError(null);
         createJob.mutate(
@@ -521,6 +524,7 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
                                 {checkedModels && compatibilityMessages(checkedModels).map((message) =>
                                     message && <p key={message} className="break-words">{message}</p>,
                                 )}
+                                {shouldReviewCompatibility && <p>Review the model check and submit again.</p>}
                             </div>
                             <div className="flex flex-wrap items-center gap-4">
                                 <Button
