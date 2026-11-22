@@ -132,7 +132,9 @@ describe("MaterialsAuthoring", () => {
         expect(screen.getByText("Lecture · module.pdf · Page 2")).toBeVisible();
         expect(screen.getByText("Past paper · module.pdf · Page 1")).toBeVisible();
         await user.click(screen.getByRole("radio", { name: "Hard" }));
-        expect(await screen.findByText(/Relevance will use OpenAI gpt-mini/)).toBeVisible();
+        await user.click(await screen.findByRole("button", { name: "Model fallback details" }));
+        expect(screen.getByRole("dialog")).toHaveTextContent(/logprobs\) for relevance/);
+        await user.keyboard("{Escape}");
         expect(createAuthoringJob).not.toHaveBeenCalled();
         await user.click(screen.getByRole("button", { name: "Create question" }));
 

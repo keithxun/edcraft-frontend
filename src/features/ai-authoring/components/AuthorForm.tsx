@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
     Select,
@@ -89,30 +90,33 @@ function getModelRequest(
     };
 }
 
-function compatibilityMessage(label: string, result: JudgeModelCompatibility): string | null {
-    switch (result.status) {
-        case "fallback": {
-            const provider = result.provider === "openai" ? "OpenAI"
-                : result.provider === "soclaas" ? "SoCLaaS" : result.provider;
-            return `${label} will use ${provider} ${result.model}.`;
-        }
-        case "unknown":
-            return `${label} model compatibility is unknown. A fallback may be used.`;
-        case "unavailable":
-            return `${label} check may be skipped. You can choose another model in Advanced settings.`;
-        case "compatible":
-            return null;
-    }
-}
+function compatibilityMessages(result?: JudgeCompatibility) {
+    const notices: string[] = [];
+    const warnings: string[] = [];
+    if (!result) return { notices, warnings };
 
-function compatibilityMessages({ difficulty, relevance }: JudgeCompatibility) {
-    if (
-        difficulty.status === "fallback" && relevance.status === "fallback" &&
-        difficulty.provider === relevance.provider && difficulty.model === relevance.model
-    ) {
-        return [compatibilityMessage("Difficulty and relevance", difficulty)];
+    const { difficulty, relevance } = result;
+    const sharedFallback = difficulty.status === "fallback" && relevance.status === "fallback" &&
+        difficulty.provider === relevance.provider && difficulty.model === relevance.model;
+    const checks: [string, JudgeModelCompatibility][] = sharedFallback
+        ? [["Difficulty and relevance", difficulty]]
+        : [["Difficulty", difficulty], ["Relevance", relevance]];
+
+    for (const [label, check] of checks) {
+        if (check.status === "fallback") {
+            const provider = check.provider === "openai" ? "OpenAI"
+                : check.provider === "soclaas" ? "SoCLaaS" : check.provider;
+            warnings.push(
+                `EdCraft couldn’t get usable token probabilities (logprobs) for ${label.toLowerCase()}. ` +
+                `Choose a different model in Advanced settings, or continue with ${provider} ${check.model}.`,
+            );
+        } else if (check.status === "unknown") {
+            notices.push(`${label} model compatibility is unknown. A fallback may be used.`);
+        } else if (check.status === "unavailable") {
+            notices.push(`${label} check may be skipped. You can choose another model in Advanced settings.`);
+        }
     }
-    return [compatibilityMessage("Difficulty", difficulty), compatibilityMessage("Relevance", relevance)];
+    return { notices, warnings };
 }
 
 interface AuthorFormProps {
@@ -223,6 +227,7 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
         refetch: checkCompatibilityAgain,
         confirmCurrentResult,
     } = useJudgeCompatibility(modelRequest, hasManualModel);
+    const { notices, warnings } = compatibilityMessages(checkedModels);
 
     useEffect(() => {
         if (submitError) summaryRef.current?.focus();
@@ -521,12 +526,33 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
                                 {compatibilityFailed && (
                                     <p>Could not check advisory model compatibility.</p>
                                 )}
-                                {checkedModels && compatibilityMessages(checkedModels).map((message) =>
-                                    message && <p key={message} className="break-words">{message}</p>,
+                                {notices.map((message) => <p key={message}>{message}</p>)}
+                                {warnings.length > 0 && (
+                                    <span className="sr-only">A fallback model will be used. Open Model fallback details to learn why.</span>
                                 )}
                                 {shouldReviewCompatibility && <p>Review the model check and submit again.</p>}
                             </div>
                             <div className="flex flex-wrap items-center gap-4">
+                                {warnings.length > 0 && (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                aria-label="Model fallback details"
+                                                title="Model fallback details"
+                                                className="text-amber-700 dark:text-amber-400"
+                                            >
+                                                <AlertCircle aria-hidden="true" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent align="start" aria-label="Model fallback details"
+                                            className="max-w-[calc(100vw-2rem)] space-y-2 text-sm break-words">
+                                            {warnings.map((message) => <p key={message}>{message}</p>)}
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
                                 <Button
                                     type="submit"
                                     aria-describedby="judge-compatibility"

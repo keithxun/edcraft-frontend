@@ -49,6 +49,8 @@ async function openAdvanced() {
         .click(screen.getByRole("button", { name: "Advanced settings" }));
 }
 
+const warningButton = { name: "Model fallback details" };
+
 describe("AuthorForm", () => {
     it("adds the verified family scope while preserving the educator's prompt", async () => {
         const example = "H2 topic 1.2. Binary search.";
@@ -93,7 +95,15 @@ describe("AuthorForm", () => {
         const user = userEvent.setup();
         renderForm(undefined, connectionCapabilities);
 
-        expect(await screen.findByText(/Difficulty will use OpenAI gpt-mini/)).toBeVisible();
+        const warning = await screen.findByRole("button", warningButton);
+        expect(warning).toHaveAttribute("aria-expanded", "false");
+        expect(screen.queryByText(/logprobs/i)).not.toBeInTheDocument();
+        await user.click(warning);
+        expect(screen.getByRole("dialog", warningButton)).toHaveTextContent(
+            /token probabilities \(logprobs\) for difficulty\. Choose a different model in Advanced settings, or continue with OpenAI gpt-mini/,
+        );
+        await user.keyboard("{Escape}");
+        expect(warning).toHaveFocus();
         expect(screen.getByRole("button", { name: "Advanced settings" })).toHaveAttribute("aria-expanded", "false");
         expect(createAuthoringJob).not.toHaveBeenCalled();
 
@@ -142,7 +152,8 @@ describe("AuthorForm", () => {
                 relevance: { status: "fallback", provider: "openai", model: "gpt-mini" },
             });
         });
-        expect(await screen.findByText(/Relevance will use OpenAI gpt-mini/)).toBeVisible();
+        await user.click(await screen.findByRole("button", warningButton));
+        expect(screen.getByRole("dialog", warningButton)).toHaveTextContent(/logprobs\) for relevance/);
         expect(create).toBeEnabled();
     });
 
@@ -154,7 +165,13 @@ describe("AuthorForm", () => {
         });
         renderForm(undefined, connectionCapabilities);
 
-        expect(await screen.findByText("Difficulty and relevance will use SoCLaaS x-test-2.")).toBeVisible();
+        const user = userEvent.setup();
+        const warning = await screen.findByRole("button", warningButton);
+        warning.focus();
+        await user.keyboard("{Enter}");
+        expect(screen.getByRole("dialog", warningButton)).toHaveTextContent(
+            /logprobs\) for difficulty and relevance\. Choose a different model in Advanced settings, or continue with SoCLaaS x-test-2/,
+        );
         expect(screen.getAllByText(/x-test-2/)).toHaveLength(1);
     });
 
@@ -167,6 +184,7 @@ describe("AuthorForm", () => {
 
         expect(await screen.findByText(/Difficulty model compatibility is unknown\. A fallback may be used/)).toBeVisible();
         expect(screen.getByText(/Relevance check may be skipped/)).toBeVisible();
+        expect(screen.queryByRole("button", warningButton)).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Create question" })).toBeEnabled();
     });
 
@@ -189,9 +207,8 @@ describe("AuthorForm", () => {
             relevance: { status: "compatible", provider: "openai", model: "configured-judge" },
         });
         renderForm(undefined, connectionCapabilities);
-        const fallback = /Difficulty will use OpenAI gpt-mini/;
 
-        expect(await screen.findByText(fallback)).toBeVisible();
+        expect(await screen.findByRole("button", warningButton)).toBeVisible();
         await openAdvanced();
         await user.click(screen.getByRole("combobox", { name: "Difficulty check" }));
         await user.click(screen.getByRole("option", { name: /My OpenAI/ }));
@@ -200,11 +217,11 @@ describe("AuthorForm", () => {
             model: "gpt-test",
             judges: { difficulty: { connection_id: "connection-1", model: "gpt-test" } },
         }, expect.any(AbortSignal)));
-        expect(screen.queryByText(fallback)).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", warningButton)).not.toBeInTheDocument();
 
         await user.click(screen.getByRole("combobox", { name: "Difficulty check" }));
         await user.click(screen.getByRole("option", { name: "Same as question model" }));
-        expect(await screen.findByText(fallback)).toBeVisible();
+        expect(await screen.findByRole("button", warningButton)).toBeVisible();
         expect(getJudgeCompatibility).toHaveBeenCalledTimes(2);
     });
 
@@ -222,7 +239,7 @@ describe("AuthorForm", () => {
 
         await user.click(create);
 
-        expect(await screen.findByText("Relevance will use OpenAI gpt-mini.")).toBeVisible();
+        expect(await screen.findByRole("button", warningButton)).toBeVisible();
         expect(screen.getByText("Review the model check and submit again.")).toBeVisible();
         expect(createAuthoringJob).not.toHaveBeenCalled();
         await user.click(create);
