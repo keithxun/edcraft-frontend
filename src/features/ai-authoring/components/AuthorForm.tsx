@@ -71,7 +71,7 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
     const connections = capabilities.connections ?? [];
     const profiles = capabilities.model_profiles;
     const relevanceDefaultLabel = capabilities.judge
-        ? `Server default (${capabilities.judge.label})`
+        ? `Server override (${capabilities.judge.label})`
         : "Same as question model";
     const minDistractors = capabilities.min_distractors ?? 1;
     const maxDistractors = capabilities.max_distractors ?? 10;

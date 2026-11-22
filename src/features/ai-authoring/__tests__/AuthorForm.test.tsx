@@ -266,7 +266,15 @@ describe("AuthorForm", () => {
         });
     });
 
-    it("defaults difficulty to the question model and relevance to the server judge", async () => {
+    it("shows both checks inheriting the question model when there is no override", async () => {
+        renderForm(undefined, { ...connectionCapabilities, judge: null });
+        await openAdvanced();
+        for (const name of ["Difficulty check", "Relevance check"]) {
+            expect(screen.getByRole("combobox", { name })).toHaveTextContent("Same as question model");
+        }
+    });
+
+    it("shows an explicit server override for relevance", async () => {
         renderForm(undefined, connectionCapabilities);
         await openAdvanced();
 
@@ -274,7 +282,7 @@ describe("AuthorForm", () => {
             "Same as question model",
         );
         expect(screen.getByRole("combobox", { name: "Relevance check" })).toHaveTextContent(
-            "Server default (Default judge)",
+            "Server override (Default judge)",
         );
     });
 

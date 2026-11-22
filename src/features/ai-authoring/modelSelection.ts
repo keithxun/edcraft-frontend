@@ -75,9 +75,7 @@ export function buildModelRequest(
 }
 
 /**
- * Build the optional judge overrides. Inherit entries are omitted so the
- * backend uses each role's default: the author for difficulty and the
- * server-configured decision judge for relevance.
+ * Send only explicit role overrides. The backend resolves inherited models.
  */
 export function buildJudgeSelections(
     difficulty: ModelSelection,
