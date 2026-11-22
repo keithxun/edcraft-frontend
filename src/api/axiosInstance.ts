@@ -38,6 +38,8 @@ let refreshPromise: Promise<void> | null = null;
 instance.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
+        if (axios.isCancel(error)) throw error;
+
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
         // Handle 401: attempt token refresh then retry

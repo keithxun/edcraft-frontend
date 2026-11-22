@@ -84,6 +84,7 @@ export const queryKeys = {
     // AI authoring queries
     aiAuthoring: {
         capabilities: () => ["ai-authoring", "capabilities"] as const,
+        judgeCompatibility: () => ["ai-authoring", "judge-compatibility"] as const,
         jobs: () => ["ai-authoring", "jobs"] as const,
         job: (id: string) => ["ai-authoring", "job", id] as const,
         review: (id: string) => ["ai-authoring", "job", id, "review"] as const,

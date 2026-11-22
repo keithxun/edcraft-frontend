@@ -9,6 +9,7 @@ import AiAuthoringPage from "../pages/AiAuthoringPage";
 import {
     createAuthoringJob,
     getAuthoringCapabilities,
+    getJudgeCompatibility,
     listAuthoringJobs,
 } from "../services/ai-authoring.service";
 import {
@@ -21,6 +22,7 @@ import { capabilities } from "./fixtures";
 vi.mock("../services/materials.service");
 vi.mock("../services/ai-authoring.service", () => ({
     getAuthoringCapabilities: vi.fn(),
+    getJudgeCompatibility: vi.fn(),
     listAuthoringJobs: vi.fn(),
     createAuthoringJob: vi.fn(),
 }));
@@ -90,6 +92,10 @@ describe("MaterialsAuthoring", () => {
 
     it("submits reviewed sources and question settings through the ordinary job flow", async () => {
         vi.mocked(getAuthoringCapabilities).mockResolvedValue(capabilities);
+        vi.mocked(getJudgeCompatibility).mockResolvedValue({
+            difficulty: { status: "compatible", provider: "openai", model: "configured-model" },
+            relevance: { status: "fallback", provider: "openai", model: "gpt-mini" },
+        });
         vi.mocked(extractMaterialPages)
             .mockResolvedValueOnce({ pages: ["Lecture introduction", "Worked list example"] })
             .mockResolvedValueOnce({ pages: ["Given xs = [3].\n(b) Trace the list after append."] });
@@ -126,6 +132,8 @@ describe("MaterialsAuthoring", () => {
         expect(screen.getByText("Lecture · module.pdf · Page 2")).toBeVisible();
         expect(screen.getByText("Past paper · module.pdf · Page 1")).toBeVisible();
         await user.click(screen.getByRole("radio", { name: "Hard" }));
+        expect(await screen.findByText(/Relevance will use OpenAI gpt-mini/)).toBeVisible();
+        expect(createAuthoringJob).not.toHaveBeenCalled();
         await user.click(screen.getByRole("button", { name: "Create question" }));
 
         expect(await screen.findByRole("heading", { name: "Job review" })).toBeVisible();

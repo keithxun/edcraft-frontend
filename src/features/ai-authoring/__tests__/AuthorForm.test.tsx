@@ -1,15 +1,16 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { AuthorForm } from "../components/AuthorForm";
-import { createAuthoringJob } from "../services/ai-authoring.service";
-import type { AuthoringCapabilities, AuthoringRetryPrefill } from "../types";
+import { createAuthoringJob, getJudgeCompatibility } from "../services/ai-authoring.service";
+import type { AuthoringCapabilities, AuthoringRetryPrefill, JudgeCompatibility } from "../types";
 import { capabilities, connectionCapabilities } from "./fixtures";
 
 vi.mock("../services/ai-authoring.service", () => ({
     getAuthoringCapabilities: vi.fn(),
+    getJudgeCompatibility: vi.fn(),
     createAuthoringJob: vi.fn(),
     listAuthoringJobs: vi.fn(),
     getAuthoringJob: vi.fn(),
@@ -72,6 +73,10 @@ describe("AuthorForm", () => {
     });
 
     beforeEach(() => {
+        vi.mocked(getJudgeCompatibility).mockResolvedValue({
+            difficulty: { status: "compatible", provider: "openai", model: "gpt-test" },
+            relevance: { status: "compatible", provider: "openai", model: "configured-judge" },
+        });
         vi.mocked(createAuthoringJob).mockResolvedValue({
             job_id: "job-1",
             status_url: "/ai-authoring/jobs/job-1",
@@ -79,6 +84,152 @@ describe("AuthorForm", () => {
     });
 
     afterEach(cleanup);
+
+    it("shows the fallback check and model before submitting the original selection", async () => {
+        vi.mocked(getJudgeCompatibility).mockResolvedValueOnce({
+            difficulty: { status: "fallback", provider: "openai", model: "gpt-mini" },
+            relevance: { status: "compatible", provider: "openai", model: "configured-judge" },
+        });
+        const user = userEvent.setup();
+        renderForm(undefined, connectionCapabilities);
+
+        expect(await screen.findByText(/Difficulty will use OpenAI gpt-mini/)).toBeVisible();
+        expect(screen.getByRole("button", { name: "Advanced settings" })).toHaveAttribute("aria-expanded", "false");
+        expect(createAuthoringJob).not.toHaveBeenCalled();
+
+        await user.type(screen.getByLabelText("Prompt"), "Create a loop question.");
+        await user.click(screen.getByRole("button", { name: "Create question" }));
+        await waitFor(() => {
+            expect(createAuthoringJob).toHaveBeenCalledWith(expect.objectContaining({
+                connection_id: "connection-1",
+                model: "gpt-test",
+            }));
+        });
+    });
+
+    it("blocks submission during a model change and ignores the old compatibility response", async () => {
+        let resolveFirst!: (result: JudgeCompatibility) => void;
+        let resolveSecond!: (result: JudgeCompatibility) => void;
+        const first = new Promise<JudgeCompatibility>((resolve) => { resolveFirst = resolve; });
+        const second = new Promise<JudgeCompatibility>((resolve) => { resolveSecond = resolve; });
+        vi.mocked(getJudgeCompatibility).mockImplementation(({ model }) =>
+            model === "gpt-other" ? second : first,
+        );
+        const user = userEvent.setup();
+        renderForm(undefined, connectionCapabilities);
+        await waitFor(() => expect(getJudgeCompatibility).toHaveBeenCalled());
+        await user.type(screen.getByLabelText("Prompt"), "Create a loop question.");
+        await openAdvanced();
+        await user.click(screen.getByRole("combobox", { name: "Model" }));
+        await user.click(screen.getByRole("option", { name: "gpt-other" }));
+        const create = screen.getByRole("button", { name: "Create question" });
+
+        expect(create).toBeDisabled();
+        await act(async () => {
+            fireEvent.submit(create.closest("form")!);
+            resolveFirst({
+                difficulty: { status: "fallback", provider: "openai", model: "obsolete-fallback" },
+                relevance: { status: "compatible", provider: "openai", model: "configured-judge" },
+            });
+        });
+        expect(createAuthoringJob).not.toHaveBeenCalled();
+        expect(screen.queryByText(/obsolete-fallback/)).not.toBeInTheDocument();
+        expect(create).toBeDisabled();
+
+        await act(async () => {
+            resolveSecond({
+                difficulty: { status: "compatible", provider: "openai", model: "gpt-other" },
+                relevance: { status: "fallback", provider: "openai", model: "gpt-mini" },
+            });
+        });
+        expect(await screen.findByText(/Relevance will use OpenAI gpt-mini/)).toBeVisible();
+        expect(create).toBeEnabled();
+    });
+
+    it("combines both checks in one message when they use the same fallback", async () => {
+        const fallback = { status: "fallback", provider: "soclaas", model: "x-test-2" } as const;
+        vi.mocked(getJudgeCompatibility).mockResolvedValueOnce({
+            difficulty: fallback,
+            relevance: fallback,
+        });
+        renderForm(undefined, connectionCapabilities);
+
+        expect(await screen.findByText("Difficulty and relevance will use SoCLaaS x-test-2.")).toBeVisible();
+        expect(screen.getAllByText(/x-test-2/)).toHaveLength(1);
+    });
+
+    it("explains unknown and unavailable checks while allowing the user to continue", async () => {
+        vi.mocked(getJudgeCompatibility).mockResolvedValueOnce({
+            difficulty: { status: "unknown", provider: "openai", model: "gpt-test" },
+            relevance: { status: "unavailable", provider: "openai", model: "configured-judge" },
+        });
+        renderForm(undefined, connectionCapabilities);
+
+        expect(await screen.findByText(/Difficulty model compatibility is unknown\. A fallback may be used/)).toBeVisible();
+        expect(screen.getByText(/Relevance check may be skipped/)).toBeVisible();
+        expect(screen.getByRole("button", { name: "Create question" })).toBeEnabled();
+    });
+
+    it("lets the user retry when the compatibility request fails", async () => {
+        vi.mocked(getJudgeCompatibility).mockRejectedValueOnce(new Error("Offline"));
+        const user = userEvent.setup();
+        renderForm();
+
+        const retry = await screen.findByRole("button", { name: "Retry compatibility check" });
+        const create = screen.getByRole("button", { name: "Create question" });
+        expect(create).toBeDisabled();
+        await user.click(retry);
+        await waitFor(() => expect(create).toBeEnabled());
+    });
+
+    it("reuses fresh results only for the same author and advisory selections", async () => {
+        const user = userEvent.setup();
+        vi.mocked(getJudgeCompatibility).mockResolvedValueOnce({
+            difficulty: { status: "fallback", provider: "openai", model: "gpt-mini" },
+            relevance: { status: "compatible", provider: "openai", model: "configured-judge" },
+        });
+        renderForm(undefined, connectionCapabilities);
+        const fallback = /Difficulty will use OpenAI gpt-mini/;
+
+        expect(await screen.findByText(fallback)).toBeVisible();
+        await openAdvanced();
+        await user.click(screen.getByRole("combobox", { name: "Difficulty check" }));
+        await user.click(screen.getByRole("option", { name: /My OpenAI/ }));
+        await waitFor(() => expect(getJudgeCompatibility).toHaveBeenLastCalledWith({
+            connection_id: "connection-1",
+            model: "gpt-test",
+            judges: { difficulty: { connection_id: "connection-1", model: "gpt-test" } },
+        }, expect.any(AbortSignal)));
+        expect(screen.queryByText(fallback)).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("combobox", { name: "Difficulty check" }));
+        await user.click(screen.getByRole("option", { name: "Same as question model" }));
+        expect(await screen.findByText(fallback)).toBeVisible();
+        expect(getJudgeCompatibility).toHaveBeenCalledTimes(2);
+    });
+
+    it("checks the completed model name when the user enters it manually", async () => {
+        const user = userEvent.setup();
+        renderForm(undefined, {
+            ...connectionCapabilities,
+            connections: connectionCapabilities.connections?.map((connection) => ({
+                ...connection,
+                models: [],
+            })),
+        });
+        await waitFor(() => expect(screen.getByRole("button", { name: "Create question" })).toBeEnabled());
+        await openAdvanced();
+        const model = screen.getByLabelText("Model");
+        await user.clear(model);
+        await user.type(model, "manual-model");
+
+        expect(screen.getByRole("button", { name: "Create question" })).toBeDisabled();
+        await waitFor(() => expect(getJudgeCompatibility).toHaveBeenLastCalledWith({
+            connection_id: "connection-1",
+            model: "manual-model",
+        }, expect.any(AbortSignal)));
+        expect(getJudgeCompatibility).toHaveBeenCalledTimes(2);
+    });
 
     it("prefills the prompt and settings from a failed request", async () => {
         renderForm({

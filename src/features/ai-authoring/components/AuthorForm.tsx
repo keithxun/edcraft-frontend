@@ -31,10 +31,12 @@ import { ROUTES } from "@/router/paths";
 import { getAuthoringErrorMessage } from "../errors";
 import { domainInfo, domainLabel } from "../domains";
 import { capitalize } from "../format";
-import { useCreateAuthoringJob } from "../hooks/useAiAuthoring";
+import { useCreateAuthoringJob, useJudgeCompatibility } from "../hooks/useAiAuthoring";
 import {
     buildJudgeSelections,
     buildModelRequest,
+    isInheritSource,
+    parseModelSource,
     resolveStoredJudgeSelection,
     resolveStoredModelSelection,
 } from "../modelSelection";
@@ -43,12 +45,75 @@ import type {
     AuthoringCapabilities,
     AuthoringDifficulty,
     AuthoringRetryPrefill,
+    JudgeCompatibility,
+    JudgeCompatibilityRequest,
+    JudgeModelCompatibility,
 } from "../types";
 import type { MaterialAuthoringSelection } from "./MaterialsAuthoring";
 import { ModelPickerField } from "./ModelPickerField";
 import { SourceExcerpts } from "./SourceExcerpts";
 
 const DIFFICULTY_ORDER: AuthoringDifficulty[] = ["easy", "medium", "hard"];
+
+const MODEL_FIELDS = [
+    "model_source",
+    "model",
+    "difficulty_source",
+    "difficulty_model",
+    "relevance_source",
+    "relevance_model",
+] as const;
+
+function isCompleteModel(source: string, model: string): boolean {
+    const parsed = parseModelSource(source);
+    return parsed?.kind === "profile" || (parsed?.kind === "connection" && Boolean(model.trim()));
+}
+
+function getModelRequest(
+    [source, model, difficultySource, difficultyModel, relevanceSource, relevanceModel]: readonly string[],
+): JudgeCompatibilityRequest | null {
+    if (
+        !isCompleteModel(source, model) ||
+        (!isInheritSource(difficultySource) && !isCompleteModel(difficultySource, difficultyModel)) ||
+        (!isInheritSource(relevanceSource) && !isCompleteModel(relevanceSource, relevanceModel))
+    ) {
+        return null;
+    }
+
+    return {
+        ...buildModelRequest(source, model),
+        judges: buildJudgeSelections(
+            { source: difficultySource, model: difficultyModel },
+            { source: relevanceSource, model: relevanceModel },
+        ),
+    };
+}
+
+function compatibilityMessage(label: string, result: JudgeModelCompatibility): string | null {
+    switch (result.status) {
+        case "fallback": {
+            const provider = result.provider === "openai" ? "OpenAI"
+                : result.provider === "soclaas" ? "SoCLaaS" : result.provider;
+            return `${label} will use ${provider} ${result.model}.`;
+        }
+        case "unknown":
+            return `${label} model compatibility is unknown. A fallback may be used.`;
+        case "unavailable":
+            return `${label} check may be skipped. You can choose another model in Advanced settings.`;
+        case "compatible":
+            return null;
+    }
+}
+
+function compatibilityMessages({ difficulty, relevance }: JudgeCompatibility) {
+    if (
+        difficulty.status === "fallback" && relevance.status === "fallback" &&
+        difficulty.provider === relevance.provider && difficulty.model === relevance.model
+    ) {
+        return [compatibilityMessage("Difficulty and relevance", difficulty)];
+    }
+    return [compatibilityMessage("Difficulty", difficulty), compatibilityMessage("Relevance", relevance)];
+}
 
 interface AuthorFormProps {
     capabilities: AuthoringCapabilities;
@@ -144,6 +209,18 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
     const selectedDomain = form.watch("domain");
     const domain = selectedDomain || defaultDomain;
     const syllabusPrompts = capabilities.syllabus_prompts?.[domain];
+    const modelFields = form.watch(MODEL_FIELDS);
+    const modelRequest = domains.length && difficultyOptions.length ? getModelRequest(modelFields) : null;
+    const hasManualModel = [modelRequest, modelRequest?.judges?.difficulty, modelRequest?.judges?.relevance]
+        .some((role) => connections.some((connection) =>
+            connection.id === role?.connection_id && connection.models.length === 0,
+        ));
+    const {
+        isChecking: checkingCompatibility,
+        isError: compatibilityFailed,
+        result: checkedModels,
+        refetch: checkCompatibilityAgain,
+    } = useJudgeCompatibility(modelRequest, hasManualModel);
 
     useEffect(() => {
         if (submitError) summaryRef.current?.focus();
@@ -151,20 +228,22 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
 
     const onInvalid = (errors: FieldErrors<AuthoringFormValues>) => {
         setSubmitError("Check the highlighted fields and try again.");
-        const advancedFields: Array<keyof AuthoringFormValues> = [
-            "model_source",
-            "model",
-            "difficulty_source",
-            "difficulty_model",
-            "relevance_source",
-            "relevance_model",
-        ];
-        if (advancedFields.some((field) => errors[field])) {
+        if (MODEL_FIELDS.some((field) => errors[field])) {
             setAdvancedOpen(true);
         }
     };
 
     const onSubmit = (values: AuthoringFormValues) => {
+        if (!modelRequest || !checkedModels || createJob.isPending) return;
+        // Form validation is asynchronous, so the live selection can change while it runs.
+        if (
+            MODEL_FIELDS.some((field, index) =>
+                values[field] !== modelFields[index] || form.getValues(field) !== modelFields[index],
+            )
+        ) {
+            return;
+        }
+
         setSubmitError(null);
         createJob.mutate(
             {
@@ -173,17 +252,7 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
                 prompt: values.prompt,
                 difficulty: values.difficulty,
                 num_distractors: values.distractors,
-                ...buildModelRequest(values.model_source, values.model),
-                judges: buildJudgeSelections(
-                    {
-                        source: values.difficulty_source,
-                        model: values.difficulty_model,
-                    },
-                    {
-                        source: values.relevance_source,
-                        model: values.relevance_model,
-                    },
-                ),
+                ...modelRequest,
             },
             {
                 onSuccess: (job) => {
@@ -437,28 +506,60 @@ export function AuthorForm({ capabilities, selection }: AuthorFormProps) {
                             />
                         </div>
 
-                        <div className="mt-6 flex flex-wrap items-center gap-4 border-t pt-4">
-                            <Button
-                                type="submit"
-                                disabled={createJob.isPending || difficultyOptions.length === 0}
+                        <div className="mt-6 border-t pt-4">
+                            <div
+                                id="judge-compatibility"
+                                role="status"
+                                className="mb-3 space-y-1 text-sm empty:mb-0"
                             >
-                                {createJob.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                                ) : (
-                                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                                {checkingCompatibility && (
+                                    <p className="text-muted-foreground">Checking advisory model compatibility…</p>
                                 )}
-                                {createJob.isPending ? "Creating…" : "Create question"}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="link"
-                                className="h-auto p-0 text-sm"
-                                aria-expanded={advancedOpen}
-                                aria-controls="advanced-settings"
-                                onClick={() => setAdvancedOpen((open) => !open)}
-                            >
-                                Advanced settings
-                            </Button>
+                                {compatibilityFailed && (
+                                    <p>Could not check advisory model compatibility.</p>
+                                )}
+                                {checkedModels && compatibilityMessages(checkedModels).map((message) =>
+                                    message && <p key={message} className="break-words">{message}</p>,
+                                )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-4">
+                                <Button
+                                    type="submit"
+                                    aria-describedby="judge-compatibility"
+                                    disabled={
+                                        createJob.isPending ||
+                                        difficultyOptions.length === 0 ||
+                                        checkingCompatibility ||
+                                        compatibilityFailed
+                                    }
+                                >
+                                    {createJob.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                                    ) : (
+                                        <Sparkles className="h-4 w-4" aria-hidden="true" />
+                                    )}
+                                    {createJob.isPending ? "Creating…" : "Create question"}
+                                </Button>
+                                {compatibilityFailed && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => void checkCompatibilityAgain()}
+                                    >
+                                        Retry compatibility check
+                                    </Button>
+                                )}
+                                <Button
+                                    type="button"
+                                    variant="link"
+                                    className="h-auto p-0 text-sm"
+                                    aria-expanded={advancedOpen}
+                                    aria-controls="advanced-settings"
+                                    onClick={() => setAdvancedOpen((open) => !open)}
+                                >
+                                    Advanced settings
+                                </Button>
+                            </div>
                         </div>
 
                         {advancedOpen && (

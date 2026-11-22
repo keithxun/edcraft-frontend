@@ -42,6 +42,18 @@ export type CreateAuthoringJobRequest = Omit<SubmitAuthoringJobRequest, "domain"
     domain: string;
 };
 export type CreatedAuthoringJob = AuthoringJobSubmittedResponse;
+export type JudgeCompatibilityRequest = Pick<
+    CreateAuthoringJobRequest,
+    "model_profile" | "connection_id" | "model" | "judges"
+>;
+
+export interface JudgeModelCompatibility {
+    status: "compatible" | "fallback" | "unknown" | "unavailable";
+    provider: string;
+    model: string;
+}
+
+export type JudgeCompatibility = Record<"difficulty" | "relevance", JudgeModelCompatibility>;
 export type AuthoringApproval = StoredReviewerApproval;
 export type AuthoringCheck = ReviewCheck;
 export type AuthoringDifficultyOutcome = DifficultyOutcome;

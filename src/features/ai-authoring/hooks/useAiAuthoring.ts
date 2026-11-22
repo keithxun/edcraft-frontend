@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api";
 import { useUserStore } from "@/shared/stores/user.store";
 import { nextJobPollingInterval } from "../polling";
@@ -10,12 +11,14 @@ import {
     getAuthoringJob,
     getAuthoringPreview,
     getAuthoringReview,
+    getJudgeCompatibility,
     listAuthoringJobs,
 } from "../services/ai-authoring.service";
 import type {
     ApprovalInput,
     CreateAuthoringJobRequest,
     GenerateInput,
+    JudgeCompatibilityRequest,
 } from "../types";
 
 // Scope every AI query key to the current owner so cached data from a prior
@@ -31,6 +34,37 @@ export function useAuthoringCapabilities() {
         queryFn: getAuthoringCapabilities,
         staleTime: 60_000,
     });
+}
+
+export function useJudgeCompatibility(
+    request: JudgeCompatibilityRequest | null,
+    hasManualModel: boolean,
+) {
+    const ownerId = useOwnerId();
+    const selectionKey = JSON.stringify(request);
+    const [settledSelection, setSettledSelection] = useState(selectionKey);
+    const isSettling = hasManualModel && selectionKey !== settledSelection;
+
+    useEffect(() => {
+        if (!isSettling) return;
+        const timer = setTimeout(() => setSettledSelection(selectionKey), 300);
+        return () => clearTimeout(timer);
+    }, [isSettling, selectionKey]);
+
+    const query = useQuery({
+        queryKey: [...queryKeys.aiAuthoring.judgeCompatibility(), ownerId, request],
+        queryFn: request && !isSettling ? ({ signal }) => getJudgeCompatibility(request, signal) : skipToken,
+        networkMode: "always",
+        retry: false,
+        staleTime: 60_000,
+    });
+    const isChecking = request !== null && (isSettling || query.isPending || query.isFetching);
+    return {
+        isChecking,
+        result: !isChecking && query.isSuccess ? query.data : undefined,
+        isError: !isChecking && query.isError,
+        refetch: query.refetch,
+    };
 }
 
 export function useAuthoringJobs() {

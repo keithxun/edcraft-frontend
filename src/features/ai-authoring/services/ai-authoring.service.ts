@@ -1,4 +1,5 @@
 import { api } from "@/api/client";
+import { axiosInstance } from "@/api/axiosInstance";
 import type {
     ApprovalInput,
     AuthoringApproval,
@@ -11,10 +12,25 @@ import type {
     CreateAuthoringJobRequest,
     CreatedAuthoringJob,
     GenerateInput,
+    JudgeCompatibility,
+    JudgeCompatibilityRequest,
 } from "../types";
 
 export async function getAuthoringCapabilities(): Promise<AuthoringCapabilities> {
     const response = await api.getCapabilitiesAiAuthoringCapabilitiesGet();
+    return response.data;
+}
+
+export async function getJudgeCompatibility(
+    request: JudgeCompatibilityRequest,
+    signal: AbortSignal,
+): Promise<JudgeCompatibility> {
+    const response = await axiosInstance<JudgeCompatibility>({
+        method: "POST",
+        url: "/ai-authoring/judge-compatibility",
+        data: request,
+        signal,
+    });
     return response.data;
 }
 

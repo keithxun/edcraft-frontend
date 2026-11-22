@@ -25,6 +25,7 @@ function useInvalidateConnections() {
         void queryClient.invalidateQueries({ queryKey: queryKeys.providerConnections.all() });
         // Authoring capabilities embed the caller's connections for the form.
         void queryClient.invalidateQueries({ queryKey: queryKeys.aiAuthoring.capabilities() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.aiAuthoring.judgeCompatibility() });
     };
 }
 
